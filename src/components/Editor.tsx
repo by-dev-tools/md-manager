@@ -204,9 +204,10 @@ function EditorHeader({
         ) : (
           <RepoFileCrumb
             doc={doc}
-            repoName={state.repos.find((r) => r.id === doc.repoId)?.name ?? doc.repoId}
+            repo={state.repos.find((r) => r.id === doc.repoId) ?? null}
           />
         )}
+        <span className="saved">{saving ? 'Saving…' : 'Saved'}</span>
       </div>
       <div className="segmented">
         <button
@@ -223,7 +224,6 @@ function EditorHeader({
         </button>
       </div>
       <div className="editor-actions">
-        <span className="saved">{saving ? 'Saving…' : 'Saved'}</span>
         <button title="More" onClick={onOpenOverflow}>
           <DotsIcon />
         </button>
@@ -264,13 +264,28 @@ function DraftCrumb({
   );
 }
 
-function RepoFileCrumb({ doc, repoName }: { doc: RepoFile; repoName: string }) {
+function RepoFileCrumb({
+  doc,
+  repo,
+}: {
+  doc: RepoFile;
+  repo: { id: string; name: string; source: string | null } | null;
+}) {
+  const repoName = repo?.name ?? doc.repoId;
+  const displayPath = `${repoName}/${doc.path}${doc.name}`;
+  const openInFinder = () => {
+    const base = repo?.source?.replace(/\/$/, '') ?? `~/${repoName}`;
+    const fileUrl = `file://${base}/${doc.path}${doc.name}`;
+    window.open(fileUrl, '_blank');
+  };
   return (
-    <div className="attach-chip breadcrumb attached">
-      <span>
-        {repoName} / {doc.path}
-        {doc.name}
-      </span>
-    </div>
+    <button
+      type="button"
+      className="attach-chip breadcrumb attached"
+      onClick={openInFinder}
+      title={`Open ${displayPath} in Finder`}
+    >
+      <span>{displayPath}</span>
+    </button>
   );
 }

@@ -36,7 +36,17 @@
   --radius-surface: 24px;
 
   /* Surface */
-  --surface-gutter: 12px;
+  --surface-gutter: 8px;
+
+  /* Dev-tunable design tokens (driven by DevPanel) */
+  --sidebar-width: 268px;
+  --nav-section-gap: 24px;
+  --surface-opacity: 0.5;
+  --surface-radius: 8px;
+  --surface-shadow-alpha: 0.5;
+  --sidebar-font: 13px;
+  --editor-font: 15px;
+  --search-opacity: 0.6;
   --surface-shadow:
     0 1px 3px rgba(0, 0, 0, 0.04), 0 6px 16px -2px rgba(0, 0, 0, 0.07);
 
@@ -76,20 +86,22 @@ button {
 
 .app {
   display: grid;
-  grid-template-columns: 268px 1fr;
+  grid-template-columns: var(--sidebar-width) 1fr;
   height: 100vh;
   min-height: 600px;
 }
 
 /* ───── Sidebar ───── */
 .sidebar {
-  border-right: 1px solid var(--page-tint-edge);
   display: flex;
   flex-direction: column;
   background: transparent;
-  font-family: 'Geist Mono', monospace;
+  font-family: 'Geist', sans-serif;
   letter-spacing: -0.005em;
   min-height: 0;
+}
+.mode-flat .sidebar {
+  border-right: 1px solid var(--page-tint-edge);
 }
 .sidebar-top-bar {
   padding: 14px 14px 0;
@@ -133,7 +145,7 @@ button {
   align-items: center;
   gap: var(--space-3);
   padding: 7px 10px;
-  background: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, var(--search-opacity));
   border-radius: var(--radius-button);
   color: var(--sand-9);
   font-size: 12px;
@@ -156,63 +168,49 @@ button {
 .nav {
   flex: 1;
   overflow-y: auto;
-  padding: 0 var(--space-3) var(--space-4);
+  padding: 16px 22px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--nav-section-gap);
 }
 
-/* Top-level row: icon → label → chevron, count or + on right */
-.row-top {
+.nav-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.nav-title {
   display: flex;
   align-items: center;
-  padding: 5px 8px;
-  border-radius: var(--radius-button);
-  color: var(--sand-12);
-  font-weight: var(--weight-regular);
-  font-size: 13px;
-  user-select: none;
+  gap: 4px;
   cursor: pointer;
-  line-height: 1.4;
+  user-select: none;
   position: relative;
 }
-.row-top:hover {
-  background: rgba(255, 255, 255, 0.45);
+.nav-title .nav-icon {
+  color: var(--sand-12);
 }
-.row-top .icon {
+.nav-title .nav-label {
+  font-size: var(--sidebar-font);
+  font-weight: var(--weight-medium);
+  color: var(--sand-12);
+}
+.nav-title .nav-count {
+  font-size: var(--sidebar-font);
+  font-weight: var(--weight-regular);
+  color: var(--sand-9);
+  margin-left: 2px;
+  transition: opacity 160ms ease;
+}
+.nav-count.is-hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+.nav-title .nav-action {
+  margin-left: auto;
   width: 18px;
   height: 18px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--sand-11);
-  flex-shrink: 0;
-  margin-right: 8px;
-}
-.row-top .chev {
-  width: 14px;
-  height: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--sand-9);
-  margin-left: 4px;
-  transition: transform 120ms ease;
-}
-.row-top .chev.open {
-  transform: rotate(90deg);
-}
-.row-top .count {
-  margin-left: auto;
-  color: var(--sand-9);
-  font-weight: var(--weight-regular);
-  font-size: 11px;
-  transition: opacity 120ms ease;
-}
-.row-top .row-action {
-  position: absolute;
-  right: 6px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 22px;
-  height: 22px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -221,153 +219,106 @@ button {
   background: transparent;
   border: 0;
   cursor: pointer;
-  opacity: 0;
-  transition: opacity 120ms ease, background 120ms ease, color 120ms ease;
+  transition: background 120ms ease, color 120ms ease;
 }
-.row-top:hover .row-action {
-  opacity: 1;
-}
-.row-action:hover {
+.nav-title .nav-action:hover {
   background: rgba(255, 255, 255, 0.7);
   color: var(--sand-12);
 }
-.row-top:hover .count {
-  opacity: 0;
-}
 
-.children {
-  padding-left: 30px;
-  padding-bottom: 2px;
-}
-
-/* Leaf row (drafts) */
-.row-leaf {
+.nav-icon {
+  width: 13px;
+  height: 13px;
   display: flex;
   align-items: center;
-  padding: 4px 8px;
-  border-radius: var(--radius-button);
-  color: var(--sand-11);
-  font-size: 12px;
-  font-weight: var(--weight-regular);
-  line-height: 1.45;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.nav-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
   user-select: none;
+  min-width: 0;
+  color: var(--sand-11);
+  transition: color 150ms ease;
+}
+.nav-row.depth-1 { padding-left: 21px; }
+.nav-row.depth-2 { padding-left: 42px; }
+.nav-row.depth-3 { padding-left: 63px; }
+.nav-row .nav-icon {
+  color: var(--sand-11);
+}
+.nav-row .nav-label {
+  font-size: var(--sidebar-font);
+  font-weight: var(--weight-regular);
+  color: var(--sand-11);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  cursor: pointer;
+  flex: 1;
+  min-width: 0;
+  transition: color 150ms ease, font-weight 0ms;
 }
-.row-leaf:hover {
-  background: rgba(255, 255, 255, 0.45);
-}
-.row-leaf.selected {
-  color: var(--sand-12);
+.nav-row.folder .nav-label {
   font-weight: var(--weight-medium);
 }
-.row-leaf .label {
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* Sub-section label */
-.sub-label {
-  padding: 10px 8px 4px;
-  font-family: 'Geist Mono', monospace;
-  font-size: 10.5px;
+.nav-row .nav-count {
+  font-size: var(--sidebar-font);
   font-weight: var(--weight-regular);
-  letter-spacing: 0;
   color: var(--sand-9);
+  flex-shrink: 0;
+  margin-left: 2px;
 }
-
-/* File tree */
-.file-tree {
-  font-family: 'Geist Mono', monospace;
-  font-size: 12px;
-  letter-spacing: -0.005em;
-}
-.file-row {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  padding: 3px 8px;
-  border-radius: var(--radius-button);
-  color: var(--sand-11);
-  line-height: 1.5;
-  cursor: pointer;
-  user-select: none;
-  white-space: nowrap;
-  overflow: hidden;
-}
-.file-row:hover {
-  background: rgba(255, 255, 255, 0.45);
-}
-.file-row.selected {
+.nav-row.selected .nav-label {
   color: var(--sand-12);
   font-weight: var(--weight-medium);
 }
-.file-row.dimmed {
-  color: var(--sand-9);
-  opacity: 0.55;
+.nav-row:hover .nav-label {
+  color: var(--sand-12);
+}
+.nav-row.dimmed {
   cursor: default;
 }
-.file-row.dimmed:hover {
-  background: transparent;
-}
-.file-row.folder {
-  color: var(--sand-12);
-}
-.file-row .file-name {
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.file-tree .folder-chev {
-  width: 12px;
-  height: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.nav-row.dimmed .nav-icon,
+.nav-row.dimmed .nav-label {
   color: var(--sand-9);
-  flex-shrink: 0;
-  transition: transform 120ms ease;
+  opacity: 0.7;
 }
-.file-tree .folder-chev.open {
-  transform: rotate(90deg);
-}
-.file-tree .file-icon {
-  width: 16px;
-  height: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
+.nav-row.dimmed:hover .nav-label {
   color: var(--sand-9);
-}
-.md-badge {
-  width: 18px;
-  height: 14px;
-  background: rgba(255, 255, 255, 0.7);
-  border-radius: 3px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: 'Geist Mono', monospace;
-  font-size: 8.5px;
-  font-weight: var(--weight-semibold);
-  color: var(--sand-11);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  flex-shrink: 0;
-  box-shadow: inset 0 0 0 0.5px rgba(0, 0, 0, 0.04);
-}
-.file-row.selected .md-badge {
-  background: rgba(255, 255, 255, 0.95);
-  color: var(--sand-12);
-}
-.folder-children {
-  padding-left: 18px;
 }
 
-.group-gap {
-  height: 18px;
+.nav-divider {
+  height: 1px;
+  background: var(--page-tint-edge);
+  margin-left: 21px;
+  align-self: stretch;
+}
+
+/* Collapsible content wrapper for sections, sub-folders, and tree folders.
+   Uses the grid-template-rows 0fr/1fr trick so the inner content height
+   animates without us needing to know it. */
+.nav-collapse {
+  display: grid;
+  grid-template-rows: 1fr;
+  opacity: 1;
+  overflow: hidden;
+  transition: grid-template-rows 200ms ease, opacity 200ms ease;
+}
+.nav-collapse.is-closed {
+  grid-template-rows: 0fr;
+  opacity: 0;
+  pointer-events: none;
+}
+.nav-collapse > .nav-collapse-inner {
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .sidebar-footer {
@@ -377,14 +328,15 @@ button {
   align-items: center;
   gap: var(--space-3);
   color: var(--sand-11);
-  font-size: 12px;
-  font-family: 'Geist Mono', monospace;
+  font-size: 13px;
+  font-family: 'Geist', sans-serif;
   cursor: pointer;
   background: transparent;
   border-left: 0;
   border-right: 0;
   border-bottom: 0;
   width: 100%;
+  transition: color 150ms ease;
 }
 .sidebar-footer:hover {
   color: var(--sand-12);
@@ -417,9 +369,11 @@ button {
 .mode-floating .surface {
   margin: var(--surface-gutter);
   margin-right: calc(var(--surface-gutter) + 12px + var(--surface-gutter));
-  border-radius: var(--radius-surface);
-  box-shadow: var(--surface-shadow);
-  background: rgba(255, 255, 255, 0.75);
+  border-radius: var(--surface-radius);
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, calc(0.04 * var(--surface-shadow-alpha))),
+    0 6px 16px -2px rgba(0, 0, 0, calc(0.07 * var(--surface-shadow-alpha)));
+  background: rgba(255, 255, 255, var(--surface-opacity));
 }
 
 .mode-flat .surface {
@@ -438,7 +392,6 @@ button {
   align-items: center;
   padding: 14px 24px 14px 28px;
   gap: var(--space-4);
-  border-bottom: 1px solid var(--gray-a5);
   position: relative;
   flex-shrink: 0;
 }
@@ -507,10 +460,16 @@ button {
   background: transparent;
   border: 0;
   padding-left: 0;
-  cursor: default;
+  cursor: pointer;
+  font-family: 'Geist Mono', monospace;
+  font-size: 12px;
 }
 .attach-chip.breadcrumb:hover {
   background: transparent;
+  color: var(--sand-12);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-color: var(--sand-9);
 }
 
 /* Segmented control */
@@ -571,7 +530,7 @@ button {
 .editor {
   padding: 40px 32px 60px;
   font-family: 'Geist', sans-serif;
-  font-size: var(--type-body);
+  font-size: var(--editor-font);
   line-height: 1.55;
   color: var(--sand-12);
   max-width: 680px;
@@ -877,6 +836,126 @@ button {
 .btn-primary:hover {
   background: var(--sand-11);
   border-color: var(--sand-11);
+}
+
+/* ───── Dev panel ───── */
+.dev-panel {
+  position: fixed;
+  bottom: 8px;
+  /* Right-anchored to the sidebar's right edge with an 8px inset.
+     viewport_right − X = sidebar_width − 8  ⇒  X = 100vw − sidebar_width + 8 */
+  right: calc(100vw - var(--sidebar-width) + 8px);
+  z-index: 100;
+  font-family: 'Geist Mono', monospace;
+  font-size: 11px;
+  color: var(--sand-12);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+.dev-panel-toggle {
+  background: rgba(33, 32, 28, 0.85);
+  color: #fff;
+  border: 0;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font: inherit;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  opacity: 0.5;
+  transition: opacity 120ms ease;
+}
+.dev-panel-toggle:hover,
+.dev-panel.open .dev-panel-toggle {
+  opacity: 1;
+}
+.dev-panel-body {
+  margin-top: 6px;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid var(--gray-a7);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  padding: 10px 12px 12px;
+  width: 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.dev-knob {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.dev-knob-toggle {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.dev-knob-toggle label {
+  font-size: 11px;
+  color: var(--sand-11);
+  flex: 1;
+}
+.dev-knob-toggle input[type='checkbox'] {
+  accent-color: var(--sand-12);
+  cursor: pointer;
+}
+.dev-knob-select {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.dev-knob-select label {
+  font-size: 11px;
+  color: var(--sand-11);
+  flex: 1;
+}
+.dev-knob-select select {
+  font: inherit;
+  font-size: 11px;
+  color: var(--sand-12);
+  background: var(--sand-2);
+  border: 1px solid var(--gray-a7);
+  border-radius: 4px;
+  padding: 2px 4px;
+  cursor: pointer;
+  font-family: 'Geist Mono', monospace;
+}
+.dev-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.dev-row label {
+  font-size: 11px;
+  color: var(--sand-11);
+}
+.dev-value {
+  font-variant-numeric: tabular-nums;
+  color: var(--sand-12);
+}
+.dev-panel input[type='range'] {
+  width: 100%;
+  accent-color: var(--sand-12);
+}
+.dev-reset {
+  align-self: flex-end;
+  background: transparent;
+  border: 0;
+  color: var(--sand-9);
+  font: inherit;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  padding: 2px 4px;
+}
+.dev-reset:hover {
+  color: var(--sand-12);
 }
 
 /* ───── Color rail ───── */

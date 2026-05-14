@@ -5,6 +5,7 @@ import { Editor } from './components/Editor';
 import { ColorRail } from './components/ColorRail';
 import { AddRepoModal } from './components/AddRepoModal';
 import { OverflowMenu } from './components/OverflowMenu';
+import { DevPanel } from './components/DevPanel';
 import { useStore } from './store';
 
 export function App() {
@@ -52,6 +53,7 @@ export function App() {
         <ColorRail />
       </main>
       {addRepoOpen && <AddRepoModal onClose={() => setAddRepoOpen(false)} />}
+      {import.meta.env.DEV && <DevPanel />}
       {import.meta.env.DEV && <Agentation />}
     </div>
   );

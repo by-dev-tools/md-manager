@@ -36,4 +36,3 @@ export interface Repo {
 export type Doc = Draft | RepoFile;
 
 export type ViewMode = 'preview' | 'markdown';
-export type SurfaceMode = 'floating' | 'flat';

@@ -15,7 +15,6 @@ import type {
   Repo,
   RepoFile,
   RepoId,
-  SurfaceMode,
 } from './types';
 import { seedDrafts, seedRepoFiles, seedRepos } from './data/seed';
 import { deriveTitle } from './lib/markdown';
@@ -30,7 +29,6 @@ interface PersistedState {
   expanded: Record<string, boolean>;
   pageTint: string;
   pageTintEdge: string;
-  surfaceMode: SurfaceMode;
 }
 
 function defaultState(): PersistedState {
@@ -42,7 +40,6 @@ function defaultState(): PersistedState {
     expanded: { unattached: true, 'mochi-emr': true, 'folder:mochi-emr:core-docs/': true },
     pageTint: 'hsl(30, 60%, 88%)',
     pageTintEdge: 'hsla(30, 30%, 50%, 0.10)',
-    surfaceMode: 'floating',
   };
 }
 
@@ -65,6 +62,7 @@ interface StoreApi {
   docById: (id: DocId | null) => Doc | null;
   selectDoc: (id: DocId | null) => void;
   createDraft: (target: RepoId | 'unattached') => DraftId;
+  deleteDraft: (id: DraftId) => void;
   updateDraftBody: (id: DraftId, md: string) => void;
   /** Cheap title-only update for preview-mode edits that don't round-trip. */
   setDraftTitle: (id: DraftId, title: string) => void;
@@ -74,7 +72,6 @@ interface StoreApi {
   setExpanded: (key: string, value: boolean) => void;
   toggleExpanded: (key: string) => void;
   setPageTint: (tint: string, edge?: string) => void;
-  setSurfaceMode: (mode: SurfaceMode) => void;
 }
 
 type DraftId = string;
@@ -109,11 +106,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     document.documentElement.style.setProperty('--page-tint-edge', state.pageTintEdge);
   }, [state.pageTint, state.pageTintEdge]);
 
-  useEffect(() => {
-    document.body.classList.toggle('mode-floating', state.surfaceMode === 'floating');
-    document.body.classList.toggle('mode-flat', state.surfaceMode === 'flat');
-  }, [state.surfaceMode]);
-
   const docById = useCallback(
     (id: DocId | null): Doc | null => {
       if (!id) return null;
@@ -127,7 +119,20 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   );
 
   const selectDoc = useCallback((id: DocId | null) => {
-    setState((s) => ({ ...s, selectedDocId: id }));
+    setState((s) => {
+      // If we're navigating away from an empty draft, drop it. The user
+      // created a fresh draft, typed nothing, and clicked away — keeping it
+      // around just clutters the sidebar.
+      const prevId = s.selectedDocId;
+      const next: PersistedState = { ...s, selectedDocId: id };
+      if (prevId && prevId !== id) {
+        const prev = s.drafts.find((d) => d.id === prevId);
+        if (prev && prev.md.trim() === '') {
+          next.drafts = s.drafts.filter((d) => d.id !== prevId);
+        }
+      }
+      return next;
+    });
   }, []);
 
   const createDraft = useCallback((target: RepoId | 'unattached'): DraftId => {
@@ -149,6 +154,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       expanded: { ...s.expanded, [target]: true },
     }));
     return id;
+  }, []);
+
+  const deleteDraft = useCallback((id: DraftId) => {
+    setState((s) => {
+      const drafts = s.drafts.filter((d) => d.id !== id);
+      const selectedDocId =
+        s.selectedDocId === id ? (drafts[0]?.id ?? null) : s.selectedDocId;
+      return { ...s, drafts, selectedDocId };
+    });
   }, []);
 
   const updateDraftBody = useCallback((id: DraftId, md: string) => {
@@ -231,10 +245,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }));
   }, []);
 
-  const setSurfaceMode = useCallback((mode: SurfaceMode) => {
-    setState((s) => ({ ...s, surfaceMode: mode }));
-  }, []);
-
   const api: StoreApi = useMemo(
     () => ({
       state,
@@ -242,6 +252,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       docById,
       selectDoc,
       createDraft,
+      deleteDraft,
       updateDraftBody,
       setDraftTitle,
       updateRepoFileBody,
@@ -250,7 +261,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setExpanded,
       toggleExpanded,
       setPageTint,
-      setSurfaceMode,
     }),
     [
       state,
@@ -258,6 +268,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       docById,
       selectDoc,
       createDraft,
+      deleteDraft,
       updateDraftBody,
       setDraftTitle,
       updateRepoFileBody,
@@ -266,7 +277,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setExpanded,
       toggleExpanded,
       setPageTint,
-      setSurfaceMode,
     ],
   );
 

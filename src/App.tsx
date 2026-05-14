@@ -4,14 +4,34 @@ import { Sidebar } from './components/Sidebar';
 import { Editor } from './components/Editor';
 import { ColorRail } from './components/ColorRail';
 import { AddRepoModal } from './components/AddRepoModal';
-import { OverflowMenu } from './components/OverflowMenu';
+import { DevPanel } from './components/DevPanel';
 import { useStore } from './store';
+
+const SIDEBAR_STORAGE_KEY = 'mumbai.sidebarCollapsed.v1';
+
+function loadSidebarCollapsed(): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    return localStorage.getItem(SIDEBAR_STORAGE_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
 
 export function App() {
   const { state, docById, createDraft } = useStore();
   const [addRepoOpen, setAddRepoOpen] = useState(false);
-  const [overflowOpen, setOverflowOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(loadSidebarCollapsed);
   const doc = docById(state.selectedDocId);
+
+  useEffect(() => {
+    document.body.classList.toggle('sidebar-collapsed', sidebarCollapsed);
+    try {
+      localStorage.setItem(SIDEBAR_STORAGE_KEY, sidebarCollapsed ? '1' : '0');
+    } catch {
+      /* noop */
+    }
+  }, [sidebarCollapsed]);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -26,9 +46,13 @@ export function App() {
         createDraft('unattached');
         return;
       }
+      if ((e.metaKey || e.ctrlKey) && e.key === '\\') {
+        e.preventDefault();
+        setSidebarCollapsed((v) => !v);
+        return;
+      }
       if (e.key === 'Escape') {
         setAddRepoOpen(false);
-        setOverflowOpen(false);
       }
       if (!inEditable && !e.metaKey && !e.ctrlKey && !e.altKey) {
         // room for future global shortcuts
@@ -45,14 +69,19 @@ export function App() {
         <div className="surface">
           <Editor
             doc={doc}
-            onOpenOverflow={() => setOverflowOpen((v) => !v)}
+            sidebarCollapsed={sidebarCollapsed}
+            onToggleSidebar={() => setSidebarCollapsed((v) => !v)}
           />
-          {overflowOpen && <OverflowMenu onClose={() => setOverflowOpen(false)} />}
         </div>
         <ColorRail />
       </main>
       {addRepoOpen && <AddRepoModal onClose={() => setAddRepoOpen(false)} />}
-      {import.meta.env.DEV && <Agentation />}
+      {import.meta.env.DEV && (
+        <>
+          <DevPanel />
+          <Agentation />
+        </>
+      )}
     </div>
   );
 }

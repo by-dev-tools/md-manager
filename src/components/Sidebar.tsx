@@ -2,13 +2,15 @@ import { useMemo, useState } from 'react';
 import { useStore } from '../store';
 import type { Draft, Repo, RepoFile, RepoId } from '../types';
 import {
-  ChevronRight,
   FileIcon,
   FolderIcon,
+  FolderOpenIcon,
   PencilIcon,
   PlusIcon,
+  RepoIcon,
   SearchIcon,
 } from './icons';
+import type { ReactNode } from 'react';
 
 interface SidebarProps {
   onOpenAddRepo: () => void;
@@ -38,13 +40,6 @@ export function Sidebar({ onOpenAddRepo }: SidebarProps) {
           <span />
           <span />
         </div>
-        <button
-          className="icon-btn"
-          title="New draft (⌘N)"
-          onClick={() => createDraft('unattached')}
-        >
-          <PencilIcon />
-        </button>
       </div>
 
       <div className="search">
@@ -63,10 +58,12 @@ export function Sidebar({ onOpenAddRepo }: SidebarProps) {
           label="Unattached drafts"
           count={unattachedDrafts.length}
           expanded={!!state.expanded['unattached']}
+          iconKind="file"
+          collapsible={unattachedDrafts.length > 0}
           onToggle={() => toggleExpanded('unattached')}
           onCreateDraft={() => createDraft('unattached')}
         />
-        {!!state.expanded['unattached'] && (
+        {unattachedDrafts.length > 0 && !!state.expanded['unattached'] && (
           <div className="children">
             {unattachedDrafts.filter(filterDraft).map((d) => (
               <DraftRow
@@ -104,8 +101,13 @@ interface SourceRowProps {
   count?: number;
   expanded: boolean;
   onToggle: () => void;
-  onCreateDraft: () => void;
-  iconKind?: 'file' | 'folder';
+  onCreateDraft?: () => void;
+  icon?: ReactNode;
+  iconKind?: 'file' | 'folder' | 'pencil' | 'repo';
+  variant?: 'primary' | 'nested';
+  /** When false, the row has no chevron and doesn't expand — only the + action
+      remains. Use for empty containers where expand/collapse would be a no-op. */
+  collapsible?: boolean;
 }
 
 function SourceRow({
@@ -114,28 +116,47 @@ function SourceRow({
   expanded,
   onToggle,
   onCreateDraft,
+  icon,
   iconKind = 'file',
+  variant = 'primary',
+  collapsible = true,
 }: SourceRowProps) {
+  const baseIcon =
+    icon ??
+    (iconKind === 'folder' ? (
+      collapsible && expanded ? <FolderOpenIcon /> : <FolderIcon />
+    ) : iconKind === 'pencil' ? (
+      <PencilIcon />
+    ) : iconKind === 'repo' ? (
+      <RepoIcon />
+    ) : (
+      <FileIcon />
+    ));
+  const showCount =
+    collapsible && !expanded && count !== undefined && count > 0;
+
   return (
-    <div className="row-top" onClick={onToggle}>
-      <span className="icon">
-        {iconKind === 'folder' ? <FolderIcon /> : <FileIcon />}
-      </span>
+    <div
+      className={`row-top${variant === 'nested' ? ' row-nested' : ''}${
+        collapsible ? '' : ' not-collapsible'
+      }`}
+      onClick={collapsible ? onToggle : undefined}
+    >
+      <span className="icon">{baseIcon}</span>
       <span className="label">{label}</span>
-      <span className={`chev${expanded ? ' open' : ''}`}>
-        <ChevronRight />
-      </span>
-      <button
-        className="row-action"
-        title={`New draft in ${label}`}
-        onClick={(e) => {
-          e.stopPropagation();
-          onCreateDraft();
-        }}
-      >
-        <PlusIcon />
-      </button>
-      {count !== undefined && <span className="count">{count}</span>}
+      {showCount && <span className="count">{count}</span>}
+      {onCreateDraft && (
+        <button
+          className="row-action"
+          title={`New draft in ${label}`}
+          onClick={(e) => {
+            e.stopPropagation();
+            onCreateDraft();
+          }}
+        >
+          <PlusIcon />
+        </button>
+      )}
     </div>
   );
 }
@@ -154,6 +175,7 @@ function DraftRow({
       className={`row-leaf${selected ? ' selected' : ''}`}
       onClick={onSelect}
     >
+      <span className="leaf-spacer" aria-hidden />
       <span className="label">{draft.title || 'Untitled draft'}</span>
     </div>
   );
@@ -173,8 +195,17 @@ function RepoSection({
   const { state, selectDoc, createDraft, toggleExpanded } = useStore();
   const expanded = !!state.expanded[repo.id];
 
-  const draftsForRepo = state.drafts.filter((d) => d.attachedRepo === repo.id);
-  const filesForRepo = state.repoFiles.filter((f) => f.repoId === repo.id);
+  const draftsForRepo = state.drafts
+    .filter((d) => d.attachedRepo === repo.id)
+    .filter(filterDraft);
+  const filesForRepo = state.repoFiles
+    .filter((f) => f.repoId === repo.id && f.isMarkdown)
+    .filter(filterRepoFile);
+  const hasContent = filesForRepo.length > 0 || draftsForRepo.length > 0;
+  // Drafts always sit "below the line" — the hairline marks them as loose,
+  // not part of the repo. So show it whenever drafts exist, even if there
+  // are no files above to separate from.
+  const showDivider = draftsForRepo.length > 0;
 
   return (
     <>
@@ -182,24 +213,33 @@ function RepoSection({
       <SourceRow
         sourceKey={repo.id}
         label={repo.name}
+        count={filesForRepo.length}
         expanded={expanded}
-        iconKind="folder"
+        iconKind="repo"
+        collapsible={hasContent}
         onToggle={() => toggleExpanded(repo.id)}
         onCreateDraft={() => createDraft(repo.id)}
       />
-      {expanded && (
+      {hasContent && expanded && (
         <div className="children">
-          <div className="sub-label">drafts · {draftsForRepo.length}</div>
-          {draftsForRepo.filter(filterDraft).map((d) => (
-            <DraftRow
-              key={d.id}
-              draft={d}
-              selected={state.selectedDocId === d.id}
-              onSelect={() => selectDoc(d.id)}
-            />
-          ))}
-          <div className="sub-label">files · {filesForRepo.length}</div>
-          <RepoFileTree repoId={repo.id} files={filesForRepo.filter(filterRepoFile)} />
+          {filesForRepo.length > 0 && (
+            <div className="repo-files">
+              <RepoFileTree repoId={repo.id} files={filesForRepo} />
+            </div>
+          )}
+          {showDivider && <div className="repo-divider" aria-hidden />}
+          {draftsForRepo.length > 0 && (
+            <div className="repo-drafts">
+              {draftsForRepo.map((d) => (
+                <DraftRow
+                  key={d.id}
+                  draft={d}
+                  selected={state.selectedDocId === d.id}
+                  onSelect={() => selectDoc(d.id)}
+                />
+              ))}
+            </div>
+          )}
         </div>
       )}
       <div className="group-gap" />
@@ -275,13 +315,9 @@ function TreeChildren({ node, repoId }: { node: TreeNode; repoId: RepoId }) {
       {node.children.map((child) => (
         <FolderNode key={child.path} node={child} repoId={repoId} />
       ))}
-      {node.files.map((f) =>
-        f.isMarkdown ? (
-          <MdFileRow key={f.id} file={f} />
-        ) : (
-          <DimmedFileRow key={f.id} file={f} />
-        ),
-      )}
+      {node.files.map((f) => (
+        <MdFileRow key={f.id} file={f} />
+      ))}
     </>
   );
 }
@@ -297,14 +333,9 @@ function FolderNode({ node, repoId }: { node: TreeNode; repoId: RepoId }) {
         onClick={() => toggleExpanded(key)}
       >
         <span className="file-icon">
-          <FolderIcon size={13} />
+          {expanded ? <FolderOpenIcon size={13} /> : <FolderIcon size={13} />}
         </span>
         <span className="file-name">{node.name}</span>
-        <span className={`folder-chev${expanded ? ' open' : ''}`}>
-          <svg width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
-            <path d="m3.5 2 3 3-3 3" />
-          </svg>
-        </span>
       </div>
       {expanded && (
         <div className="folder-children">
@@ -329,13 +360,3 @@ function MdFileRow({ file }: { file: RepoFile }) {
   );
 }
 
-function DimmedFileRow({ file }: { file: RepoFile }) {
-  return (
-    <div className="file-row dimmed">
-      <span className="file-icon">
-        <FileIcon size={12} />
-      </span>
-      <span className="file-name">{file.name}</span>
-    </div>
-  );
-}

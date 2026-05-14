@@ -198,22 +198,4 @@ Maps the patient journey from signup → first visit → ongoing care.
 3. Provider match
 4. First visit booking`,
   },
-  {
-    id: 'mochi-package-json',
-    kind: 'repo-file',
-    repoId: 'mochi-emr',
-    path: '',
-    name: 'package.json',
-    isMarkdown: false,
-    md: '',
-  },
-  {
-    id: 'mochi-tsconfig',
-    kind: 'repo-file',
-    repoId: 'mochi-emr',
-    path: '',
-    name: 'tsconfig.json',
-    isMarkdown: false,
-    md: '',
-  },
 ];

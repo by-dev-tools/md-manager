@@ -9,21 +9,34 @@ function inline(text: string): string {
   return escapeHtml(text)
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
     .replace(/(?<!\*)\*([^*]+?)\*(?!\*)/g, '<em>$1</em>')
-    .replace(/`([^`]+?)`/g, '<code>$1</code>');
+    .replace(/~~(.+?)~~/g, '<s>$1</s>')
+    .replace(/`([^`]+?)`/g, '<code>$1</code>')
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
 }
 
 export function mdToHtml(md: string): string {
   const lines = md.split('\n');
   const out: string[] = [];
-  let inList = false;
+  let listKind: 'ul' | 'ol' | null = null;
+  let inQuote = false;
   let inCode = false;
   const codeBuf: string[] = [];
 
   const closeList = () => {
-    if (inList) {
-      out.push('</ul>');
-      inList = false;
+    if (listKind) {
+      out.push(`</${listKind}>`);
+      listKind = null;
     }
+  };
+  const closeQuote = () => {
+    if (inQuote) {
+      out.push('</blockquote>');
+      inQuote = false;
+    }
+  };
+  const closeAll = () => {
+    closeList();
+    closeQuote();
   };
 
   for (const line of lines) {
@@ -33,7 +46,7 @@ export function mdToHtml(md: string): string {
         codeBuf.length = 0;
         inCode = false;
       } else {
-        closeList();
+        closeAll();
         inCode = true;
       }
       continue;
@@ -43,27 +56,161 @@ export function mdToHtml(md: string): string {
       continue;
     }
 
-    if (line.startsWith('# ')) {
-      closeList();
-      out.push(`<h1>${inline(line.slice(2))}</h1>`);
-    } else if (line.startsWith('## ')) {
-      closeList();
-      out.push(`<h2>${inline(line.slice(3))}</h2>`);
-    } else if (/^[-*]\s+/.test(line)) {
-      if (!inList) {
+    const hMatch = /^(#{1,6})\s+(.*)$/.exec(line);
+    const ulMatch = /^[-*]\s+(.*)$/.exec(line);
+    const olMatch = /^\d+\.\s+(.*)$/.exec(line);
+    const quoteMatch = /^>\s?(.*)$/.exec(line);
+
+    if (hMatch) {
+      closeAll();
+      const level = hMatch[1].length;
+      out.push(`<h${level}>${inline(hMatch[2])}</h${level}>`);
+    } else if (ulMatch) {
+      closeQuote();
+      if (listKind !== 'ul') {
+        closeList();
         out.push('<ul>');
-        inList = true;
+        listKind = 'ul';
       }
-      out.push(`<li>${inline(line.replace(/^[-*]\s+/, ''))}</li>`);
+      out.push(`<li>${inline(ulMatch[1])}</li>`);
+    } else if (olMatch) {
+      closeQuote();
+      if (listKind !== 'ol') {
+        closeList();
+        out.push('<ol>');
+        listKind = 'ol';
+      }
+      out.push(`<li>${inline(olMatch[1])}</li>`);
+    } else if (quoteMatch) {
+      closeList();
+      if (!inQuote) {
+        out.push('<blockquote>');
+        inQuote = true;
+      }
+      out.push(`<p>${inline(quoteMatch[1])}</p>`);
     } else if (line.trim() === '') {
-      closeList();
+      closeAll();
     } else {
-      closeList();
+      closeAll();
       out.push(`<p>${inline(line)}</p>`);
     }
   }
-  closeList();
+  closeAll();
   return out.join('\n');
+}
+
+/** Convert a DOM tree back to markdown. Tolerant of contenteditable quirks. */
+function inlineToMd(node: Node): string {
+  if (node.nodeType === Node.TEXT_NODE) return node.textContent ?? '';
+  if (node.nodeType !== Node.ELEMENT_NODE) return '';
+  const el = node as HTMLElement;
+  const tag = el.tagName.toLowerCase();
+  const inner = Array.from(el.childNodes).map(inlineToMd).join('');
+  switch (tag) {
+    case 'strong':
+    case 'b':
+      return inner ? `**${inner}**` : '';
+    case 'em':
+    case 'i':
+      return inner ? `*${inner}*` : '';
+    case 's':
+    case 'del':
+    case 'strike':
+      return inner ? `~~${inner}~~` : '';
+    case 'code':
+      return inner ? `\`${inner}\`` : '';
+    case 'a': {
+      const href = el.getAttribute('href') ?? '';
+      return inner ? `[${inner}](${href})` : '';
+    }
+    case 'br':
+      return '\n';
+    default:
+      return inner;
+  }
+}
+
+function blockToMd(node: Node): string | null {
+  if (node.nodeType === Node.TEXT_NODE) {
+    const t = node.textContent ?? '';
+    return t.trim() ? t : null;
+  }
+  if (node.nodeType !== Node.ELEMENT_NODE) return null;
+  const el = node as HTMLElement;
+  const tag = el.tagName.toLowerCase();
+
+  switch (tag) {
+    case 'h1':
+    case 'h2':
+    case 'h3':
+    case 'h4':
+    case 'h5':
+    case 'h6': {
+      const level = parseInt(tag.slice(1), 10);
+      const text = inlineToMd(el).trim();
+      return '#'.repeat(level) + ' ' + text;
+    }
+    case 'p': {
+      const text = inlineToMd(el);
+      return text.trim() ? text : '';
+    }
+    case 'ul':
+      return Array.from(el.children)
+        .filter((c) => c.tagName.toLowerCase() === 'li')
+        .map((li) => '- ' + inlineToMd(li).trim())
+        .join('\n');
+    case 'ol':
+      return Array.from(el.children)
+        .filter((c) => c.tagName.toLowerCase() === 'li')
+        .map((li, i) => `${i + 1}. ${inlineToMd(li).trim()}`)
+        .join('\n');
+    case 'blockquote': {
+      const inner: string[] = [];
+      for (const c of Array.from(el.childNodes)) {
+        const b = blockToMd(c);
+        if (b !== null) inner.push(b);
+      }
+      const joined = inner.join('\n').trim();
+      return joined
+        .split('\n')
+        .map((l) => '> ' + l)
+        .join('\n');
+    }
+    case 'pre': {
+      const code = el.querySelector('code');
+      const text = (code?.textContent ?? el.textContent ?? '').replace(/\n+$/, '');
+      return '```\n' + text + '\n```';
+    }
+    case 'div': {
+      // Browsers often wrap lines in <div> after Enter in contenteditable.
+      // Treat as a paragraph-ish container.
+      const text = inlineToMd(el);
+      return text.trim() ? text : '';
+    }
+    case 'br':
+      return '';
+    default: {
+      const text = inlineToMd(el);
+      return text.trim() ? text : null;
+    }
+  }
+}
+
+export function htmlToMd(html: string): string {
+  if (typeof document === 'undefined') return '';
+  const wrapper = document.createElement('div');
+  wrapper.innerHTML = html;
+  const blocks: string[] = [];
+  for (const child of Array.from(wrapper.childNodes)) {
+    const md = blockToMd(child);
+    if (md === null) continue;
+    blocks.push(md);
+  }
+  return blocks
+    .map((b) => b.trim())
+    .filter((b, i, arr) => !(b === '' && arr[i - 1] === ''))
+    .join('\n\n')
+    .trim();
 }
 
 /** Derive a title from the markdown source: first non-empty line, heading hash stripped. */

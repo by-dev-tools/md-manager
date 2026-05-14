@@ -8,23 +8,22 @@ import {
 } from 'react';
 import { useStore } from '../store';
 import type { Doc, Draft, RepoFile, ViewMode } from '../types';
-import { mdToHtml } from '../lib/markdown';
-import { AttachIcon, DotsIcon } from './icons';
+import { htmlToMd, mdToHtml } from '../lib/markdown';
+import {
+  AttachIcon,
+  CodeIcon,
+  CopyIcon,
+  EyeIcon,
+  PanelLeftIcon,
+  TrashIcon,
+} from './icons';
 import { AttachPopover } from './AttachPopover';
+import { FloatingToolbar } from './FloatingToolbar';
 
 interface EditorProps {
   doc: Doc | null;
-  onOpenOverflow: () => void;
-}
-
-function positionCursorAtStart(node: Node) {
-  const range = document.createRange();
-  range.selectNodeContents(node);
-  range.collapse(true);
-  const sel = window.getSelection();
-  if (!sel) return;
-  sel.removeAllRanges();
-  sel.addRange(range);
+  sidebarCollapsed: boolean;
+  onToggleSidebar: () => void;
 }
 
 function updateEmptyState(el: HTMLDivElement) {
@@ -32,8 +31,8 @@ function updateEmptyState(el: HTMLDivElement) {
   el.classList.toggle('is-empty', empty);
 }
 
-export function Editor({ doc, onOpenOverflow }: EditorProps) {
-  const { updateDraftBody, updateRepoFileBody, setDraftTitle, saving } = useStore();
+export function Editor({ doc, sidebarCollapsed, onToggleSidebar }: EditorProps) {
+  const { updateDraftBody, updateRepoFileBody, deleteDraft, saving } = useStore();
   const [viewMode, setViewMode] = useState<ViewMode>('preview');
   const [attachOpen, setAttachOpen] = useState(false);
   const editorRef = useRef<HTMLDivElement>(null);
@@ -64,11 +63,6 @@ export function Editor({ doc, onOpenOverflow }: EditorProps) {
     if (isEmptyDraft && viewMode === 'preview') {
       el.innerHTML = '<h1><br></h1>';
       updateEmptyState(el);
-      if (docChanged) {
-        el.focus();
-        const h1 = el.querySelector('h1');
-        if (h1) positionCursorAtStart(h1);
-      }
       return;
     }
 
@@ -78,10 +72,6 @@ export function Editor({ doc, onOpenOverflow }: EditorProps) {
       el.textContent = md;
     }
     updateEmptyState(el);
-    if (docChanged) {
-      el.focus();
-      positionCursorAtStart(el);
-    }
   }, [doc, viewMode]);
 
   useEffect(() => {
@@ -108,22 +98,67 @@ export function Editor({ doc, onOpenOverflow }: EditorProps) {
       return;
     }
 
-    // Preview mode: do not round-trip HTML→Markdown. Keep the sidebar title
-    // in sync from the first non-empty visible line, and seed the markdown
-    // source with `# title` for a brand-new empty draft.
-    if (doc.kind === 'draft') {
-      const firstLine =
-        (el.textContent ?? '')
-          .split('\n')
-          .map((l) => l.replace(/^#+\s*/, '').trim())
-          .find((l) => l) ?? '';
-      if (doc.md === '' && firstLine) {
-        updateDraftBody(doc.id, '# ' + firstLine);
-      } else if (firstLine) {
-        setDraftTitle(doc.id, firstLine);
+    // Preview mode: round-trip the contenteditable DOM back to markdown so
+    // formatting toolbar actions and direct edits persist.
+    const md = htmlToMd(el.innerHTML);
+    if (doc.kind === 'draft') updateDraftBody(doc.id, md);
+    else updateRepoFileBody(doc.id, md);
+  }, [doc, viewMode, updateDraftBody, updateRepoFileBody]);
+
+  const commitFromToolbar = useCallback(() => {
+    // execCommand mutates the DOM directly and doesn't fire input events
+    // in every browser; nudge the input handler manually.
+    handleInput();
+  }, [handleInput]);
+
+  // ArrowRight at the end of an inline <code> element should escape the code
+  // wrapper instead of leaving the caret stuck at its boundary (where typing
+  // continues inside the code). Place the caret just after </code>.
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key !== 'ArrowRight') return;
+    if (e.shiftKey || e.metaKey || e.ctrlKey || e.altKey) return;
+    const editor = editorRef.current;
+    const sel = window.getSelection();
+    if (!editor || !sel || !sel.isCollapsed || sel.rangeCount === 0) return;
+    const range = sel.getRangeAt(0);
+    const node = range.startContainer;
+    const offset = range.startOffset;
+    if (node.nodeType !== Node.TEXT_NODE) return;
+    if (offset !== (node.textContent?.length ?? 0)) return;
+
+    // Find an enclosing <code> ancestor (excluding code inside <pre> blocks).
+    let codeEl: HTMLElement | null = null;
+    let n: Node | null = node.parentNode;
+    while (n && n !== editor) {
+      if (n.nodeType === Node.ELEMENT_NODE) {
+        const el = n as HTMLElement;
+        const tag = el.tagName.toLowerCase();
+        if (tag === 'pre') return;
+        if (tag === 'code') {
+          codeEl = el;
+          break;
+        }
       }
+      n = n.parentNode;
     }
-  }, [doc, viewMode, updateDraftBody, updateRepoFileBody, setDraftTitle]);
+    if (!codeEl) return;
+
+    // Confirm the caret really is at the trailing edge of the code element.
+    let walker: Node = node;
+    while (walker !== codeEl) {
+      if (walker.nextSibling) return;
+      const parent = walker.parentNode;
+      if (!parent) return;
+      walker = parent;
+    }
+
+    e.preventDefault();
+    const newRange = document.createRange();
+    newRange.setStartAfter(codeEl);
+    newRange.collapse(true);
+    sel.removeAllRanges();
+    sel.addRange(newRange);
+  }, []);
 
   const placeholder = useMemo(() => {
     if (!doc) return 'Untitled draft';
@@ -133,9 +168,17 @@ export function Editor({ doc, onOpenOverflow }: EditorProps) {
 
   if (!doc) {
     return (
-      <div className="editor-wrap">
-        <div className="editor" />
-      </div>
+      <>
+        <div className="editor-header">
+          <SidebarToggle
+            collapsed={sidebarCollapsed}
+            onToggle={onToggleSidebar}
+          />
+        </div>
+        <div className="editor-wrap">
+          <div className="editor" />
+        </div>
+      </>
     );
   }
 
@@ -156,8 +199,19 @@ export function Editor({ doc, onOpenOverflow }: EditorProps) {
         attachOpen={attachOpen}
         onToggleAttach={() => setAttachOpen((v) => !v)}
         onCloseAttach={() => setAttachOpen(false)}
-        onOpenOverflow={onOpenOverflow}
         saving={saving}
+        sidebarCollapsed={sidebarCollapsed}
+        onToggleSidebar={onToggleSidebar}
+        onCopy={() => {
+          void navigator.clipboard?.writeText(doc.md);
+        }}
+        onDelete={
+          doc.kind === 'draft'
+            ? () => {
+                if (window.confirm('Delete this draft?')) deleteDraft(doc.id);
+              }
+            : undefined
+        }
       />
       <div className="editor-wrap">
         <div
@@ -167,8 +221,14 @@ export function Editor({ doc, onOpenOverflow }: EditorProps) {
           suppressContentEditableWarning
           data-placeholder={placeholder}
           onInput={handleInput}
+          onKeyDown={handleKeyDown}
         />
       </div>
+      <FloatingToolbar
+        editorRef={editorRef}
+        onCommit={commitFromToolbar}
+        enabled={viewMode === 'preview'}
+      />
     </>
   );
 }
@@ -180,8 +240,11 @@ interface HeaderProps {
   attachOpen: boolean;
   onToggleAttach: () => void;
   onCloseAttach: () => void;
-  onOpenOverflow: () => void;
   saving: boolean;
+  sidebarCollapsed: boolean;
+  onToggleSidebar: () => void;
+  onCopy: () => void;
+  onDelete?: () => void;
 }
 
 function EditorHeader({
@@ -191,43 +254,67 @@ function EditorHeader({
   attachOpen,
   onToggleAttach,
   onCloseAttach,
-  onOpenOverflow,
   saving,
+  sidebarCollapsed,
+  onToggleSidebar,
+  onCopy,
+  onDelete,
 }: HeaderProps) {
   const { state } = useStore();
 
   return (
     <div className="editor-header">
+      <SidebarToggle collapsed={sidebarCollapsed} onToggle={onToggleSidebar} />
       <div className="crumb">
         {doc.kind === 'draft' ? (
-          <DraftCrumb doc={doc} onToggleAttach={onToggleAttach} repos={state.repos} />
+          <DraftCrumb />
         ) : (
           <RepoFileCrumb
             doc={doc}
             repoName={state.repos.find((r) => r.id === doc.repoId)?.name ?? doc.repoId}
           />
         )}
+        <span className="saved">{saving ? 'Saving…' : 'Saved'}</span>
+        <button
+          className="header-icon-btn"
+          title="Copy markdown"
+          aria-label="Copy markdown"
+          onClick={onCopy}
+        >
+          <CopyIcon />
+        </button>
+        {onDelete && (
+          <button
+            className="header-icon-btn"
+            title="Delete draft"
+            aria-label="Delete draft"
+            onClick={onDelete}
+          >
+            <TrashIcon />
+          </button>
+        )}
       </div>
       <div className="segmented">
         <button
           className={viewMode === 'preview' ? 'active' : ''}
           onClick={() => setViewMode('preview')}
+          title="Preview"
+          aria-label="Preview"
         >
-          Preview
+          <EyeIcon />
         </button>
         <button
           className={viewMode === 'markdown' ? 'active' : ''}
           onClick={() => setViewMode('markdown')}
+          title="Markdown"
+          aria-label="Markdown"
         >
-          Markdown
+          <CodeIcon />
         </button>
       </div>
-      <div className="editor-actions">
-        <span className="saved">{saving ? 'Saving…' : 'Saved'}</span>
-        <button title="More" onClick={onOpenOverflow}>
-          <DotsIcon />
-        </button>
-      </div>
+      {doc.kind === 'draft' && (
+        <AttachButton doc={doc} repos={state.repos} onToggle={onToggleAttach} />
+      )}
       {attachOpen && doc.kind === 'draft' && (
         <AttachPopover draft={doc} onClose={onCloseAttach} />
       )}
@@ -235,32 +322,55 @@ function EditorHeader({
   );
 }
 
-function DraftCrumb({
+function SidebarToggle({
+  collapsed,
+  onToggle,
+}: {
+  collapsed: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      className={`sidebar-toggle${collapsed ? ' is-collapsed' : ''}`}
+      title={collapsed ? 'Show sidebar (⌘\\)' : 'Hide sidebar (⌘\\)'}
+      aria-label={collapsed ? 'Show sidebar' : 'Hide sidebar'}
+      onClick={onToggle}
+    >
+      <PanelLeftIcon />
+    </button>
+  );
+}
+
+function DraftCrumb() {
+  return (
+    <span className="tag">
+      <span className="tag-dot" />
+      Draft
+    </span>
+  );
+}
+
+function AttachButton({
   doc,
-  onToggleAttach,
   repos,
+  onToggle,
 }: {
   doc: Draft;
-  onToggleAttach: () => void;
   repos: { id: string; name: string }[];
+  onToggle: () => void;
 }) {
   const attached = doc.attachedRepo
     ? repos.find((r) => r.id === doc.attachedRepo)
     : null;
   return (
-    <>
-      <span className="tag">
-        <span className="tag-dot" />
-        Draft
-      </span>
-      <button
-        className={`attach-chip${attached ? ' attached' : ''}`}
-        onClick={onToggleAttach}
-      >
-        <AttachIcon />
-        <span>{attached ? attached.name : 'Attach to repo'}</span>
-      </button>
-    </>
+    <button
+      className={`attach-chip${attached ? ' attached' : ''}`}
+      onClick={onToggle}
+    >
+      <AttachIcon />
+      <span>{attached ? attached.name : 'Attach to repo'}</span>
+    </button>
   );
 }
 

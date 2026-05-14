@@ -46,24 +46,26 @@ export function FolderIcon(props: { size?: number }) {
   );
 }
 
-/** GitHub-octicon-style "repo" — a book shape with a slim bottom strip. */
-export function RepoIcon(props: { size?: number }) {
-  const s = props.size ?? 15;
+export function FolderOpenIcon(props: { size?: number }) {
+  const s = props.size ?? 13;
   return (
-    <svg width={s} height={s} viewBox="0 0 16 16" {...base} strokeWidth={1.3}>
-      <path d="M4 2.5A1.5 1.5 0 0 1 5.5 1H13v12H5.5A1.5 1.5 0 0 0 4 14.5v-12Z" />
-      <path d="M4 14.5A1.5 1.5 0 0 1 5.5 13H13v2H5.5A1.5 1.5 0 0 1 4 13.5v1Z" />
-      <path d="M7 4h3" />
+    <svg width={s} height={s} viewBox="0 0 16 16" {...base}>
+      {/* Back lid */}
+      <path d="M2.5 5.5a1 1 0 0 1 1-1h3l1.5 1.5h4.5a1 1 0 0 1 1 1v1H2.5V5.5Z" />
+      {/* Open front face — tilted trapezoid */}
+      <path d="M1.5 13 3 8h11l-1.5 5h-11Z" />
     </svg>
   );
 }
 
-export function FolderOpenIcon(props: { size?: number }) {
-  const s = props.size ?? 15;
+export function RepoIcon(props: { size?: number }) {
+  const s = props.size ?? 13;
   return (
-    <svg width={s} height={s} viewBox="0 0 16 16" {...base}>
-      <path d="M2.5 4.5a1 1 0 0 1 1-1h3l1.5 1.5h4.5a1 1 0 0 1 1 1v1H2.5V4.5Z" />
-      <path d="M2.5 7h11l-1.2 5a1 1 0 0 1-.98.8H4.18a1 1 0 0 1-.98-.8L2.5 7Z" />
+    <svg width={s} height={s} viewBox="0 0 16 16" {...base} strokeWidth={1.3}>
+      {/* Book/repo outline */}
+      <path d="M3 3.5A1.5 1.5 0 0 1 4.5 2h7.5a.5.5 0 0 1 .5.5v10a.5.5 0 0 1-.5.5H4.5A1.5 1.5 0 0 0 3 14.5v-11Z" />
+      {/* Bottom spine — shows the open lower edge of the cover */}
+      <path d="M3 13a1.5 1.5 0 0 1 1.5-1.5H12" />
     </svg>
   );
 }

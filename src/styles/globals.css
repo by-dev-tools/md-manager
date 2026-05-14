@@ -56,6 +56,9 @@
   --sidebar-font: 13px;
   --editor-font: 15px;
 
+  /* Hanging-icon nav spacing (driven by DevPanel's "Section spacing" knob). */
+  --nav-section-gap: 24px;
+
   /* User-set page color */
   --page-tint: hsl(30, 60%, 88%);
   --page-tint-edge: rgba(0, 0, 0, 0.06);
@@ -116,7 +119,7 @@ body.sidebar-collapsed .dev-panel {
   display: flex;
   flex-direction: column;
   background: transparent;
-  font-family: 'Geist Mono', monospace;
+  font-family: 'Geist', -apple-system, sans-serif;
   letter-spacing: -0.005em;
   min-height: 0;
   font-size: var(--sidebar-font);
@@ -124,14 +127,9 @@ body.sidebar-collapsed .dev-panel {
 body.mode-floating .sidebar {
   border-right: 0;
 }
-body.sidebar-sans .sidebar {
-  font-family: 'Geist', -apple-system, sans-serif;
-}
-body.sidebar-sans .sidebar .file-tree {
-  font-family: 'Geist', -apple-system, sans-serif;
-}
-body.sidebar-sans .sidebar .sidebar-footer {
-  font-family: 'Geist', -apple-system, sans-serif;
+body.sidebar-mono .sidebar,
+body.sidebar-mono .sidebar .sidebar-footer {
+  font-family: 'Geist Mono', monospace;
 }
 .sidebar-top-bar {
   padding: 14px 14px 0;
@@ -198,60 +196,49 @@ body.sidebar-sans .sidebar .sidebar-footer {
 .nav {
   flex: 1;
   overflow-y: auto;
-  padding: 0 var(--space-3) var(--space-4);
+  padding: 16px 22px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--nav-section-gap);
 }
 
-/* Top-level row: leading icon (or chevron when expanded) → label → count → +.
-   Conductor pattern: count summarizes hidden content when collapsed; the + is
-   persistent (no hover-only). When expanded, chevron replaces the icon and the
-   count disappears (you can see everything). */
-.row-top {
+.nav-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.nav-title {
   display: flex;
   align-items: center;
-  padding: 5px 8px;
-  border-radius: var(--radius-button);
-  color: var(--sand-12);
-  font-weight: var(--weight-medium);
-  font-size: 1em;
-  user-select: none;
+  gap: 4px;
   cursor: pointer;
-  line-height: 1.4;
+  user-select: none;
+  position: relative;
 }
-.row-top:hover {
-  background: rgba(255, 255, 255, 0.45);
+.nav-title .nav-icon {
+  color: var(--sand-12);
 }
-.row-top .icon {
-  width: 16px;
-  height: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--sand-11);
-  flex-shrink: 0;
-  margin-right: 6px;
+.nav-title .nav-label {
+  font-size: var(--sidebar-font);
+  font-weight: var(--weight-medium);
+  color: var(--sand-12);
 }
-.row-top.is-chevron .icon {
-  color: var(--sand-9);
-}
-.row-top .label {
-  flex: 0 1 auto;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.row-top .count {
-  margin-left: 6px;
-  color: var(--sand-9);
+.nav-title .nav-count {
+  font-size: var(--sidebar-font);
   font-weight: var(--weight-regular);
-  font-size: 0.85em;
-  font-variant-numeric: tabular-nums;
-  flex-shrink: 0;
+  color: var(--sand-9);
+  margin-left: 2px;
+  transition: opacity 160ms ease;
+}
+.nav-count.is-hidden {
+  opacity: 0;
   pointer-events: none;
 }
-.row-top .row-action {
-  width: 22px;
-  height: 22px;
+.nav-title .nav-action {
+  margin-left: auto;
+  width: 18px;
+  height: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -260,219 +247,106 @@ body.sidebar-sans .sidebar .sidebar-footer {
   background: transparent;
   border: 0;
   cursor: pointer;
-  margin-left: auto;
-  flex-shrink: 0;
   transition: background 120ms ease, color 120ms ease;
 }
-.row-action:hover {
+.nav-title .nav-action:hover {
   background: rgba(255, 255, 255, 0.7);
   color: var(--sand-12);
 }
 
-/* Empty containers: no chevron, no toggle behavior. + persistence is the
-   same as everywhere else (always visible) — no extra rule needed now. */
-.row-top.not-collapsible {
-  cursor: default;
-}
-.row-top.not-collapsible:hover {
-  background: transparent;
-}
-
-/* Nested group row (drafts / files under a repo): same shape as parent,
-   slightly muted to convey hierarchy. */
-.row-top.row-nested {
-  color: var(--sand-11);
-}
-.row-top.row-nested .icon {
-  color: var(--sand-9);
-}
-
-/* Each level indents so the child icon's CENTER lands at the midpoint of the
-   space between the parent icon and the parent label.
-   Parent icon: x=8..24 (16px), margin 6, label at x=30 → space midpoint x=27.
-   Child icon width 16 → child icon left edge = 27 − 8 = 19.
-   Child .row-top padding-left is 8 → .children padding-left = 19 − 8 = 11. */
-.children {
-  padding-left: 11px;
-  padding-bottom: 2px;
-}
-
-/* Leaf row (drafts). Italic + muted color signals "loose / not committed",
-   distinguishing drafts from repo files at a glance.
-   .leaf-spacer reserves the same 16px+7px leading area that file-rows have
-   for their file-icon, so draft labels line up with file names at the same
-   nesting depth. */
-.row-leaf {
+.nav-icon {
+  width: 13px;
+  height: 13px;
   display: flex;
   align-items: center;
-  padding: 4px 8px;
-  border-radius: var(--radius-button);
-  color: var(--sand-9);
-  font-size: 1em;
-  font-style: italic;
-  font-weight: var(--weight-regular);
-  line-height: 1.45;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.nav-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
   user-select: none;
+  min-width: 0;
+  color: var(--sand-11);
+  transition: color 150ms ease;
+}
+.nav-row.depth-1 { padding-left: 21px; }
+.nav-row.depth-2 { padding-left: 42px; }
+.nav-row.depth-3 { padding-left: 63px; }
+.nav-row .nav-icon {
+  color: var(--sand-11);
+}
+.nav-row .nav-label {
+  font-size: var(--sidebar-font);
+  font-weight: var(--weight-regular);
+  color: var(--sand-11);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  cursor: pointer;
-}
-.row-leaf .leaf-spacer {
-  width: 16px;
-  height: 14px;
-  margin-right: 6px;
-  flex-shrink: 0;
-}
-.row-leaf .label {
   flex: 1;
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  /* Italic slants extend slightly past the glyph box; reserve a hair of
-     right room so the descender on letters like 'd' isn't clipped. */
-  padding-right: 2px;
+  transition: color 150ms ease, font-weight 0ms;
 }
-.row-leaf:hover {
-  background: rgba(255, 255, 255, 0.45);
-  color: var(--sand-11);
-}
-.row-leaf.selected {
-  color: var(--sand-12);
+.nav-row.folder .nav-label {
   font-weight: var(--weight-medium);
 }
-.row-leaf .label {
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* Hairline between files and drafts inside a repo. */
-.repo-divider {
-  height: 1px;
-  background: var(--page-tint-edge);
-  margin: 8px 4px 8px 4px;
-}
-/* Files (committed, in the repo) sit slightly darker than drafts. */
-.repo-files .file-row .file-name {
-  color: var(--sand-11);
-}
-.repo-files .file-row.folder .file-name {
-  color: var(--sand-12);
-}
-.repo-files .file-row.selected .file-name {
-  color: var(--sand-12);
-  font-weight: var(--weight-medium);
-}
-
-/* ───── Tree variants (switchable via dev panel) ─────
-   Default (no body class) is the compact / Linear-style we already have.
-
-   .tree-hanging: VSCode/Conductor-style. Each level indents by a full icon
-   width so icons "hang" in a left gutter aligned with their depth, and the
-   chevron is pushed to the right edge of each row. Labels at every depth
-   start at the same x offset within their row.
-
-   .tree-minimal: pure indent hierarchy with no icons on row-top entries;
-   chevron right-aligned. Files inside folders still have their (optional)
-   md badge for visual texture. */
-
-body.tree-hanging .children {
-  padding-left: 16px;
-}
-body.tree-hanging .folder-children {
-  padding-left: 16px;
-}
-
-/* Minimal mode: icons stay; the differentiator is a slightly tighter indent
-   per level. The md badge is still suppressed unless the user opts in via
-   the dev panel's "File icons" toggle. */
-body.tree-minimal .file-row .md-badge {
-  display: none;
-}
-body.tree-minimal .children {
-  padding-left: 11px;
-}
-body.tree-minimal .folder-children {
-  padding-left: 11px;
-}
-
-/* File tree */
-.file-tree {
-  font-family: 'Geist Mono', monospace;
-  font-size: 1em;
-  letter-spacing: -0.005em;
-}
-.file-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 3px 8px;
-  border-radius: var(--radius-button);
-  color: var(--sand-11);
-  line-height: 1.5;
-  cursor: pointer;
-  user-select: none;
-  white-space: nowrap;
-  overflow: hidden;
-}
-.file-row:hover {
-  background: rgba(255, 255, 255, 0.45);
-}
-.file-row.selected {
-  color: var(--sand-12);
-  font-weight: var(--weight-medium);
-}
-.file-row.folder {
-  color: var(--sand-12);
-}
-.file-row .file-name {
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.file-tree .file-icon {
-  width: 16px;
-  height: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.nav-row .nav-count {
+  font-size: var(--sidebar-font);
+  font-weight: var(--weight-regular);
+  color: var(--sand-9);
   flex-shrink: 0;
+  margin-left: 2px;
+}
+.nav-row.selected .nav-label {
+  color: var(--sand-12);
+  font-weight: var(--weight-medium);
+}
+.nav-row:hover .nav-label {
+  color: var(--sand-12);
+}
+.nav-row.dimmed {
+  cursor: default;
+}
+.nav-row.dimmed .nav-icon,
+.nav-row.dimmed .nav-label {
+  color: var(--sand-9);
+  opacity: 0.7;
+}
+.nav-row.dimmed:hover .nav-label {
   color: var(--sand-9);
 }
-.md-badge {
-  width: 16px;
-  height: 14px;
-  background: rgba(255, 255, 255, 0.7);
-  border-radius: 3px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: 'Geist Mono', monospace;
-  font-size: 8.5px;
-  font-weight: var(--weight-semibold);
-  color: var(--sand-11);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  flex-shrink: 0;
-  box-shadow: inset 0 0 0 0.5px rgba(0, 0, 0, 0.04);
-  visibility: hidden;
-}
-body.show-file-icons .md-badge {
-  visibility: visible;
-}
-.file-row.selected .md-badge {
-  background: rgba(255, 255, 255, 0.95);
-  color: var(--sand-12);
-}
-/* Folder rows in the file tree: 16px icon + 6px gap. Same midpoint math as
-   .row-top: child icon left edge at x=19, file-row padding-left 8, so
-   .folder-children padding-left = 11. */
-.folder-children {
-  padding-left: 11px;
+
+.nav-divider {
+  height: 1px;
+  background: var(--page-tint-edge);
+  margin-left: 21px;
+  align-self: stretch;
 }
 
-.group-gap {
-  height: 18px;
+/* Collapsible content wrapper for sections, sub-folders, and tree folders.
+   Uses the grid-template-rows 0fr/1fr trick so the inner content height
+   animates without us needing to know it. */
+.nav-collapse {
+  display: grid;
+  grid-template-rows: 1fr;
+  opacity: 1;
+  overflow: hidden;
+  transition: grid-template-rows 200ms ease, opacity 200ms ease;
+}
+.nav-collapse.is-closed {
+  grid-template-rows: 0fr;
+  opacity: 0;
+  pointer-events: none;
+}
+.nav-collapse > .nav-collapse-inner {
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .sidebar-footer {
@@ -482,14 +356,15 @@ body.show-file-icons .md-badge {
   align-items: center;
   gap: var(--space-3);
   color: var(--sand-11);
-  font-size: 1em;
-  font-family: 'Geist Mono', monospace;
+  font-size: 13px;
+  font-family: 'Geist', sans-serif;
   cursor: pointer;
   background: transparent;
   border-left: 0;
   border-right: 0;
   border-bottom: 0;
   width: 100%;
+  transition: color 150ms ease;
 }
 .sidebar-footer:hover {
   color: var(--sand-12);

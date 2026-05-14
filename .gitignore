@@ -5,3 +5,5 @@ dist
 .vite
 tsconfig.tsbuildinfo
 .claude/settings.local.json
+.claude/forge/cache/
+.claude/forge/unanalyzed-sessions.log

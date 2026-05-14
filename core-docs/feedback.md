@@ -33,6 +33,71 @@ Increment from the last entry. Use `FB-0001`, `FB-0002`, etc.
 
 ## Entries
 
+### FB-0015: Folder open/closed icon swap is the expansion affordance — no chevrons
+**Date:** 2026-05-13
+**Source:** user correction
+
+**What was said:** A chevron-on-the-left (Conductor-style, replacing the icon when expanded) was prototyped during the sidebar redesign. After trying it the user said "take the chevrons away again, and use medium instead of semibold for the repos." Folder rows now show `FolderIcon` when collapsed and `FolderOpenIcon` when expanded — the icon itself carries the state. Children visibility + the folder-open glyph together communicate expansion; a separate chevron is redundant.
+
+**Synthesized rule:** Default to icon-state-swap (folder vs folder-open, pencil-stable for drafts, repo-icon-stable for repos) over a chevron affordance. Children appearing under the row is the primary cue; the icon swap reinforces it. If a row type doesn't have a natural state-pair icon, prefer text-only with no chevron over adding one. Chevrons re-enter the design only with a strong rationale (e.g. very dense lists where the icon swap is too subtle).
+
+**Applies to:** ux, design-language, sidebar.
+
+### FB-0014: Cursor doesn't auto-focus on doc switch
+**Date:** 2026-05-13
+**Source:** user direction
+
+**What was said:** "When I enter a file, right now the cursor defaults to being active at the beginning of the file — don't have the cursor be active by default unless I click into the main tab into the content."
+
+**Synthesized rule:** Selecting a doc renders its content but does not focus the editor. The user clicks into the writing surface to start typing. This includes newly-created drafts via `createDraft` — focus is not stolen on creation. The empty-state's "start a new draft" link also creates without focusing. Rationale: the user often switches docs to read, not write; auto-focusing steals the page's scroll and keyboard target. If a draft is created via ⌘N from outside the editor, the user is one click away from typing.
+
+**Applies to:** ux, editor behavior.
+
+### FB-0013: Count next to label; action right-aligned; both visible simultaneously
+**Date:** 2026-05-13
+**Source:** user correction
+
+**What was said:** "The number of files indicator should be aligned to the label with a small gap rather than right aligned with the plus." Earlier iteration had count and the `+` action occupying the same right-edge slot, swapping on hover (count visible at rest, `+` on hover). The user wanted them both visible at the same time, count hugging the label, `+` anchored at the far right.
+
+**Synthesized rule:** In a sidebar row with both a count indicator and a row-level action, the layout is `[icon] [label] [6px gap] [count] · · auto-space · · [action]`. Count uses `margin-left: 6px`; action uses `margin-left: auto`. They never share a slot or swap on hover. Both are visible when applicable. The count hides when expanded (the children are visible — counting redundant); the action stays.
+
+**Applies to:** ux, sidebar layout, row patterns.
+
+### FB-0012: Empty containers have no expand affordance — just the persistent action
+**Date:** 2026-05-13
+**Source:** user direction
+
+**What was said:** "Expanding or collapsing a folder with nothing in it changes the height of the folder and everything shifts — this makes no sense. There shouldn't even be an option to expand and collapse when the folder is empty, just add." Plus: "Unattached drafts and repos with files should also have a persistent add button the way you made it for empty repos."
+
+**Synthesized rule:** A container row is collapsible only when it has children. Empty containers render `{icon, label, +action}` — no chevron, no toggle behavior, `cursor: default` on the row body (the `+` keeps its own pointer). The `+` action is **persistent across all states**, not hover-revealed — applies to empty containers AND containers with content. Hover-only affordances are reserved for rare optional actions; primary "add to this section" is too important to hide.
+
+**Applies to:** ux, sidebar, row patterns.
+
+### FB-0011: Drafts render italic + muted to signal "loose / not committed"
+**Date:** 2026-05-13
+**Source:** user direction
+
+**What was said:** "We need a bit more hierarchy with weight, color, or icon. Especially for differentiating files and drafts from the actual files in the repo (this is the biggest UX issue we're facing right now — drafts aren't actually in the repo)."
+
+**Synthesized rule:** Drafts are rendered italic in `--sand-9` (or `--sand-11` if contrast audit fails on light tints). Files (committed in the repo) are upright. The italic + muted treatment encodes "loose / not committed" at a glance. **Known caveat:** italic collides with markdown's `<em>` rendering when a draft title contains `*emphasized*` text — flagged in `roadmap.md` to revisit (drop italic in favor of color+weight, or pick a distinct token like a leading dot). When this revisit happens, the rule above is replaced; until then italic-muted is canonical for drafts.
+
+**Applies to:** ux, sidebar, design-language.
+
+### FB-0010: Repo layout is files-first, hairline, drafts-after
+**Date:** 2026-05-13
+**Source:** user direction
+
+**What was said:** "To handle drafts, let's put files first within a repo, then add a hairline divider, then have the drafts tree." And later: "When a repo only has drafts, that hairline divider should still be there."
+
+**Synthesized rule:** Inside an expanded repo:
+1. `.repo-files` — the actual file tree, always first.
+2. A 1px hairline divider (`--page-tint-edge`, 8px vertical margin) whenever the repo has drafts attached, regardless of whether there are files above.
+3. `.repo-drafts` — italic-muted draft rows.
+
+The hairline reads as "below this line is loose, not in the repo," reinforcing FB-0011's visual contract. The previous design had drafts and files as separate collapsible sub-groups inside each repo; that pattern is retired — the divider does the categorization work without the extra chrome.
+
+**Applies to:** ux, sidebar architecture.
+
 ### FB-0009: Three-lens staff-review in parallel catches what one lens misses
 **Date:** 2026-05-13
 **Source:** user direction (staff-review demonstration on PR #2)

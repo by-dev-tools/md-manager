@@ -11,6 +11,10 @@ export interface Draft {
   attachedRepo: RepoId | null;
   createdAt: number;
   updatedAt: number;
+  /** Set to true the first time the user types anything into the draft. Pristine
+      drafts (created and immediately abandoned) auto-clean themselves on
+      navigation; touched drafts persist until the user deletes them explicitly. */
+  wasEverEdited: boolean;
 }
 
 export interface RepoFile {

@@ -1186,6 +1186,118 @@ body.show-file-icons .md-badge {
   margin: 0 3px;
   display: inline-block;
 }
+.floating-toolbar-link {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 0 4px;
+}
+.floating-toolbar-link input[type='url'] {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: var(--radius-button);
+  color: var(--sand-1);
+  font: inherit;
+  padding: 0 var(--space-3);
+  height: 26px;
+  width: 240px;
+  outline: 0;
+  transition: border-color 80ms ease, background 80ms ease;
+}
+.floating-toolbar-link input[type='url']::placeholder {
+  color: rgba(255, 255, 255, 0.45);
+}
+.floating-toolbar-link input[type='url']:focus {
+  border-color: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* ───── Toasts ───── */
+.toast-host {
+  position: fixed;
+  bottom: var(--space-4);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  z-index: 200;
+  pointer-events: none;
+}
+.toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  background: var(--sand-12);
+  color: var(--sand-1);
+  padding: 0 var(--space-3) 0 var(--space-4);
+  height: 36px;
+  border-radius: var(--radius-button);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.06),
+    0 12px 28px rgba(0, 0, 0, 0.18);
+  font-family: 'Geist', -apple-system, sans-serif;
+  font-size: var(--type-caption);
+  font-weight: var(--weight-medium);
+  letter-spacing: -0.005em;
+  animation: toast-in 160ms ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .toast {
+    animation: none;
+  }
+}
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.toast-message {
+  white-space: nowrap;
+}
+.toast-action {
+  background: transparent;
+  border: 0;
+  color: var(--sand-1);
+  font: inherit;
+  font-weight: var(--weight-semibold);
+  cursor: pointer;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-button);
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  transition: background 80ms ease;
+}
+.toast-action:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+.toast-close {
+  background: transparent;
+  border: 0;
+  color: rgba(255, 255, 255, 0.6);
+  font: inherit;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-badge);
+  transition: background 80ms ease, color 80ms ease;
+}
+.toast-close:hover {
+  color: var(--sand-1);
+  background: rgba(255, 255, 255, 0.14);
+}
 
 /* ───── Dev panel (development only) ───── */
 .dev-panel {

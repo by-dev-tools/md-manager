@@ -5,13 +5,53 @@ function escapeHtml(s: string): string {
     .replace(/>/g, '&gt;');
 }
 
+/** Escape only the characters that matter inside a double-quoted attribute,
+    on a string that has already been through escapeHtml. Avoids double-encoding. */
+function escapeQuotes(s: string): string {
+  return s.replace(/"/g, '&quot;');
+}
+
+/** SAFETY: allow only schemes that can't execute script. Anything that doesn't
+    match returns '#' so the rendered link is inert. javascript:, data:, vbscript:,
+    file:, etc. are all rejected by this allowlist. */
+export function safeUrl(raw: string): string {
+  const trimmed = raw.trim();
+  if (!trimmed) return '#';
+  // Relative path or fragment is safe.
+  if (
+    trimmed.startsWith('/') ||
+    trimmed.startsWith('#') ||
+    trimmed.startsWith('?') ||
+    trimmed.startsWith('./') ||
+    trimmed.startsWith('../')
+  ) {
+    return trimmed;
+  }
+  // Protocol-relative URLs treated as https.
+  if (trimmed.startsWith('//')) return 'https:' + trimmed;
+  const schemeMatch = /^([a-z][a-z0-9+.-]*):/i.exec(trimmed);
+  if (!schemeMatch) {
+    // No scheme — treat as relative path.
+    return trimmed;
+  }
+  const scheme = schemeMatch[1].toLowerCase();
+  if (scheme === 'http' || scheme === 'https' || scheme === 'mailto') {
+    return trimmed;
+  }
+  return '#';
+}
+
 function inline(text: string): string {
   return escapeHtml(text)
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
     .replace(/(?<!\*)\*([^*]+?)\*(?!\*)/g, '<em>$1</em>')
     .replace(/~~(.+?)~~/g, '<s>$1</s>')
     .replace(/`([^`]+?)`/g, '<code>$1</code>')
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
+    .replace(
+      /\[([^\]]+)\]\(([^)]+)\)/g,
+      (_match, label, href) =>
+        `<a href="${escapeQuotes(safeUrl(href))}" rel="noopener noreferrer">${label}</a>`,
+    );
 }
 
 export function mdToHtml(md: string): string {

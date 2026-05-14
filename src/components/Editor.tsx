@@ -8,7 +8,7 @@ import {
 } from 'react';
 import { useStore } from '../store';
 import type { Doc, Draft, RepoFile, ViewMode } from '../types';
-import { htmlToMd, mdToHtml } from '../lib/markdown';
+import { htmlToMd, mdToHtml, safeUrl } from '../lib/markdown';
 import {
   AttachIcon,
   CodeIcon,
@@ -19,6 +19,7 @@ import {
 } from './icons';
 import { AttachPopover } from './AttachPopover';
 import { FloatingToolbar } from './FloatingToolbar';
+import { useToast } from './Toast';
 
 interface EditorProps {
   doc: Doc | null;
@@ -32,7 +33,9 @@ function updateEmptyState(el: HTMLDivElement) {
 }
 
 export function Editor({ doc, sidebarCollapsed, onToggleSidebar }: EditorProps) {
-  const { updateDraftBody, updateRepoFileBody, deleteDraft, saving } = useStore();
+  const { updateDraftBody, updateRepoFileBody, deleteDraft, restoreDraft, saving } =
+    useStore();
+  const toast = useToast();
   const [viewMode, setViewMode] = useState<ViewMode>('preview');
   const [attachOpen, setAttachOpen] = useState(false);
   const editorRef = useRef<HTMLDivElement>(null);
@@ -110,6 +113,26 @@ export function Editor({ doc, sidebarCollapsed, onToggleSidebar }: EditorProps) 
     // in every browser; nudge the input handler manually.
     handleInput();
   }, [handleInput]);
+
+  // ⌘/Ctrl-click on a link in preview mode opens the URL in a new tab. Plain
+  // click stays as caret-placement so authoring isn't disrupted. The mdToHtml
+  // path already filters unsafe schemes; we re-run safeUrl() here as a defense
+  // in depth in case content was pasted in a way that bypassed the renderer.
+  const handleClick = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      if (viewMode !== 'preview') return;
+      if (!(e.metaKey || e.ctrlKey)) return;
+      const target = e.target as HTMLElement | null;
+      const anchor = target?.closest('a');
+      if (!anchor || !(anchor instanceof HTMLAnchorElement)) return;
+      const href = anchor.getAttribute('href') ?? '';
+      const safe = safeUrl(href);
+      if (safe === '#') return;
+      e.preventDefault();
+      window.open(safe, '_blank', 'noopener,noreferrer');
+    },
+    [viewMode],
+  );
 
   // ArrowRight at the end of an inline <code> element should escape the code
   // wrapper instead of leaving the caret stuck at its boundary (where typing
@@ -204,11 +227,20 @@ export function Editor({ doc, sidebarCollapsed, onToggleSidebar }: EditorProps) 
         onToggleSidebar={onToggleSidebar}
         onCopy={() => {
           void navigator.clipboard?.writeText(doc.md);
+          toast.push({ message: 'Markdown copied' });
         }}
         onDelete={
           doc.kind === 'draft'
             ? () => {
-                if (window.confirm('Delete this draft?')) deleteDraft(doc.id);
+                const removed = deleteDraft(doc.id);
+                if (!removed) return;
+                toast.push({
+                  message: 'Draft deleted',
+                  action: {
+                    label: 'Undo',
+                    onClick: () => restoreDraft(removed),
+                  },
+                });
               }
             : undefined
         }
@@ -222,6 +254,7 @@ export function Editor({ doc, sidebarCollapsed, onToggleSidebar }: EditorProps) 
           data-placeholder={placeholder}
           onInput={handleInput}
           onKeyDown={handleKeyDown}
+          onClick={handleClick}
         />
       </div>
       <FloatingToolbar

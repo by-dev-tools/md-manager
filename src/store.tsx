@@ -50,7 +50,17 @@ function loadState(): PersistedState {
     if (!raw) return defaultState();
     const parsed = JSON.parse(raw) as Partial<PersistedState>;
     const base = defaultState();
-    return { ...base, ...parsed };
+    const merged = { ...base, ...parsed };
+    // Migration: backfill `wasEverEdited` on persisted drafts that predate the
+    // field. Drafts already in storage have content the user kept across sessions —
+    // treat them as touched so the pristine-cleanup doesn't drop them.
+    merged.drafts = (merged.drafts ?? []).map((d) => {
+      const draft = d as Draft & Partial<{ wasEverEdited: boolean }>;
+      return draft.wasEverEdited === undefined
+        ? { ...draft, wasEverEdited: true }
+        : (draft as Draft);
+    });
+    return merged;
   } catch {
     return defaultState();
   }
@@ -62,7 +72,9 @@ interface StoreApi {
   docById: (id: DocId | null) => Doc | null;
   selectDoc: (id: DocId | null) => void;
   createDraft: (target: RepoId | 'unattached') => DraftId;
-  deleteDraft: (id: DraftId) => void;
+  deleteDraft: (id: DraftId) => Draft | null;
+  /** Re-insert a previously-deleted draft (used by undo-toast). */
+  restoreDraft: (draft: Draft) => void;
   updateDraftBody: (id: DraftId, md: string) => void;
   /** Cheap title-only update for preview-mode edits that don't round-trip. */
   setDraftTitle: (id: DraftId, title: string) => void;
@@ -118,20 +130,21 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     [state.drafts, state.repoFiles],
   );
 
+  // Drop any pristine draft (never typed into) when navigating away from it.
+  // SAFETY: only drafts where wasEverEdited is false are eligible — a draft the
+  // user touched and then cleared is preserved.
+  const dropPristineOnLeave = (s: PersistedState, nextSelectedId: DocId | null): PersistedState => {
+    const prevId = s.selectedDocId;
+    if (!prevId || prevId === nextSelectedId) return s;
+    const prev = s.drafts.find((d) => d.id === prevId);
+    if (!prev || prev.wasEverEdited) return s;
+    return { ...s, drafts: s.drafts.filter((d) => d.id !== prevId) };
+  };
+
   const selectDoc = useCallback((id: DocId | null) => {
     setState((s) => {
-      // If we're navigating away from an empty draft, drop it. The user
-      // created a fresh draft, typed nothing, and clicked away — keeping it
-      // around just clutters the sidebar.
-      const prevId = s.selectedDocId;
-      const next: PersistedState = { ...s, selectedDocId: id };
-      if (prevId && prevId !== id) {
-        const prev = s.drafts.find((d) => d.id === prevId);
-        if (prev && prev.md.trim() === '') {
-          next.drafts = s.drafts.filter((d) => d.id !== prevId);
-        }
-      }
-      return next;
+      const cleaned = dropPristineOnLeave(s, id);
+      return { ...cleaned, selectedDocId: id };
     });
   }, []);
 
@@ -146,22 +159,40 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       attachedRepo: target === 'unattached' ? null : target,
       createdAt: now,
       updatedAt: now,
+      wasEverEdited: false,
     };
-    setState((s) => ({
-      ...s,
-      drafts: [draft, ...s.drafts],
-      selectedDocId: id,
-      expanded: { ...s.expanded, [target]: true },
-    }));
+    setState((s) => {
+      // Route through the pristine-drop helper so a chain of "+ → + → +" doesn't
+      // leave behind a trail of never-touched drafts.
+      const cleaned = dropPristineOnLeave(s, id);
+      return {
+        ...cleaned,
+        drafts: [draft, ...cleaned.drafts],
+        selectedDocId: id,
+        expanded: { ...cleaned.expanded, [target]: true },
+      };
+    });
     return id;
   }, []);
 
-  const deleteDraft = useCallback((id: DraftId) => {
+  const deleteDraft = useCallback((id: DraftId): Draft | null => {
+    let removed: Draft | null = null;
     setState((s) => {
-      const drafts = s.drafts.filter((d) => d.id !== id);
+      const idx = s.drafts.findIndex((d) => d.id === id);
+      if (idx < 0) return s;
+      removed = s.drafts[idx];
+      const drafts = [...s.drafts.slice(0, idx), ...s.drafts.slice(idx + 1)];
       const selectedDocId =
         s.selectedDocId === id ? (drafts[0]?.id ?? null) : s.selectedDocId;
       return { ...s, drafts, selectedDocId };
+    });
+    return removed;
+  }, []);
+
+  const restoreDraft = useCallback((draft: Draft) => {
+    setState((s) => {
+      if (s.drafts.some((d) => d.id === draft.id)) return s;
+      return { ...s, drafts: [draft, ...s.drafts] };
     });
   }, []);
 
@@ -170,7 +201,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       ...s,
       drafts: s.drafts.map((d) =>
         d.id === id
-          ? { ...d, md, title: deriveTitle(md, 'Untitled draft'), updatedAt: Date.now() }
+          ? {
+              ...d,
+              md,
+              title: deriveTitle(md, 'Untitled draft'),
+              updatedAt: Date.now(),
+              wasEverEdited: d.wasEverEdited || md.length > 0,
+            }
           : d,
       ),
     }));
@@ -253,6 +290,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       selectDoc,
       createDraft,
       deleteDraft,
+      restoreDraft,
       updateDraftBody,
       setDraftTitle,
       updateRepoFileBody,
@@ -269,6 +307,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       selectDoc,
       createDraft,
       deleteDraft,
+      restoreDraft,
       updateDraftBody,
       setDraftTitle,
       updateRepoFileBody,

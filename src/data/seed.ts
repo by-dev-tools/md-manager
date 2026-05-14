@@ -16,6 +16,7 @@ export const seedDrafts: Draft[] = [
     attachedRepo: null,
     createdAt: now - 1000 * 60 * 60 * 24 * 3,
     updatedAt: now - 1000 * 60 * 30,
+    wasEverEdited: true,
     md: `# Password reset enumeration concerns
 
 The routing layer may already be exposing account existence before the user ever reaches the confirmation screen — which would defeat the whole point of returning the same "if an account exists, we sent you a link" message on submit.
@@ -39,6 +40,7 @@ Raise with security before the flow ships, or fix in-line and document? Leaning 
     attachedRepo: null,
     createdAt: now - 1000 * 60 * 60 * 24 * 5,
     updatedAt: now - 1000 * 60 * 60 * 4,
+    wasEverEdited: true,
     md: `# About AI — rough outline
 
 A blog about AI by a human, written without AI assistance. The angle: working in the AI space, living in an AI-shaped world, building AI tools — but the writing itself is unmediated.
@@ -62,6 +64,7 @@ A blog about AI by a human, written without AI assistance. The angle: working in
     attachedRepo: null,
     createdAt: now - 1000 * 60 * 60 * 24 * 1,
     updatedAt: now - 1000 * 60 * 60 * 2,
+    wasEverEdited: true,
     md: `# Notes app architecture
 
 Two source types: unattached drafts (app-owned, no git) and repo files (live in a per-repo worktree on a dedicated branch).
@@ -81,6 +84,7 @@ One worktree per repo on a \`notes-app/drafts\` branch. Saves are commits. Refre
     attachedRepo: 'mochi-emr',
     createdAt: now - 1000 * 60 * 60 * 24 * 2,
     updatedAt: now - 1000 * 60 * 60 * 6,
+    wasEverEdited: true,
     md: `# Patient onboarding flow ideas
 
 Sketches for reducing first-week dropoff on the EMR onboarding flow.
@@ -98,6 +102,7 @@ Sketches for reducing first-week dropoff on the EMR onboarding flow.
     attachedRepo: 'mochi-emr',
     createdAt: now - 1000 * 60 * 60 * 24 * 1,
     updatedAt: now - 1000 * 60 * 60 * 3,
+    wasEverEdited: true,
     md: `# Subscription delay v2
 
 Iterating on the delay feature shipped in under two days. v1 worked; v2 needs to handle the edge cases v1 punted on.

@@ -145,6 +145,17 @@ Shadow scale: light triple-stack for floating surface (`--surface-shadow`), heav
 
 ## Component guidelines
 
+### False affordances are a bug
+
+A button, input, link, menu item, or any other control visible on the surface must do its job today. Half-implementations get one of two paths:
+
+- **Wire it** if the gap is < 1 day and uses existing primitives. This is the default — the user's mental model already expects the control to work.
+- **Remove it** from the surface until it can ship complete. Capture the deferred work in `core-docs/roadmap.md` with the surface name, the gap, and the rough cost.
+
+A control that produces invisible output, opens a broken state, or relies on the user not noticing is forbidden in the default build. Hide-behind-a-flag is an exception, not a default — use only when there's a legitimate dogfood reason to evaluate the rough version.
+
+This rule is the design-system enforcement of CLAUDE.md § "Quality posture". Sister-app reference: Designer's `core-docs/design-language.md` "False affordances are a bug" line, and feedback entries FB-0036 / FB-0038.
+
 ### Buttons
 
 - Default `.btn` — transparent background, sand-12 text, sand-3 hover. 7px × 14px padding, 13px medium.

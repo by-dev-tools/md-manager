@@ -12,7 +12,7 @@ Use the `SAFETY` marker on any entry that modifies error handling, persistence, 
 ### [Short title of what was shipped]
 **Date:** YYYY-MM-DD
 **Branch:** branch-name
-**Commit:** [SHA or range]
+**Commit / PR:** [SHA, SHA range, or PR link — fill in after commit; "[this commit]" is fine at write time since /ship writes the entry before the commit]
 
 **What was done:**
 [Concrete deliverables — what changed in user-facing terms.]

@@ -4,7 +4,7 @@ A markdown notes app with a content-forward, warm-neutral interface. Drafts live
 
 **Core thesis:** Notes should feel like a calm, single surface — content over chrome, warmth over sterility, with the user always in control of the visual tone.
 
-**Family:** md-manager is a sister app to [Designer](/Users/benyamron/dev/designer/). They share design DNA (sand neutrals, Geist, 3/4/5/6 spacing rhythm, two-tier floating surface model) but are not copies. New divergent patterns are welcome **with rationalization** — see `core-docs/design-language.md` § "Family: sister app to Designer." The page tint color rail is md-manager's signature divergence (Designer is monochrome by policy; md-manager is user-tinted by policy).
+**Family:** sister app to [Designer](/Users/benyamron/dev/designer/) — shared design DNA, distinct personality. Mini adoption + surface posture are open questions. See `core-docs/design-language.md` § "Family" for what's confirmed vs. undecided.
 
 ---
 
@@ -40,18 +40,29 @@ A markdown notes app with a content-forward, warm-neutral interface. Drafts live
 ## Tech stack
 
 - **Platform:** Web (modern browsers)
-- **Language/UI:** TypeScript + React 18 + vanilla CSS (CSS custom properties for tokens — no Tailwind, no UI lib)
+- **Language/UI:** TypeScript + React 18 + vanilla CSS (CSS custom properties for tokens — no Tailwind, no UI lib; Mini adoption pending)
 - **Build:** Vite 5
 - **Backend:** None (local-only prototype; persistence story TBD — see `core-docs/spec.md`)
 - **Persistence:** Currently in-memory via `src/store.tsx`. localStorage / file-system / repo-sync are open questions.
 - **Notable deps:** `agentation` (dev-mode toolbar only)
+
+## Commands
+
+| Command | What it does |
+|---|---|
+| `npm run dev` | Start Vite dev server (default port 5173). Use `/link` instead — it handles port conflicts. |
+| `npm run build` | TypeScript build + Vite production build. |
+| `npm run typecheck` | `tsc -b --noEmit` — fast type-only pass. Run after any code change in a review pipeline. |
+| `npm run preview` | Preview the production build locally. |
+
+Dependencies install via `npm install`. The repo doesn't commit `node_modules`; expect a fresh clone to need install before any command runs.
 
 ## Product principles
 
 1. **Content over chrome.** UI recedes; the writing surface dominates.
 2. **Warmth without nostalgia.** Sand neutrals, Geist typography, subtle depth — modern, not retro.
 3. **User-controlled tone.** Page tint is the user's call (color rail). The app adapts.
-4. **One surface, two modes.** Floating (rounded card) vs flat — same content, different posture.
+4. **Surface posture is the user's choice (open question).** Prototype ships both floating and flat; final answer undecided. See `core-docs/design-language.md` § "Family".
 5. **Markdown is the data.** Files are `.md`. No proprietary format, no lock-in.
 6. **Small, ship-shaped changes.** Bias toward shipping a tight slice over batching ambition.
 
@@ -96,11 +107,11 @@ Default path handles plan-writing and doc-writing in the main thread; reach for 
 
 | Rule | Loads on | Enforces |
 |---|---|---|
-| `general.md` | Always | Workflow discipline, scope, autonomous-work guardrails |
-| `ui.md` | `src/components/**`, `src/styles/**`, `**/*.tsx` | Read design-language.md first; use tokens; a11y baseline |
+| `general.md` | Always (`**/*`) | Workflow discipline, scope, autonomous-work guardrails |
+| `ui.md` | `src/components/**`, `src/styles/**`, `**/*.tsx`, `**/*.css` | Read design-language.md first; use tokens; a11y baseline |
 | `safety.md` | `src/store.tsx`, `src/data/**`, `src/lib/markdown.ts`, app entry | Don't silently downgrade error handling; flag `SAFETY` changes |
-| `documentation.md` | Always | Format rules for history.md / feedback.md / plan.md |
-| `dev-server.md` | Always | Surface the dev URL after UI work |
+| `documentation.md` | `core-docs/**` | Format rules for history.md / feedback.md / plan.md |
+| `dev-server.md` | UI files (`*.tsx`, `*.css`, etc.) | Surface the dev URL after UI work |
 
 ---
 

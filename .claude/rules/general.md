@@ -1,3 +1,8 @@
+---
+paths:
+  - "**/*"
+---
+
 # General Rules
 
 These apply to all work in md-manager. They reinforce the workflow defined in `CLAUDE.md` and `core-docs/workflow.md` — they don't replace it.

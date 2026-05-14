@@ -11,14 +11,15 @@ These rules ensure consistent formatting across core-docs files.
 
 Every entry must include:
 - **Date** (YYYY-MM-DD)
-- **Branch and commit SHA** -- not just the branch name
+- **Branch** (the branch the work shipped from)
+- **Commit / PR reference** when available. `/ship` writes the entry before committing, so this field can be a forward reference ("[this commit]" or "[range pending push]") at write time; `git log` and the PR link recover the SHAs later. Don't block on the SHA — branch + entry content are the load-bearing parts.
 - **What was done** in user-facing terms
-- **Why** -- the problem or goal
+- **Why** — the problem or goal
 - **Design decisions** with reasoning
 - **Technical decisions** with reasoning
-- **Tradeoffs discussed** -- the most valuable part for future reference
+- **Tradeoffs discussed** — the most valuable part for future reference
 
-Entries that modify error handling, persistence, or fallback behavior must include a `SAFETY` marker.
+Entries that modify error handling, persistence, fallback behavior, or markdown sanitization must include a `SAFETY` marker.
 
 ## feedback.md format
 

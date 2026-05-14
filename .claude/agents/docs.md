@@ -39,7 +39,7 @@ Add a new entry at the top of the **Entries** section, newest first, using the f
 ### [Short title of what was shipped]
 **Date:** YYYY-MM-DD
 **Branch:** branch-name
-**Commit:** [SHA or range]
+**Commit / PR:** [SHA, range, or PR link — forward-reference like "[this commit]" is fine if writing before the commit lands]
 
 **What was done:** [user-facing terms]
 **Why:** [problem solved / goal served]
@@ -64,7 +64,7 @@ If the user gave a correction, preference, or direction during this work that is
 ## Bar
 
 - **Tradeoffs section is the most valuable.** If there wasn't a real tradeoff, say so — don't invent one.
-- **Cite branch AND commit SHA.** Not just one.
+- **Cite branch (always) + commit/PR reference when available.** Forward-references are fine — `git log` recovers the SHA later. Don't block on missing SHA.
 - **Don't summarize the diff — explain the reasoning.** Anyone can read `git log`; only this entry preserves the why.
 - **Match the tone of existing entries.** Concise, plain language, no marketing voice.
 

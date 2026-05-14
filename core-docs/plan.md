@@ -6,17 +6,18 @@ The living document for what's being worked on right now, what's queued, and wha
 
 ## Current Focus
 
-Documenting the project and standing up the agent workflow. Prototype scaffold (Vite + React + TS) is in place; next step is deciding what feature to build first against the open questions in `spec.md`.
+Init-project PR is shipping (`init-project` branch, PR #3). Next session picks the first real feature — likely **Mini design system adoption** (P0 in roadmap), with surface-posture decision and persistence following close behind.
 
 ## Handoff Notes
 
-- Project initialized via `/init-project` on 2026-05-13. Skills (`/staff-review`, `/ship`, `/link`, `/security-review`, `/accessibility-review`) are wired up. Workflow is documented in `workflow.md`.
-- **md-manager is a sister app to Designer.** Shared design DNA (sand, Geist, 3/4/5/6 rhythm, surface tier model); intentional divergence on page tint. See `design-language.md` § "Family" for the full map of confirmed vs. open-question divergences.
-- **Two key things are still undecided** — do not lock them shut without an explicit user call:
+- Project init **shipped** in PR #3 (`6d2f0ad..d839127`). Workflow, skills, agents, rules, and core docs all in place. See `history.md` for the full record.
+- **md-manager is a sister app to Designer.** Shared design DNA (sand, Geist, 3/4/5/6 rhythm, surface tier model); page tint color rail is the confirmed divergence. See `design-language.md` § "Family" for the full map.
+- **Two open questions to honor — do not lock them shut without an explicit user call:**
   1. **Surface posture:** keep both floating + flat, drop one, or rethink. Currently both ship.
-  2. **Mini adoption:** likely soon. Treat any new tokens or patterns added before then as bridge work that should port cleanly to Mini.
-- The `package.json` still says `"name": "mumbai"` from the original scaffold. Rename when next touching it — flagged as low-priority cleanup in `roadmap.md`.
-- Persistence, repo sync, and search are all unresolved; see "Open questions" in `spec.md`.
+  2. **Mini adoption:** likely the next feature. Treat any new tokens or patterns added before then as bridge work that should port cleanly to Mini.
+- New rules captured in `feedback.md` (FB-0001 through FB-0006) — read these before doing anything novel; they encode this session's directional moments.
+- The `package.json` still says `"name": "mumbai"`. Rename when next touching it — low-priority cleanup in `roadmap.md`.
+- Persistence, repo sync, and search remain unresolved; see "Open questions" in `spec.md`.
 
 ## Active Work Items
 
@@ -48,8 +49,8 @@ _No active feature work. Documentation and workflow setup wraps the current sess
 
 _(Last 3–5 items. Older items live in `history.md`.)_
 
-- **Scaffold Notes app prototype** — Vite + React + TS, in-memory store, full UI (sidebar / editor / color rail / modals). Commit `d504073` (#1).
-- **Initialize project documentation + agent workflow** — `/init-project` ran, populated CLAUDE.md / spec.md / workflow.md / design-language.md / plan.md / roadmap.md, authored 5 skills (`/ship`, `/staff-review`, `/security-review`, `/accessibility-review`, `/link`). 2026-05-13.
+- **Initialize project documentation + agent workflow** — `/init-project` run shipped in PR #3 (`6d2f0ad..d839127`). 5 skills, 8 core docs, 2 optional agents, 5 auto-loading rules, sister-app framing with Designer, 6 seeded feedback entries. 2026-05-13.
+- **Scaffold Notes app prototype** — Vite + React + TS, in-memory store, full UI (sidebar / editor / color rail / modals). Commit `d504073` (#1). 2026-05-13.
 
 ## Backlog
 

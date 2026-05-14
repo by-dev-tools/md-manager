@@ -68,9 +68,9 @@ None currently. If GitHub repo sync is implemented, OAuth + rate-limited API cal
 
 ## Current status
 
-- **Stage:** Prototype scaffold
+- **Stage:** Prototype scaffold + agent workflow in place
 - **Last updated:** 2026-05-13
-- **Branch:** `seattle-v1`
+- **Branch:** `init-project` (PR #3 open)
 - **Open questions:**
   - How does persistence work? (localStorage for drafts? IndexedDB? File System Access API?)
   - How does repo sync actually function — local file watcher? GitHub API? GitHub App?

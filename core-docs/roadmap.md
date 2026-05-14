@@ -10,9 +10,7 @@ Deferred follow-ups from `/staff-review` and `/ship` land here when they're real
 
 Work that's actively being designed or about to start.
 
-| Workstream | Priority | Status | Notes |
-|---|---|---|---|
-| Documentation + agent workflow setup | P0 | **Shipping** | `seattle-v1` — wraps this branch |
+_(No active workstream — init-project shipped in PR #3. Next session picks from "Next" below.)_
 
 ## Next (the next 1–2 features after the current one)
 

@@ -33,6 +33,36 @@ Increment from the last entry. Use `FB-0001`, `FB-0002`, etc.
 
 ## Entries
 
+### FB-0009: Three-lens staff-review in parallel catches what one lens misses
+**Date:** 2026-05-13
+**Source:** user direction (staff-review demonstration on PR #2)
+
+**What was said:** The user asked for a multi-perspective review on the PR's full diff. The three independent reviews (engineer, UX, design engineer) running in parallel turned up bug classes none of the three would have caught alone — the engineer found the snapshot/race issues + lifecycle bugs, the UX designer caught the silent-URL-rejection false affordance + keyboard nav holes, the design engineer caught the missing type-scale token. After fixes the user then asked for the final ship-pass (security + a11y) on top.
+
+**Synthesized rule:** Default to the three-lens parallel staff-review for any non-trivial workstream — single-lens reviews systematically miss issues outside the reviewer's primary frame. Run the three reviews concurrently (one tool message, three `Agent` calls) so each is independent and their findings triangulate. `/ship`'s final-pass security + a11y review is additive, not a replacement.
+
+**Applies to:** workflow, review discipline.
+
+### FB-0008: Wire it for real over flag-it-off when the gap is under a day
+**Date:** 2026-05-13
+**Source:** user direction (link-button decision during PR #2 triage)
+
+**What was said:** When proposing to defer the half-baked link feature, the user asked "where would the link be hosted? do we want this?" and pushed back: "we either need to ship the functional feature or leave it for now and document it for later. review some of designer's documentation about not shipping half-baked features." Designer's FB-0038 spelled out the inverse: when the wire-it-for-real cost is < 1 day and uses existing primitives, default to wiring. The cost estimate for click-to-navigate + safe URL handling + inline link bubble was ~½ day; the feature landed polished as part of Slice A.
+
+**Synthesized rule:** When a feature is partly working, estimate the wire-it-for-real cost first and default to wiring whenever it's under a day with existing primitives. Hide-behind-a-flag is the exception, used only when the real implementation is multi-day, contract-breaking, or needs design input. Pairs with FB-0007 (no half-baked in prod): combined, they mean *ship working features, hide what's genuinely half-baked, but reach for "wire it" first when the gap between half-baked and shipping is small*.
+
+**Applies to:** scope, release readiness, agent behavior.
+
+### FB-0007: Ship polished, narrow features. Expand scope over time, not quality.
+**Date:** 2026-05-13
+**Source:** user direction (link-button decision during PR #2 triage)
+
+**What was said:** "We either need to ship the functional feature or leave it for now and document it for later. Review some of Designer's documentation about not shipping half-baked features. This is important documentation for our project — we only want to ship polished features with limited scope. We expand scope over time, not quality." The user wanted this elevated to a top-level project principle, not buried in feedback.md alone.
+
+**Synthesized rule:** A feature ships when it's fully functional, accessible, and polished — or it doesn't ship. Half-implementations get one of two paths: wire it (if cheap, < 1 day, existing primitives) or remove it from the visible surface (if not, with a roadmap entry capturing the deferred work). Visually present but non-functional ("false affordance") is a bug — equivalent to a crash. Documented as § "Quality posture" in CLAUDE.md (project philosophy) plus § "False affordances are a bug" in `design-language.md` (design enforcement). Mirrors Designer's FB-0036 ("no half-baked features in prod") and FB-0038 (wire-vs-defer cost test).
+
+**Applies to:** product principles (canonical), workflow, design enforcement.
+
 ### FB-0006: Audit docs against framework best practices, not intuition
 **Date:** 2026-05-13
 **Source:** user direction

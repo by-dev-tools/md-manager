@@ -34,6 +34,16 @@ describe('safeUrl', () => {
     expect(safeUrl('file:///etc/passwd')).toBe('#');
   });
 
+  it('rejects URLs with whitespace before the scheme separator', () => {
+    // Browsers strip whitespace inside hrefs when resolving the scheme,
+    // so `java\tscript:alert(1)` resolves to `javascript:alert(1)`. Catch
+    // it at the source.
+    expect(safeUrl('java\tscript:alert(1)')).toBe('#');
+    expect(safeUrl('java\nscript:alert(1)')).toBe('#');
+    expect(safeUrl('java script:alert(1)')).toBe('#');
+    expect(safeUrl('java\rscript:alert(1)')).toBe('#');
+  });
+
   it('treats // as https', () => {
     expect(safeUrl('//example.com/x')).toBe('https://example.com/x');
   });
@@ -51,10 +61,11 @@ describe('mdToHtml — link sanitization', () => {
     expect(html).not.toMatch(/javascript:/i);
   });
 
-  it('preserves valid http link with rel and discoverability title', () => {
+  it('preserves valid http link with rel, target, and discoverability title', () => {
     const html = mdToHtml('[ok](https://example.com)');
     expect(html).toContain('href="https://example.com"');
     expect(html).toContain('rel="noopener noreferrer"');
+    expect(html).toContain('target="_blank"');
     // The title teaches the user that links open on ⌘-click, not plain click.
     expect(html).toContain('title="⌘-click to open"');
   });

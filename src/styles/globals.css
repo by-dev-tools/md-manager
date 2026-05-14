@@ -836,7 +836,7 @@ body.show-file-icons .md-badge {
   margin: 0;
 }
 .editor-empty .editor-empty-hint {
-  color: var(--sand-9);
+  color: var(--sand-11);
   font-size: var(--type-caption);
   margin: 0;
 }

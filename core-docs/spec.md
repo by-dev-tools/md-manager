@@ -33,12 +33,16 @@ A two-pane app — sidebar + content surface — built on five constraints:
 | Drafts (attached to repo) | Drafts associated with a connected repo for later promotion to a file | Shipped (prototype) |
 | Repo connections | Connect a local path or GitHub URL; browse its markdown files | Shipped (prototype, UI only — actual filesystem/git integration TBD) |
 | File tree | Folder + file navigation inside a connected repo | Shipped (prototype) |
-| Markdown editor | Contenteditable surface, preview and markdown modes | Shipped (prototype) |
+| Markdown editor | Contenteditable surface, preview and markdown modes, debounced HTML↔Markdown round-trip | Shipped (prototype) |
+| Editor toolbar | Floating selection toolbar (H1–H4, B/I/S, inline code toggle, lists, blockquote, fenced code, link) | Shipped (prototype) |
+| Markdown link safety | URL allowlist (`http`/`https`/`mailto`/relative), `rel="noopener noreferrer"`, `target="_blank"`, reject whitespace-bypassed schemes; ⌘/Ctrl-click navigates | Shipped (prototype) |
 | Page-tint color rail | HSL gradient slider + presets + manual color picker on the right edge | Shipped (prototype) |
-| Surface mode toggle | Floating vs flat | Prototype only — final answer undecided (keep both / drop one / rethink) |
+| Surface mode toggle | Floating vs flat (lives in the dev panel) | Prototype only — final answer undecided (keep both / drop one / rethink) |
+| Dev panel | Dev-only surface tweaks: opacity / radius / gutter / shadow / fonts / file-icons / sans-vs-mono / tree layout / surface mode | Shipped (prototype) |
 | Attach popover | Attach a draft to a repo / detach | Shipped (prototype) |
-| Overflow menu | Per-doc actions (delete, rename, etc.) | Shipped (prototype, scope TBD) |
-| Keyboard shortcuts | ⌘N new draft; ⎋ closes modals | Shipped (prototype) |
+| Draft delete + undo toast | Soft-delete via toast with Undo (8s window); `restoreDraft` re-selects on undo | Shipped (prototype) |
+| Sidebar collapse | ⌘\\ keyboard shortcut + panel-left toggle button; persisted in localStorage | Shipped (prototype) |
+| Keyboard shortcuts | ⌘N new draft; ⌘E toggles Preview/Markdown; ⌘\\ collapses sidebar; ⎋ closes modals | Shipped (prototype) |
 | Persistence | Real save/load across reloads | **Planned** |
 | Repo sync | Actual read/write to a local path or GitHub repo | **Planned** |
 | Search | Across drafts and repo files | **Planned** |
@@ -68,9 +72,9 @@ None currently. If GitHub repo sync is implemented, OAuth + rate-limited API cal
 
 ## Current status
 
-- **Stage:** Prototype scaffold + agent workflow in place
+- **Stage:** Prototype with the safety bundle + editor performance + a11y pass shipped (PR #2). Persistence, repo sync, and Mini adoption still ahead.
 - **Last updated:** 2026-05-13
-- **Branch:** `init-project` (PR #3 open)
+- **Branch:** `address-agentation-comments` (PR #2 open)
 - **Open questions:**
   - How does persistence work? (localStorage for drafts? IndexedDB? File System Access API?)
   - How does repo sync actually function — local file watcher? GitHub API? GitHub App?

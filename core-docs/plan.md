@@ -6,17 +6,18 @@ The living document for what's being worked on right now, what's queued, and wha
 
 ## Current Focus
 
-Triage and ship the issues surfaced by the three-lens staff review on PR #2 (the agentation feedback + sidebar/editor redesign + dev panel batch). Branch `address-agentation-comments` is open as PR #2; main has since merged PR #3 (workflow + docs). The PR #2 branch now contains the merge from main.
+Slices A + B of the PR #2 staff-review triage **shipped** (`657dbe3..[head]`, branch `address-agentation-comments`, PR #2). The polished-features doctrine is canonical (FB-0007 / CLAUDE.md § "Quality posture"). Next session picks up **Slice C** (sidebar + feedback polish: folder-row counts, contrast audit, drafts visual treatment revisit) or pivots to Mini adoption per user call.
 
 ## Handoff Notes
 
-- Project init **shipped** in PR #3 (`6d2f0ad..d839127`). Workflow, skills, agents, rules, and core docs all in place. See `history.md` for the full record.
-- **PR #2 is open** (`address-agentation-comments` → `main`) with the agentation feedback + sidebar/editor redesign + dev panel work. Staff review surfaced 30 issues across engineering / UX / design-engineering. Triaged into 6 slices below.
-- **md-manager is a sister app to Designer.** Shared design DNA (sand, Geist, 3/4/5/6 rhythm, surface tier model); page tint color rail is the confirmed divergence. See `design-language.md` § "Family" for the full map.
+- **PR #2 ready for human merge.** Branch `address-agentation-comments`. Slices A (safety bundle) and B (editor performance + a11y + vitest) plus the staff-review fixes and the ship-pass security/a11y fixes are committed and pushed. `npm run typecheck && npm run build && npm test` (20/20) all clean.
+- Project init **shipped** in PR #3 (`6d2f0ad..d839127`). Workflow, skills, agents, rules, and core docs all in place.
+- **md-manager is a sister app to Designer.** Shared design DNA (sand, Geist, 3/4/5/6 rhythm, surface tier model); page tint color rail is the confirmed divergence. See `design-language.md` § "Family".
+- **Polished-features doctrine is canonical.** CLAUDE.md § "Quality posture" + FB-0007 + FB-0008. Every scoping decision runs through wire-vs-defer: if real wiring is < 1 day, default to wiring; otherwise remove the visible affordance until polished.
 - **Two open questions to honor — do not lock them shut without an explicit user call:**
   1. **Surface posture:** keep both floating + flat, drop one, or rethink. Currently both ship via the dev panel.
-  2. **Mini adoption:** likely the next feature. Treat any new tokens or patterns added before then as bridge work that should port cleanly to Mini.
-- New rules captured in `feedback.md` (FB-0001 through FB-0006) — read these before doing anything novel; they encode this session's directional moments.
+  2. **Mini adoption:** likely the next feature. The CSS-architecture follow-ups in `roadmap.md` are intentionally deferred so Mini can drive the refactor.
+- New rules captured in `feedback.md` (FB-0001 through FB-0009) — read these before doing anything novel.
 - The `package.json` still says `"name": "mumbai"`. Rename when next touching it — low-priority cleanup in `roadmap.md`.
 - Persistence, repo sync, and search remain unresolved; see "Open questions" in `spec.md`.
 
@@ -34,19 +35,20 @@ Triage and ship the issues surfaced by the three-lens staff review on PR #2 (the
 
 **Slices in recommended order:**
 
-#### Slice A — P0 safety bundle (one PR, ~½ day)
-- [ ] Track `wasEverEdited` on drafts; only auto-cleanup drafts whose flag stays `false`.
-- [ ] Route `createDraft` through `selectDoc` (or shared helper) so the cleanup logic fires on every nav-away path.
-- [ ] Validate `href` in `mdToHtml`'s link transform; allowlist `http(s)`, `mailto`, relative paths; escape `"` in the attribute. (`SAFETY` marker for `/ship`.)
-- [ ] Replace `window.confirm` (Delete) — themed modal **or** undo-toast (see open question).
-- [ ] Replace `window.prompt` (link URL) with an inline popover anchored to the toolbar.
+#### Slice A — P0 safety bundle ✅ SHIPPED (`dc191db`)
+- [x] Track `wasEverEdited` on drafts; only auto-cleanup drafts whose flag stays `false`.
+- [x] Route `createDraft` through the same pristine-drop helper as `selectDoc`.
+- [x] Validate `href` in `mdToHtml`'s link transform; allowlist + reject pre-colon whitespace.
+- [x] Replace `window.confirm` (Delete) with undo-toast.
+- [x] Replace `window.prompt` (link URL) with an inline bubble at the toolbar.
+- [x] Wire ⌘/Ctrl-click link navigation (avoid false affordance per FB-0007).
 
-#### Slice B — Editor performance + accessibility (one PR, ~1 day)
-- [ ] Debounce the preview-mode `htmlToMd` round-trip (~150ms idle), or only round-trip on blur / mode-switch / toolbar-action.
-- [ ] Add `role="textbox"`, `aria-multiline="true"`, dynamic `aria-label` on the contenteditable.
-- [ ] Empty-editor state when no doc is selected: short warm copy in `--sand-11`, no illustration, per design-language.
-- [ ] Keyboard shortcut to toggle Preview/Markdown (Cmd+E or Cmd+Shift+P).
-- [ ] Add vitest; round-trip tests for `mdToHtml ↔ htmlToMd` covering Enter, double-Enter, mixed inline+block, list nesting, code blocks.
+#### Slice B — Editor performance + accessibility ✅ SHIPPED (`2ed26b0`)
+- [x] Debounced preview-mode `htmlToMd` round-trip via snapshot pattern.
+- [x] `role="textbox"`, `aria-multiline="true"`, static `aria-label` on the contenteditable.
+- [x] Empty-editor state when no doc is selected (warm copy in `--sand-11`).
+- [x] ⌘E toggles Preview/Markdown (with input/textarea guard).
+- [x] vitest + jsdom: 20 round-trip + sanitization tests passing.
 
 #### Slice C — Sidebar + feedback polish (one PR, ~½ day)
 - [ ] Folder-row child counts in the file tree (parity with repo counts).
@@ -108,6 +110,7 @@ Triage and ship the issues surfaced by the three-lens staff review on PR #2 (the
 
 _(Last 3–5 items. Older items live in `history.md`.)_
 
+- **Slices A + B of PR #2 staff-review triage** — Safety bundle (drafts, XSS, native dialogs, link wiring), editor performance + a11y + vitest, plus staff-review and ship-pass review fixes. Doctrine: polished features, expand scope not quality (FB-0007). PR #2, branch `address-agentation-comments`. 2026-05-13.
 - **Initialize project documentation + agent workflow** — `/init-project` run shipped in PR #3 (`6d2f0ad..d839127`). 5 skills, 8 core docs, 2 optional agents, 5 auto-loading rules, sister-app framing with Designer, 6 seeded feedback entries. 2026-05-13.
 - **Scaffold Notes app prototype** — Vite + React + TS, in-memory store, full UI (sidebar / editor / color rail / modals). Commit `d504073` (#1). 2026-05-13.
 

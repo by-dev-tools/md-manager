@@ -436,7 +436,9 @@ function EditorHeader({
             repoName={state.repos.find((r) => r.id === doc.repoId)?.name ?? doc.repoId}
           />
         )}
-        <span className="saved">{saving ? 'Saving…' : 'Saved'}</span>
+        <span className="saved" aria-live="polite" aria-atomic="true">
+          {saving ? 'Saving…' : 'Saved'}
+        </span>
         <button
           className="header-icon-btn"
           title="Copy markdown"

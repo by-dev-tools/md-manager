@@ -13,10 +13,21 @@ function escapeQuotes(s: string): string {
 
 /** SAFETY: allow only schemes that can't execute script. Anything that doesn't
     match returns '#' so the rendered link is inert. javascript:, data:, vbscript:,
-    file:, etc. are all rejected by this allowlist. */
+    file:, etc. are all rejected by this allowlist.
+
+    Whitespace and control characters anywhere before the scheme separator
+    cause rejection too — browsers normalize whitespace inside hrefs (e.g.
+    `java\tscript:` resolves to `javascript:`), so any pre-colon whitespace is
+    a tampering signal. */
 export function safeUrl(raw: string): string {
   const trimmed = raw.trim();
   if (!trimmed) return '#';
+  // Reject any whitespace before the first colon. Browsers strip these when
+  // resolving the scheme, so `java\tscript:` would be treated as `javascript:`.
+  // We don't let it that far.
+  const colonIdx = trimmed.indexOf(':');
+  const prefix = colonIdx === -1 ? trimmed : trimmed.slice(0, colonIdx);
+  if (/\s/.test(prefix)) return '#';
   // Protocol-relative URLs (`//example.com/path`) are treated as https.
   // Check this BEFORE the generic `/`-prefix branch below.
   if (trimmed.startsWith('//')) return 'https:' + trimmed;
@@ -51,7 +62,11 @@ function inline(text: string): string {
     .replace(
       /\[([^\]]+)\]\(([^)]+)\)/g,
       (_match, label, href) =>
-        `<a href="${escapeQuotes(safeUrl(href))}" rel="noopener noreferrer" title="⌘-click to open">${label}</a>`,
+        // target="_blank" gives screen-reader announcement of "opens in a
+        // new tab" and matches the ⌘-click handler's behavior so the cue
+        // doesn't lie. rel="noopener noreferrer" keeps the new window
+        // sandboxed.
+        `<a href="${escapeQuotes(safeUrl(href))}" target="_blank" rel="noopener noreferrer" title="⌘-click to open">${label}</a>`,
     );
 }
 
@@ -239,6 +254,11 @@ function blockToMd(node: Node): string | null {
 
 export function htmlToMd(html: string): string {
   if (typeof document === 'undefined') return '';
+  // SAFETY: `wrapper` is a freshly-created detached <div>. Setting innerHTML
+  // on a detached node does NOT fire event handlers (`<img onerror>`,
+  // `<svg onload>`, etc.) and does NOT execute inserted <script> tags.
+  // If you ever inline this into an attached node, this assumption breaks
+  // and the input must be sanitized first.
   const wrapper = document.createElement('div');
   wrapper.innerHTML = html;
   const blocks: string[] = [];

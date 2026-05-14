@@ -56,6 +56,22 @@ Captured by `/staff-review` and `/ship` so they don't get lost.
 - Decide co-author trailer model version (currently Opus 4.7) and document the choice
 - Audit `src/lib/markdown.ts` for sanitization posture before any user-content pasting feature ships
 
+### From Slices A+B staff review (PR #2)
+
+- **Defense-in-depth: URL-encoded scheme detection in `safeUrl`.** Today, `%6a%61%76%61%73%63%72%69%70%74%3a...` would slip past the scheme regex and get treated as a relative path. Markdown link grammar caps URLs at the first `)`, so encoded colons rarely appear in practice — but a decode-then-check pass would close the gap. Touch `src/lib/markdown.ts` `safeUrl()` plus its tests.
+- **`mdToHtml` link regex captures the post-escape href.** The current ordering works (`safeUrl` is scheme-tolerant of HTML entities) but is non-obvious. Either re-order so links are extracted before escaping, or add a clarifying comment that names the layering as intentional.
+- **Round-trip test coverage: nested lists / tabs vs spaces.** The library doesn't support nested lists yet, so the round-trip flattens them. Add an explicit "no nesting support, flattens to N items" test so a future nesting attempt is forced to update the test, not silently regress behavior.
+- **Storage migration scaffold.** `loadState` currently backfills a single field (`wasEverEdited`). Build a versioned migration helper so future schema changes ship without per-load patches. Belongs to Slice F or a dedicated persistence PR.
+- **Toast pause-on-hover.** Auto-dismiss countdown should pause while the cursor is over a toast (especially the Undo affordance). Add `onMouseEnter`/`onMouseLeave` handlers to `.toast` that clear/restore the timer.
+- **Cmd+Z global undo for delete.** Currently undo lives only on the toast. A keyboard path through the editor's global key handler would catch the user who lets the toast time out.
+- **Silent pristine cleanup feedback (decide).** Empty-but-never-touched drafts disappear silently on nav-away. Currently intentional ("no clutter"); reconsider if user reports surprise. If we want a signal, a minimal "Untitled draft dismissed" toast (no Undo since there's nothing to recover) is the cheapest option.
+- **z-index tokens.** Values are scattered (30, 50, 80, 100, 200, 1000) with no canonical scale. Define `--z-rail`, `--z-popover`, `--z-modal`, `--z-floating-toolbar`, `--z-dev-panel`, `--z-toast`, `--z-drag-indicator` and document the depth model in `design-language.md`.
+- **Toolbar / toast inline `rgba()` migration.** The floating toolbar (dark-on-light surface) uses raw `rgba(255, 255, 255, ...)` overlay colors. The toast inherits the pattern. Either define `--overlay-*` tokens for these or grandfather the toolbar as a documented special case. Decide as part of design-system maturity.
+- **CSS organization.** `globals.css` is ~1340 lines, organized organically by feature. Add a table-of-contents comment at the top, and consider splitting by feature into per-component CSS files when Mini adoption happens anyway.
+- **Toast position collision with agentation toolbar + dev panel.** Bottom-center toast may overlap bottom-right tooling on narrow viewports. Spec a guard margin or move to top-center if the issue becomes visible.
+- **Document `<kbd>` and link-style-button patterns in `design-language.md`.** Both are emerging shared patterns introduced in Slice B; promote them so the next session reuses rather than re-invents.
+- **Document the toast pattern in `design-language.md`.** New surface tier (inverted dark, bottom-anchored, transient) deserves its own entry under "Component guidelines" with the rationale for why it diverges from the warm card-on-tint norm.
+
 ## Definition of done (for any feature)
 
 A feature is "done" when:

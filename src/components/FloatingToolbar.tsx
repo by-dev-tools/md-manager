@@ -1,0 +1,378 @@
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type RefObject,
+} from 'react';
+import { safeUrl } from '../lib/markdown';
+
+interface Props {
+  editorRef: RefObject<HTMLDivElement | null>;
+  /** Called after a formatting action mutates the DOM. */
+  onCommit: () => void;
+  /** True when in preview mode — toolbar only shows there. */
+  enabled: boolean;
+}
+
+interface Pos {
+  top: number;
+  left: number;
+}
+
+type BlockTag = 'h1' | 'h2' | 'h3' | 'h4' | 'p' | 'blockquote';
+
+function selectionIsInside(editor: HTMLElement | null): Range | null {
+  const sel = window.getSelection();
+  if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return null;
+  const range = sel.getRangeAt(0);
+  if (!editor || !editor.contains(range.commonAncestorContainer)) return null;
+  return range;
+}
+
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+function findAncestor(
+  node: Node | null,
+  tagName: string,
+  stopAt: HTMLElement | null,
+): HTMLElement | null {
+  const tag = tagName.toLowerCase();
+  let n: Node | null = node;
+  while (n && n !== stopAt) {
+    if (n.nodeType === Node.ELEMENT_NODE) {
+      const el = n as HTMLElement;
+      if (el.tagName.toLowerCase() === tag) return el;
+    }
+    n = n.parentNode;
+  }
+  return null;
+}
+
+export function FloatingToolbar({ editorRef, onCommit, enabled }: Props) {
+  const [pos, setPos] = useState<Pos | null>(null);
+  const [linkMode, setLinkMode] = useState(false);
+  const [linkUrl, setLinkUrl] = useState('');
+  const [linkError, setLinkError] = useState(false);
+  const savedRangeRef = useRef<Range | null>(null);
+  // Where focus lived before the user entered link mode (typically the editor).
+  // Restored on cancel / after submit so keyboard users aren't stranded in the
+  // void when ESC dismisses the bubble.
+  const focusReturnRef = useRef<HTMLElement | null>(null);
+  const toolbarRef = useRef<HTMLDivElement>(null);
+  const linkInputRef = useRef<HTMLInputElement>(null);
+  // Mirror linkMode into a ref so recompute() — which captures via closure
+  // inside a useEffect with a single dep — sees the current value.
+  const linkModeRef = useRef(false);
+  useEffect(() => {
+    linkModeRef.current = linkMode;
+  }, [linkMode]);
+
+  const recompute = () => {
+    if (!enabled) {
+      setPos(null);
+      return;
+    }
+    // While entering a link URL, freeze the toolbar in place — focus has
+    // moved to the input and the editor selection may have collapsed.
+    if (linkModeRef.current) return;
+    const range = selectionIsInside(editorRef.current);
+    if (!range) {
+      setPos(null);
+      return;
+    }
+    const rect = range.getBoundingClientRect();
+    // Fall back to caret rect if selection rect is empty (e.g. across line break).
+    const r = rect.width === 0 && rect.height === 0
+      ? range.getClientRects()[0]
+      : rect;
+    if (!r) {
+      setPos(null);
+      return;
+    }
+    setPos({
+      top: r.top - 8,
+      left: r.left + r.width / 2,
+    });
+  };
+
+  useEffect(() => {
+    if (!enabled) {
+      setPos(null);
+      return;
+    }
+    const onSel = () => recompute();
+    const onScroll = () => recompute();
+    document.addEventListener('selectionchange', onSel);
+    window.addEventListener('scroll', onScroll, true);
+    window.addEventListener('resize', onScroll);
+    return () => {
+      document.removeEventListener('selectionchange', onSel);
+      window.removeEventListener('scroll', onScroll, true);
+      window.removeEventListener('resize', onScroll);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enabled]);
+
+  // Keep within viewport after render.
+  useLayoutEffect(() => {
+    if (!pos || !toolbarRef.current) return;
+    const el = toolbarRef.current;
+    const r = el.getBoundingClientRect();
+    const margin = 8;
+    let nextLeft = pos.left;
+    const half = r.width / 2;
+    if (nextLeft - half < margin) nextLeft = margin + half;
+    if (nextLeft + half > window.innerWidth - margin) {
+      nextLeft = window.innerWidth - margin - half;
+    }
+    if (nextLeft !== pos.left) {
+      setPos({ ...pos, left: nextLeft });
+    }
+  }, [pos]);
+
+  const exec = (cmd: string, value?: string) => {
+    document.execCommand(cmd, false, value);
+    onCommit();
+  };
+
+  const setBlock = (tag: BlockTag) => {
+    // formatBlock applies a block tag to the paragraph containing the selection.
+    exec('formatBlock', tag);
+  };
+
+  /** Toggle wrap. Uses execCommand('insertHTML') so the op lands in the
+      browser's native undo stack (Cmd+Z). */
+  const toggleWrap = (tag: 'code' | 'pre') => {
+    const editor = editorRef.current;
+    const sel = window.getSelection();
+    if (!editor || !sel || sel.rangeCount === 0) return;
+    const range = sel.getRangeAt(0);
+
+    const existing =
+      findAncestor(range.startContainer, tag, editor) ??
+      findAncestor(range.endContainer, tag, editor);
+
+    if (existing) {
+      // Unwrap: select the whole wrapper, replace with its text content.
+      const text = existing.textContent ?? '';
+      const wrapperRange = document.createRange();
+      wrapperRange.selectNode(existing);
+      sel.removeAllRanges();
+      sel.addRange(wrapperRange);
+      if (tag === 'pre') {
+        document.execCommand(
+          'insertHTML',
+          false,
+          `<p>${escapeHtml(text) || '<br>'}</p>`,
+        );
+      } else {
+        document.execCommand('insertHTML', false, escapeHtml(text));
+      }
+    } else {
+      if (sel.isCollapsed) return;
+      const text = range.toString();
+      const html =
+        tag === 'pre'
+          ? `<pre><code>${escapeHtml(text) || '<br>'}</code></pre>`
+          : `<code>${escapeHtml(text)}</code>`;
+      document.execCommand('insertHTML', false, html);
+    }
+    onCommit();
+  };
+
+  const beginLink = () => {
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return;
+    // Stash the selection — focusing the input below will collapse it.
+    savedRangeRef.current = sel.getRangeAt(0).cloneRange();
+    // Remember where focus came from so we can hand it back on cancel/submit.
+    const active = document.activeElement;
+    focusReturnRef.current =
+      active instanceof HTMLElement ? active : editorRef.current;
+    setLinkUrl('');
+    setLinkError(false);
+    setLinkMode(true);
+  };
+
+  const restoreFocus = () => {
+    // Restore the editor selection range first, then move focus back. Without
+    // the focus call the editor's caret can land in the wrong spot.
+    const range = savedRangeRef.current;
+    if (range) {
+      const sel = window.getSelection();
+      if (sel) {
+        sel.removeAllRanges();
+        sel.addRange(range);
+      }
+    }
+    const target = focusReturnRef.current ?? editorRef.current;
+    target?.focus();
+  };
+
+  const cancelLink = () => {
+    setLinkMode(false);
+    setLinkUrl('');
+    setLinkError(false);
+    restoreFocus();
+    savedRangeRef.current = null;
+    focusReturnRef.current = null;
+  };
+
+  const submitLink = () => {
+    const raw = linkUrl.trim();
+    if (!raw) {
+      cancelLink();
+      return;
+    }
+    const safe = safeUrl(raw);
+    if (safe === '#') {
+      // Rejected scheme — surface the failure rather than silently no-op'ing
+      // the submit (that would be a false affordance, see CLAUDE.md § Quality
+      // posture). The user sees the input ring + an inline message; the
+      // toolbar stays in link mode so they can correct.
+      setLinkError(true);
+      linkInputRef.current?.focus();
+      linkInputRef.current?.select();
+      return;
+    }
+    // Restore the editor selection so createLink targets the original range.
+    const range = savedRangeRef.current;
+    if (range) {
+      const sel = window.getSelection();
+      if (sel) {
+        sel.removeAllRanges();
+        sel.addRange(range);
+      }
+    }
+    document.execCommand('createLink', false, safe);
+    // Apply rel="noopener noreferrer" to whatever <a> the browser produced.
+    const editor = editorRef.current;
+    if (editor) {
+      editor.querySelectorAll('a[href]').forEach((a) => {
+        const el = a as HTMLAnchorElement;
+        if (!el.getAttribute('rel')) {
+          el.setAttribute('rel', 'noopener noreferrer');
+        }
+      });
+    }
+    setLinkMode(false);
+    setLinkUrl('');
+    setLinkError(false);
+    savedRangeRef.current = null;
+    focusReturnRef.current = null;
+    onCommit();
+  };
+
+  // Focus the link input when we enter link mode.
+  useEffect(() => {
+    if (linkMode) linkInputRef.current?.focus();
+  }, [linkMode]);
+
+  // While the link input is open, ESC anywhere dismisses; click outside the
+  // toolbar dismisses without applying. Keep these listeners scoped to link mode.
+  useEffect(() => {
+    if (!linkMode) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        cancelLink();
+      }
+    };
+    const onDown = (e: MouseEvent) => {
+      if (!toolbarRef.current) return;
+      if (toolbarRef.current.contains(e.target as Node)) return;
+      cancelLink();
+    };
+    document.addEventListener('keydown', onKey);
+    document.addEventListener('mousedown', onDown);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.removeEventListener('mousedown', onDown);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [linkMode]);
+
+  if (!enabled || !pos) return null;
+
+  // Prevent mousedown from clearing the editor selection.
+  const swallow = (e: React.MouseEvent) => e.preventDefault();
+
+  return (
+    <div
+      ref={toolbarRef}
+      className={`floating-toolbar${linkMode ? ' is-link-mode' : ''}`}
+      style={{
+        top: pos.top,
+        left: pos.left,
+      }}
+      onMouseDown={swallow}
+    >
+      {linkMode ? (
+        <form
+          className={`floating-toolbar-link${linkError ? ' has-error' : ''}`}
+          onSubmit={(e) => {
+            e.preventDefault();
+            submitLink();
+          }}
+        >
+          <input
+            ref={linkInputRef}
+            type="url"
+            inputMode="url"
+            placeholder={linkError ? 'Use http, https, or mailto' : 'Paste link'}
+            value={linkUrl}
+            onChange={(e) => {
+              setLinkUrl(e.target.value);
+              if (linkError) setLinkError(false);
+            }}
+            aria-label="Link URL"
+            aria-invalid={linkError || undefined}
+          />
+          <button type="submit" title="Apply link" aria-label="Apply link">↵</button>
+          <button
+            type="button"
+            onClick={cancelLink}
+            title="Cancel"
+            aria-label="Cancel link"
+          >
+            ×
+          </button>
+        </form>
+      ) : (
+        <>
+          <button onClick={() => setBlock('h1')} title="Heading 1">H1</button>
+          <button onClick={() => setBlock('h2')} title="Heading 2">H2</button>
+          <button onClick={() => setBlock('h3')} title="Heading 3">H3</button>
+          <button onClick={() => setBlock('h4')} title="Heading 4">H4</button>
+          <button onClick={() => setBlock('p')} title="Paragraph">¶</button>
+          <span className="ft-sep" />
+          <button onClick={() => exec('bold')} title="Bold (⌘B)">
+            <b>B</b>
+          </button>
+          <button onClick={() => exec('italic')} title="Italic (⌘I)">
+            <i>I</i>
+          </button>
+          <button onClick={() => exec('strikeThrough')} title="Strikethrough">
+            <s>S</s>
+          </button>
+          <button onClick={() => toggleWrap('code')} title="Inline code">
+            <code>{'<>'}</code>
+          </button>
+          <span className="ft-sep" />
+          <button onClick={() => exec('insertUnorderedList')} title="Bulleted list">•</button>
+          <button onClick={() => exec('insertOrderedList')} title="Numbered list">1.</button>
+          <button onClick={() => setBlock('blockquote')} title="Blockquote">&ldquo;</button>
+          <button onClick={() => toggleWrap('pre')} title="Code block">{'{ }'}</button>
+          <span className="ft-sep" />
+          <button onClick={beginLink} title="Link">🔗</button>
+        </>
+      )}
+    </div>
+  );
+}

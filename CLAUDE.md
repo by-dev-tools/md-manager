@@ -65,6 +65,38 @@ Dependencies install via `npm install`. The repo doesn't commit `node_modules`; 
 4. **Surface posture is the user's choice (open question).** Prototype ships both floating and flat; final answer undecided. See `core-docs/design-language.md` § "Family".
 5. **Markdown is the data.** Files are `.md`. No proprietary format, no lock-in.
 6. **Small, ship-shaped changes.** Bias toward shipping a tight slice over batching ambition.
+7. **Polished, narrow features. Expand scope over time, not quality.** A feature ships when it's fully functional, accessible, and polished — or it doesn't ship. Half-implementations are removed from the surface or wired to completion; they are never visibly present in a broken state. See § "Quality posture" below — this principle is load-bearing for every decision.
+
+---
+
+## Quality posture: ship polished, expand over time
+
+This is the core development philosophy. Read it before scoping any change.
+
+**The rule:** Every feature on the visible surface does what it appears to do — today, in the default build, for every user. We expand scope by adding new fully-functional features over time. We never expand scope by lowering quality.
+
+**Three corollaries follow:**
+
+### 1. No false affordances
+
+A button, input, link, menu item, or any other control visible on the surface must do its job today. If it doesn't, it's a bug — equivalent to a crash, equivalent to broken data. The user's mental model is "controls work"; rendering a control that doesn't is a teaching moment that the app is unreliable, and that lesson is hard to unwind.
+
+The mic icon that doesn't record. The Models pane that's not wired up. The link button that creates markup nothing opens. The "Settings" entry that opens an empty panel. All forbidden in the default build.
+
+### 2. The wire-vs-defer decision
+
+When a feature is partly working, ask: **is the gap between what's there and what's polished < 1 day, using existing primitives?**
+
+- **Yes → wire it.** Default to shipping the complete feature. The user's mental model already expects it to work; meeting that expectation is cheaper than the cost of training them otherwise.
+- **No → defer it.** Remove the visible affordance entirely. Capture the work in `core-docs/roadmap.md` for a future polished pass. The roadmap entry must name the surface, the gap, and the rough cost — so the next session knows what "polished" looks like.
+
+Hide-behind-a-flag is the exception, not the default. Use only when the visual placeholder has a legitimate dogfood purpose (e.g., we want internal users to evaluate the rough version) — and even then, flag it off in default builds and document why.
+
+### 3. Scope expansion is additive, never deductive
+
+A feature ships in its smallest polished form. We add capabilities to it later — new options, new edge cases, new integrations — as separate polished increments. We do not ship the full vision in a degraded state and then incrementally fix it. The first version is the one users see; it sets their expectations for the entire app.
+
+**Sister-app reference.** Designer documents the same doctrine in its [`CLAUDE.md`](file:///Users/benyamron/dev/designer/CLAUDE.md) "Quality bar", [`design-language.md`](file:///Users/benyamron/dev/designer/core-docs/design-language.md) "False affordances", and `feedback.md` entries FB-0036 and FB-0038. The principle is shared across the family.
 
 ---
 
@@ -120,6 +152,7 @@ Default path handles plan-writing and doc-writing in the main thread; reach for 
 Code doesn't ship unless it meets all of these:
 
 - **Functional** — does what it's supposed to; edge cases handled; `npm run typecheck && npm run build` clean.
+- **Polished** — no false affordances. Every visible control does what it appears to do, today. Half-implementations are wired (if cheap, per "Quality posture" § 2) or removed from the surface (if not). See "Quality posture" above — this is non-negotiable.
 - **Accessible** — WCAG 2.1 AA. Keyboard-navigable, focus-visible, contrast-passing, reduced-motion-respecting.
 - **Performant** — no visible jank on a 4-year-old laptop. Interactions feel instant (<100ms perceived).
 - **On-brand** — uses design tokens, respects `design-language.md`, no hardcoded hex/px values.

@@ -15,6 +15,7 @@
   --gray-a7: rgba(0, 0, 0, 0.11);
 
   /* Type */
+  --type-micro: 11px;
   --type-caption: 13px;
   --type-body: 15px;
   --type-h3: 18px;
@@ -36,9 +37,24 @@
   --radius-surface: 24px;
 
   /* Surface */
-  --surface-gutter: 12px;
+  --surface-gutter: 8px;
+  --surface-shadow-alpha: 1;
   --surface-shadow:
-    0 1px 3px rgba(0, 0, 0, 0.04), 0 6px 16px -2px rgba(0, 0, 0, 0.07);
+    0 1px 3px rgba(0, 0, 0, calc(0.04 * var(--surface-shadow-alpha))),
+    0 6px 16px -2px rgba(0, 0, 0, calc(0.07 * var(--surface-shadow-alpha)));
+
+  /* Color rail width — referenced by .color-rail and the floating surface
+     to reserve space on the right edge. */
+  --rail-width: 18px;
+
+  /* Layout */
+  --sidebar-width: 268px;
+
+  /* Dev-tunable surface params. */
+  --surface-opacity: 0.6;
+  --surface-radius: 8px;
+  --sidebar-font: 13px;
+  --editor-font: 15px;
 
   /* User-set page color */
   --page-tint: hsl(30, 60%, 88%);
@@ -57,6 +73,7 @@ html,
 body,
 #root {
   height: 100%;
+  overflow: hidden;
 }
 body {
   font-family: 'Geist', -apple-system, sans-serif;
@@ -76,9 +93,21 @@ button {
 
 .app {
   display: grid;
-  grid-template-columns: 268px 1fr;
+  grid-template-columns: var(--sidebar-width) 1fr;
   height: 100vh;
   min-height: 600px;
+  transition: grid-template-columns 180ms ease;
+}
+body.sidebar-collapsed .app {
+  grid-template-columns: 1fr;
+}
+body.sidebar-collapsed .sidebar {
+  display: none;
+}
+body.sidebar-collapsed .dev-panel {
+  /* Without a sidebar to anchor to, dock the dev panel to the bottom-left. */
+  right: auto;
+  left: 8px;
 }
 
 /* ───── Sidebar ───── */
@@ -90,6 +119,19 @@ button {
   font-family: 'Geist Mono', monospace;
   letter-spacing: -0.005em;
   min-height: 0;
+  font-size: var(--sidebar-font);
+}
+body.mode-floating .sidebar {
+  border-right: 0;
+}
+body.sidebar-sans .sidebar {
+  font-family: 'Geist', -apple-system, sans-serif;
+}
+body.sidebar-sans .sidebar .file-tree {
+  font-family: 'Geist', -apple-system, sans-serif;
+}
+body.sidebar-sans .sidebar .sidebar-footer {
+  font-family: 'Geist', -apple-system, sans-serif;
 }
 .sidebar-top-bar {
   padding: 14px 14px 0;
@@ -136,7 +178,7 @@ button {
   background: rgba(255, 255, 255, 0.4);
   border-radius: var(--radius-button);
   color: var(--sand-9);
-  font-size: 12px;
+  font-size: 1em;
   font-family: inherit;
 }
 .search input {
@@ -159,58 +201,55 @@ button {
   padding: 0 var(--space-3) var(--space-4);
 }
 
-/* Top-level row: icon → label → chevron, count or + on right */
+/* Top-level row: leading icon (or chevron when expanded) → label → count → +.
+   Conductor pattern: count summarizes hidden content when collapsed; the + is
+   persistent (no hover-only). When expanded, chevron replaces the icon and the
+   count disappears (you can see everything). */
 .row-top {
   display: flex;
   align-items: center;
   padding: 5px 8px;
   border-radius: var(--radius-button);
   color: var(--sand-12);
-  font-weight: var(--weight-regular);
-  font-size: 13px;
+  font-weight: var(--weight-medium);
+  font-size: 1em;
   user-select: none;
   cursor: pointer;
   line-height: 1.4;
-  position: relative;
 }
 .row-top:hover {
   background: rgba(255, 255, 255, 0.45);
 }
 .row-top .icon {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--sand-11);
   flex-shrink: 0;
-  margin-right: 8px;
+  margin-right: 6px;
 }
-.row-top .chev {
-  width: 14px;
-  height: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.row-top.is-chevron .icon {
   color: var(--sand-9);
-  margin-left: 4px;
-  transition: transform 120ms ease;
 }
-.row-top .chev.open {
-  transform: rotate(90deg);
+.row-top .label {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .row-top .count {
-  margin-left: auto;
+  margin-left: 6px;
   color: var(--sand-9);
   font-weight: var(--weight-regular);
-  font-size: 11px;
-  transition: opacity 120ms ease;
+  font-size: 0.85em;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+  pointer-events: none;
 }
 .row-top .row-action {
-  position: absolute;
-  right: 6px;
-  top: 50%;
-  transform: translateY(-50%);
   width: 22px;
   height: 22px;
   display: flex;
@@ -221,33 +260,56 @@ button {
   background: transparent;
   border: 0;
   cursor: pointer;
-  opacity: 0;
-  transition: opacity 120ms ease, background 120ms ease, color 120ms ease;
-}
-.row-top:hover .row-action {
-  opacity: 1;
+  margin-left: auto;
+  flex-shrink: 0;
+  transition: background 120ms ease, color 120ms ease;
 }
 .row-action:hover {
   background: rgba(255, 255, 255, 0.7);
   color: var(--sand-12);
 }
-.row-top:hover .count {
-  opacity: 0;
+
+/* Empty containers: no chevron, no toggle behavior. + persistence is the
+   same as everywhere else (always visible) — no extra rule needed now. */
+.row-top.not-collapsible {
+  cursor: default;
+}
+.row-top.not-collapsible:hover {
+  background: transparent;
 }
 
+/* Nested group row (drafts / files under a repo): same shape as parent,
+   slightly muted to convey hierarchy. */
+.row-top.row-nested {
+  color: var(--sand-11);
+}
+.row-top.row-nested .icon {
+  color: var(--sand-9);
+}
+
+/* Each level indents so the child icon's CENTER lands at the midpoint of the
+   space between the parent icon and the parent label.
+   Parent icon: x=8..24 (16px), margin 6, label at x=30 → space midpoint x=27.
+   Child icon width 16 → child icon left edge = 27 − 8 = 19.
+   Child .row-top padding-left is 8 → .children padding-left = 19 − 8 = 11. */
 .children {
-  padding-left: 30px;
+  padding-left: 11px;
   padding-bottom: 2px;
 }
 
-/* Leaf row (drafts) */
+/* Leaf row (drafts). Italic + muted color signals "loose / not committed",
+   distinguishing drafts from repo files at a glance.
+   .leaf-spacer reserves the same 16px+7px leading area that file-rows have
+   for their file-icon, so draft labels line up with file names at the same
+   nesting depth. */
 .row-leaf {
   display: flex;
   align-items: center;
   padding: 4px 8px;
   border-radius: var(--radius-button);
-  color: var(--sand-11);
-  font-size: 12px;
+  color: var(--sand-9);
+  font-size: 1em;
+  font-style: italic;
   font-weight: var(--weight-regular);
   line-height: 1.45;
   user-select: none;
@@ -256,8 +318,25 @@ button {
   text-overflow: ellipsis;
   cursor: pointer;
 }
+.row-leaf .leaf-spacer {
+  width: 16px;
+  height: 14px;
+  margin-right: 6px;
+  flex-shrink: 0;
+}
+.row-leaf .label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  /* Italic slants extend slightly past the glyph box; reserve a hair of
+     right room so the descender on letters like 'd' isn't clipped. */
+  padding-right: 2px;
+}
 .row-leaf:hover {
   background: rgba(255, 255, 255, 0.45);
+  color: var(--sand-11);
 }
 .row-leaf.selected {
   color: var(--sand-12);
@@ -268,26 +347,66 @@ button {
   text-overflow: ellipsis;
 }
 
-/* Sub-section label */
-.sub-label {
-  padding: 10px 8px 4px;
-  font-family: 'Geist Mono', monospace;
-  font-size: 10.5px;
-  font-weight: var(--weight-regular);
-  letter-spacing: 0;
-  color: var(--sand-9);
+/* Hairline between files and drafts inside a repo. */
+.repo-divider {
+  height: 1px;
+  background: var(--page-tint-edge);
+  margin: 8px 4px 8px 4px;
+}
+/* Files (committed, in the repo) sit slightly darker than drafts. */
+.repo-files .file-row .file-name {
+  color: var(--sand-11);
+}
+.repo-files .file-row.folder .file-name {
+  color: var(--sand-12);
+}
+.repo-files .file-row.selected .file-name {
+  color: var(--sand-12);
+  font-weight: var(--weight-medium);
+}
+
+/* ───── Tree variants (switchable via dev panel) ─────
+   Default (no body class) is the compact / Linear-style we already have.
+
+   .tree-hanging: VSCode/Conductor-style. Each level indents by a full icon
+   width so icons "hang" in a left gutter aligned with their depth, and the
+   chevron is pushed to the right edge of each row. Labels at every depth
+   start at the same x offset within their row.
+
+   .tree-minimal: pure indent hierarchy with no icons on row-top entries;
+   chevron right-aligned. Files inside folders still have their (optional)
+   md badge for visual texture. */
+
+body.tree-hanging .children {
+  padding-left: 16px;
+}
+body.tree-hanging .folder-children {
+  padding-left: 16px;
+}
+
+/* Minimal mode: icons stay; the differentiator is a slightly tighter indent
+   per level. The md badge is still suppressed unless the user opts in via
+   the dev panel's "File icons" toggle. */
+body.tree-minimal .file-row .md-badge {
+  display: none;
+}
+body.tree-minimal .children {
+  padding-left: 11px;
+}
+body.tree-minimal .folder-children {
+  padding-left: 11px;
 }
 
 /* File tree */
 .file-tree {
   font-family: 'Geist Mono', monospace;
-  font-size: 12px;
+  font-size: 1em;
   letter-spacing: -0.005em;
 }
 .file-row {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: 6px;
   padding: 3px 8px;
   border-radius: var(--radius-button);
   color: var(--sand-11);
@@ -304,33 +423,12 @@ button {
   color: var(--sand-12);
   font-weight: var(--weight-medium);
 }
-.file-row.dimmed {
-  color: var(--sand-9);
-  opacity: 0.55;
-  cursor: default;
-}
-.file-row.dimmed:hover {
-  background: transparent;
-}
 .file-row.folder {
   color: var(--sand-12);
 }
 .file-row .file-name {
   overflow: hidden;
   text-overflow: ellipsis;
-}
-.file-tree .folder-chev {
-  width: 12px;
-  height: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--sand-9);
-  flex-shrink: 0;
-  transition: transform 120ms ease;
-}
-.file-tree .folder-chev.open {
-  transform: rotate(90deg);
 }
 .file-tree .file-icon {
   width: 16px;
@@ -342,7 +440,7 @@ button {
   color: var(--sand-9);
 }
 .md-badge {
-  width: 18px;
+  width: 16px;
   height: 14px;
   background: rgba(255, 255, 255, 0.7);
   border-radius: 3px;
@@ -357,13 +455,20 @@ button {
   text-transform: uppercase;
   flex-shrink: 0;
   box-shadow: inset 0 0 0 0.5px rgba(0, 0, 0, 0.04);
+  visibility: hidden;
+}
+body.show-file-icons .md-badge {
+  visibility: visible;
 }
 .file-row.selected .md-badge {
   background: rgba(255, 255, 255, 0.95);
   color: var(--sand-12);
 }
+/* Folder rows in the file tree: 16px icon + 6px gap. Same midpoint math as
+   .row-top: child icon left edge at x=19, file-row padding-left 8, so
+   .folder-children padding-left = 11. */
 .folder-children {
-  padding-left: 18px;
+  padding-left: 11px;
 }
 
 .group-gap {
@@ -377,7 +482,7 @@ button {
   align-items: center;
   gap: var(--space-3);
   color: var(--sand-11);
-  font-size: 12px;
+  font-size: 1em;
   font-family: 'Geist Mono', monospace;
   cursor: pointer;
   background: transparent;
@@ -416,10 +521,10 @@ button {
 
 .mode-floating .surface {
   margin: var(--surface-gutter);
-  margin-right: calc(var(--surface-gutter) + 12px + var(--surface-gutter));
-  border-radius: var(--radius-surface);
+  margin-right: calc(var(--surface-gutter) + var(--rail-width) + var(--surface-gutter));
+  border-radius: var(--surface-radius);
   box-shadow: var(--surface-shadow);
-  background: rgba(255, 255, 255, 0.75);
+  background: rgba(255, 255, 255, var(--surface-opacity));
 }
 
 .mode-flat .surface {
@@ -436,11 +541,29 @@ button {
 .editor-header {
   display: flex;
   align-items: center;
-  padding: 14px 24px 14px 28px;
+  padding: 14px 24px 14px 16px;
   gap: var(--space-4);
-  border-bottom: 1px solid var(--gray-a5);
   position: relative;
   flex-shrink: 0;
+}
+.sidebar-toggle {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-button);
+  color: var(--sand-9);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 120ms ease, color 120ms ease;
+}
+.sidebar-toggle:hover {
+  background: var(--gray-a5);
+  color: var(--sand-12);
 }
 .crumb {
   display: flex;
@@ -452,16 +575,21 @@ button {
   min-width: 0;
 }
 
+/* Draft status label — non-interactive. Plain caption text so it can't be
+   mistaken for the adjacent Attach button. */
 .tag {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 3px 8px;
-  background: var(--gray-a5);
-  border-radius: 10px;
-  font-size: 12px;
-  font-weight: var(--weight-medium);
-  color: var(--sand-11);
+  padding: 0;
+  background: transparent;
+  font-size: 10.5px;
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--sand-9);
+  cursor: default;
+  user-select: none;
 }
 .tag .tag-dot {
   width: 5px;
@@ -470,55 +598,65 @@ button {
   background: var(--sand-9);
 }
 
+/* Attach button — clearly an action. Solid (not dashed) border and a
+   visible hover so it doesn't blend with the status label. */
 .attach-chip {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 9px 4px 8px;
-  background: transparent;
-  border: 1px dashed var(--gray-a7);
-  border-radius: 10px;
+  height: 28px;
+  padding: 0 10px;
+  background: rgba(255, 255, 255, 0.4);
+  border: 1px solid var(--gray-a7);
+  border-radius: var(--radius-button);
   font-size: 12px;
   font-weight: var(--weight-medium);
-  color: var(--sand-11);
+  color: var(--sand-12);
   cursor: pointer;
-  transition: all 120ms ease;
+  transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
   font-family: inherit;
 }
 .attach-chip:hover {
-  background: var(--gray-a5);
+  background: #ffffff;
+  border-color: var(--sand-9);
   color: var(--sand-12);
-  border-color: var(--gray-a7);
-  border-style: solid;
 }
 .attach-chip svg {
-  color: var(--sand-9);
+  color: var(--sand-11);
 }
 .attach-chip.attached {
-  background: var(--gray-a5);
-  border-style: solid;
-  border-color: var(--gray-a7);
-  color: var(--sand-12);
+  background: var(--sand-12);
+  border-color: var(--sand-12);
+  color: var(--sand-1);
+}
+.attach-chip.attached:hover {
+  background: var(--sand-11);
+  border-color: var(--sand-11);
 }
 .attach-chip.attached svg {
-  color: var(--sand-11);
+  color: var(--sand-1);
 }
 .attach-chip.breadcrumb {
   background: transparent;
   border: 0;
   padding-left: 0;
+  color: var(--sand-11);
   cursor: default;
 }
 .attach-chip.breadcrumb:hover {
   background: transparent;
+  border: 0;
+  color: var(--sand-11);
 }
 
 /* Segmented control */
 .segmented {
   display: inline-flex;
+  align-items: center;
   background: var(--gray-a5);
   border-radius: var(--radius-button);
-  padding: 2px;
+  padding: 0 2px;
+  height: 28px;
 }
 .segmented button {
   border: 0;
@@ -527,9 +665,12 @@ button {
   font-size: 12px;
   font-weight: var(--weight-medium);
   color: var(--sand-11);
-  padding: 4px 10px;
+  padding: 0 10px;
   border-radius: 4px;
   cursor: pointer;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
 }
 .segmented button.active {
   background: #ffffff;
@@ -537,27 +678,32 @@ button {
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
 }
 
-.editor-actions {
-  display: flex;
-  align-items: center;
-  gap: var(--space-4);
+.saved {
+  font-size: 11px;
   color: var(--sand-9);
+  font-style: italic;
+  letter-spacing: 0.01em;
+  margin-left: 4px;
 }
-.editor-actions button {
+.header-icon-btn {
   background: transparent;
   border: 0;
-  display: flex;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
   align-items: center;
-  color: inherit;
-  cursor: pointer;
-  padding: 2px;
-}
-.editor-actions button:hover {
-  color: var(--sand-11);
-}
-.saved {
-  font-size: 12px;
+  justify-content: center;
+  border-radius: var(--radius-button);
   color: var(--sand-9);
+  cursor: pointer;
+  flex-shrink: 0;
+  margin-left: 2px;
+  transition: background 120ms ease, color 120ms ease;
+}
+.header-icon-btn:hover {
+  background: var(--gray-a5);
+  color: var(--sand-12);
 }
 
 /* Editor body */
@@ -571,7 +717,7 @@ button {
 .editor {
   padding: 40px 32px 60px;
   font-family: 'Geist', sans-serif;
-  font-size: var(--type-body);
+  font-size: var(--editor-font);
   line-height: 1.55;
   color: var(--sand-12);
   max-width: 680px;
@@ -579,7 +725,7 @@ button {
   position: relative;
 }
 .editor h1 {
-  font-size: 26px;
+  font-size: 1.73em;
   font-weight: var(--weight-semibold);
   letter-spacing: -0.015em;
   line-height: 1.2;
@@ -589,16 +735,50 @@ button {
   margin-bottom: 12px;
 }
 .editor h2 {
-  font-size: var(--type-h3);
+  font-size: 1.2em;
   font-weight: var(--weight-semibold);
   margin: 24px 0 8px;
   letter-spacing: -0.01em;
 }
-.editor ul {
+.editor h3 {
+  font-size: 1.07em;
+  font-weight: var(--weight-semibold);
+  margin: 20px 0 6px;
+  letter-spacing: -0.005em;
+}
+.editor h4 {
+  font-size: 1em;
+  font-weight: var(--weight-semibold);
+  margin: 18px 0 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--sand-11);
+}
+.editor ul,
+.editor ol {
   margin: 4px 0 12px 22px;
 }
 .editor li {
   margin-bottom: 4px;
+}
+.editor blockquote {
+  border-left: 3px solid var(--gray-a7);
+  padding: 2px 0 2px 12px;
+  margin: 8px 0 12px;
+  color: var(--sand-11);
+}
+.editor blockquote p {
+  margin-bottom: 4px;
+}
+.editor a {
+  color: var(--sand-12);
+  text-decoration: underline;
+  text-decoration-color: var(--gray-a7);
+  text-underline-offset: 2px;
+}
+.editor s,
+.editor del {
+  color: var(--sand-9);
 }
 .editor em {
   font-style: italic;
@@ -626,6 +806,8 @@ button {
 }
 .editor:focus,
 .editor *:focus {
+  /* The blinking text caret is the focus indicator for a contenteditable;
+     a bounding outline around the entire writing surface would be noise. */
   outline: none;
 }
 .editor.is-empty::before {
@@ -635,14 +817,60 @@ button {
   left: 32px;
   pointer-events: none;
   color: var(--page-text-quiet);
-  font-size: 26px;
+  font-size: 1.73em;
   font-weight: var(--weight-semibold);
   letter-spacing: -0.015em;
   line-height: 1.2;
 }
+/* No-doc placeholder. Warm, terse, no illustration per design-language § Empty states. */
+.editor-empty {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  cursor: default;
+}
+.editor-empty .editor-empty-title {
+  color: var(--sand-11);
+  font-size: var(--type-body);
+  font-weight: var(--weight-medium);
+  margin: 0;
+}
+.editor-empty .editor-empty-hint {
+  color: var(--sand-11);
+  font-size: var(--type-caption);
+  margin: 0;
+}
+.editor-empty .editor-empty-action {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: var(--sand-12);
+  text-decoration: underline;
+  text-decoration-color: var(--gray-a7);
+  text-underline-offset: 2px;
+  cursor: pointer;
+  border-radius: var(--radius-badge);
+}
+.editor-empty .editor-empty-action:hover {
+  text-decoration-color: var(--sand-9);
+}
+.editor-empty .editor-empty-action:focus-visible {
+  outline: 2px solid var(--sand-9);
+  outline-offset: 2px;
+  text-decoration-color: var(--sand-11);
+}
+.editor-empty kbd {
+  font-family: 'Geist Mono', monospace;
+  font-size: var(--type-micro);
+  padding: 1px 5px;
+  background: var(--gray-a5);
+  border-radius: var(--radius-badge);
+  color: var(--sand-11);
+}
 .editor.markdown-mode {
   font-family: 'Geist Mono', monospace;
-  font-size: 14px;
+  font-size: var(--editor-font);
   line-height: 1.55;
   white-space: pre-wrap;
 }
@@ -666,7 +894,7 @@ button {
 .attach-popover {
   position: absolute;
   top: 50px;
-  left: 24px;
+  right: 24px;
   width: 280px;
   background: var(--sand-1);
   border-radius: var(--radius-modal);
@@ -752,49 +980,6 @@ button {
 }
 .pop-row.detach:hover {
   color: var(--sand-12);
-}
-
-/* ───── Overflow menu ───── */
-.overflow-menu {
-  position: absolute;
-  top: 50px;
-  right: 24px;
-  min-width: 180px;
-  background: var(--sand-1);
-  border-radius: var(--radius-modal);
-  box-shadow:
-    0 1px 2px rgba(0, 0, 0, 0.04),
-    0 12px 28px rgba(0, 0, 0, 0.1),
-    0 0 0 1px rgba(0, 0, 0, 0.04);
-  z-index: 30;
-  overflow: hidden;
-  padding: 4px 0;
-}
-.menu-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  padding: 7px 12px;
-  background: transparent;
-  border: 0;
-  font: inherit;
-  font-size: 12.5px;
-  color: var(--sand-12);
-  cursor: pointer;
-  text-align: left;
-}
-.menu-item:hover {
-  background: var(--sand-3);
-}
-.menu-item .menu-meta {
-  color: var(--sand-9);
-  font-size: 11px;
-}
-.menu-sep {
-  height: 1px;
-  background: var(--gray-a5);
-  margin: 4px 0;
 }
 
 /* ───── Add repo modal ───── */
@@ -885,7 +1070,7 @@ button {
   top: 0;
   right: 0;
   bottom: 0;
-  width: 12px;
+  width: var(--rail-width);
   display: flex;
   flex-direction: column;
   z-index: 5;
@@ -938,34 +1123,41 @@ button {
 }
 
 .color-presets {
-  width: 12px;
-  padding: 4px 0 6px;
+  width: var(--rail-width);
+  padding: 6px 0 8px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   border-left: 1px solid var(--page-tint-edge);
   background: transparent;
 }
 .preset-swatch {
-  width: 10px;
-  height: 10px;
-  border-radius: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
   cursor: pointer;
-  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.18),
+    0 1px 2px rgba(0, 0, 0, 0.08);
   transition: transform 120ms ease, box-shadow 120ms ease;
   border: 0;
   padding: 0;
 }
 .preset-swatch:hover {
-  transform: scale(1.4);
+  transform: scale(1.25);
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.3),
+    0 2px 4px rgba(0, 0, 0, 0.12);
 }
 .preset-swatch.active {
-  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08), 0 0 0 2px rgba(0, 0, 0, 0.6);
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.25),
+    0 0 0 2px rgba(0, 0, 0, 0.6);
 }
 .manual-pick {
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
   margin-top: 4px;
   border-radius: 50%;
   cursor: pointer;
@@ -985,4 +1177,300 @@ button {
   pointer-events: none;
   width: 0;
   height: 0;
+}
+
+/* ───── Floating selection toolbar ───── */
+.floating-toolbar {
+  position: fixed;
+  transform: translate(-50%, -100%);
+  background: var(--sand-12);
+  color: var(--sand-1);
+  border-radius: 8px;
+  padding: 3px 4px;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.08),
+    0 8px 24px rgba(0, 0, 0, 0.18);
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  z-index: 80;
+  font-family: 'Geist', -apple-system, sans-serif;
+  font-size: 12px;
+  font-weight: var(--weight-medium);
+  user-select: none;
+  -webkit-user-select: none;
+}
+.floating-toolbar button {
+  background: transparent;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  padding: 5px 7px;
+  border-radius: 5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 26px;
+  height: 26px;
+  line-height: 1;
+  transition: background 80ms ease;
+}
+.floating-toolbar button:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+.floating-toolbar button:active {
+  background: rgba(255, 255, 255, 0.22);
+}
+.floating-toolbar button code {
+  font-family: 'Geist Mono', monospace;
+  font-size: 10.5px;
+  background: transparent;
+  padding: 0;
+}
+.floating-toolbar .ft-sep {
+  width: 1px;
+  height: 16px;
+  background: rgba(255, 255, 255, 0.18);
+  margin: 0 3px;
+  display: inline-block;
+}
+.floating-toolbar-link {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 0 4px;
+}
+.floating-toolbar-link input[type='url'] {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: var(--radius-button);
+  color: var(--sand-1);
+  font: inherit;
+  padding: 0 var(--space-3);
+  height: 26px;
+  width: 240px;
+  outline: 0;
+  transition: border-color 80ms ease, background 80ms ease;
+}
+.floating-toolbar-link input[type='url']::placeholder {
+  color: rgba(255, 255, 255, 0.45);
+}
+.floating-toolbar-link input[type='url']:focus {
+  border-color: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.12);
+}
+.floating-toolbar-link.has-error input[type='url'] {
+  border-color: rgba(255, 160, 160, 0.65);
+  background: rgba(255, 160, 160, 0.12);
+}
+.floating-toolbar-link.has-error input[type='url']::placeholder {
+  color: rgba(255, 200, 200, 0.75);
+}
+
+/* ───── Toasts ───── */
+.toast-host {
+  position: fixed;
+  bottom: var(--space-4);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  z-index: 200;
+  pointer-events: none;
+}
+.toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  background: var(--sand-12);
+  color: var(--sand-1);
+  padding: 0 var(--space-3) 0 var(--space-4);
+  height: 36px;
+  border-radius: var(--radius-button);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.06),
+    0 12px 28px rgba(0, 0, 0, 0.18);
+  font-family: 'Geist', -apple-system, sans-serif;
+  font-size: var(--type-caption);
+  font-weight: var(--weight-medium);
+  letter-spacing: -0.005em;
+  animation: toast-in 160ms ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .toast {
+    animation: none;
+  }
+}
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.toast-message {
+  white-space: nowrap;
+}
+.toast-action {
+  background: transparent;
+  border: 0;
+  color: var(--sand-1);
+  font: inherit;
+  font-weight: var(--weight-semibold);
+  cursor: pointer;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-button);
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  transition: background 80ms ease;
+}
+.toast-action:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+.toast-close {
+  background: transparent;
+  border: 0;
+  color: rgba(255, 255, 255, 0.6);
+  font: inherit;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-badge);
+  transition: background 80ms ease, color 80ms ease;
+}
+.toast-close:hover {
+  color: var(--sand-1);
+  background: rgba(255, 255, 255, 0.14);
+}
+
+/* ───── Dev panel (development only) ───── */
+.dev-panel {
+  position: fixed;
+  bottom: 8px;
+  /* Right-anchored to the sidebar's right edge with an 8px inset.
+     viewport_right - X = sidebar_width - 8  ⇒  X = 100vw − sidebar_width + 8 */
+  right: calc(100vw - var(--sidebar-width) + 8px);
+  z-index: 100;
+  font-family: 'Geist Mono', monospace;
+  font-size: 11px;
+  color: var(--sand-12);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+.dev-panel-toggle {
+  background: rgba(33, 32, 28, 0.85);
+  color: #fff;
+  border: 0;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font: inherit;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  opacity: 0.5;
+  transition: opacity 120ms ease;
+}
+.dev-panel-toggle:hover,
+.dev-panel.open .dev-panel-toggle {
+  opacity: 1;
+}
+.dev-panel-body {
+  margin-top: 6px;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid var(--gray-a7);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  padding: 10px 12px 12px;
+  width: 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.dev-knob {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.dev-knob-toggle {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.dev-knob-toggle label {
+  font-size: 11px;
+  color: var(--sand-11);
+  flex: 1;
+}
+.dev-knob-toggle input[type='checkbox'] {
+  accent-color: var(--sand-12);
+  cursor: pointer;
+}
+.dev-knob-select {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.dev-knob-select label {
+  font-size: 11px;
+  color: var(--sand-11);
+  flex: 1;
+}
+.dev-knob-select select {
+  font: inherit;
+  font-size: 11px;
+  color: var(--sand-12);
+  background: var(--sand-2);
+  border: 1px solid var(--gray-a7);
+  border-radius: 4px;
+  padding: 2px 4px;
+  cursor: pointer;
+  font-family: 'Geist Mono', monospace;
+}
+.dev-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.dev-row label {
+  font-size: 11px;
+  color: var(--sand-11);
+}
+.dev-value {
+  font-variant-numeric: tabular-nums;
+  color: var(--sand-12);
+}
+.dev-panel input[type='range'] {
+  width: 100%;
+  accent-color: var(--sand-12);
+}
+.dev-reset {
+  align-self: flex-end;
+  background: transparent;
+  border: 0;
+  color: var(--sand-9);
+  font: inherit;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  padding: 2px 4px;
+}
+.dev-reset:hover {
+  color: var(--sand-12);
 }

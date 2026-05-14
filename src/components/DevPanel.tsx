@@ -44,6 +44,18 @@ type Knob = RangeKnob | ToggleKnob | SelectKnob;
 const KNOBS: Knob[] = [
   {
     kind: 'range',
+    key: 'sectionGap',
+    label: 'Section spacing',
+    cssVar: '--nav-section-gap',
+    min: 8,
+    max: 48,
+    step: 1,
+    default: 24,
+    unit: 'px',
+    digits: 0,
+  },
+  {
+    kind: 'range',
     key: 'opacity',
     label: 'Surface opacity',
     cssVar: '--surface-opacity',
@@ -124,28 +136,10 @@ const KNOBS: Knob[] = [
   },
   {
     kind: 'toggle',
-    key: 'showFileIcons',
-    label: 'File icons',
-    bodyClass: 'show-file-icons',
+    key: 'sidebarMono',
+    label: 'Sidebar mono (vs sans)',
+    bodyClass: 'sidebar-mono',
     default: false,
-  },
-  {
-    kind: 'toggle',
-    key: 'sidebarSans',
-    label: 'Sidebar sans (vs mono)',
-    bodyClass: 'sidebar-sans',
-    default: false,
-  },
-  {
-    kind: 'select',
-    key: 'treeVariant',
-    label: 'Tree layout',
-    default: 'compact',
-    options: [
-      { value: 'compact', label: 'Compact' },
-      { value: 'hanging', label: 'Hanging', bodyClass: 'tree-hanging' },
-      { value: 'minimal', label: 'Minimal', bodyClass: 'tree-minimal' },
-    ],
   },
 ];
 

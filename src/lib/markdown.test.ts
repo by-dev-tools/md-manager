@@ -25,6 +25,15 @@ describe('safeUrl', () => {
     expect(safeUrl('#section')).toBe('#section');
   });
 
+  it('allows whitespace inside relative paths and fragments', () => {
+    // Whitespace anywhere is only rejected when it appears before a scheme
+    // separator (the bypass case). Relative paths and fragments may legitimately
+    // contain spaces — most editors render markdown links with raw spaces.
+    expect(safeUrl('/path/with space.md')).toBe('/path/with space.md');
+    expect(safeUrl('#section heading with spaces')).toBe('#section heading with spaces');
+    expect(safeUrl('foo bar/baz.md')).toBe('foo bar/baz.md');
+  });
+
   it('rejects javascript: and other dangerous schemes', () => {
     expect(safeUrl('javascript:alert(1)')).toBe('#');
     expect(safeUrl('JaVaScRiPt:alert(1)')).toBe('#');

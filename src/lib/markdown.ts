@@ -24,10 +24,11 @@ export function safeUrl(raw: string): string {
   if (!trimmed) return '#';
   // Reject any whitespace before the first colon. Browsers strip these when
   // resolving the scheme, so `java\tscript:` would be treated as `javascript:`.
-  // We don't let it that far.
+  // Only applied when there IS a colon — a relative path with no colon
+  // (`/path/with space.md`, `#section heading`) may legitimately contain
+  // spaces and should not be rejected.
   const colonIdx = trimmed.indexOf(':');
-  const prefix = colonIdx === -1 ? trimmed : trimmed.slice(0, colonIdx);
-  if (/\s/.test(prefix)) return '#';
+  if (colonIdx >= 0 && /\s/.test(trimmed.slice(0, colonIdx))) return '#';
   // Protocol-relative URLs (`//example.com/path`) are treated as https.
   // Check this BEFORE the generic `/`-prefix branch below.
   if (trimmed.startsWith('//')) return 'https:' + trimmed;

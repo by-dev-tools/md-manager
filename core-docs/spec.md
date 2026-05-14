@@ -4,6 +4,8 @@
 
 A markdown notes app that feels like a calm, single surface. Writing dominates; chrome recedes. The user owns the visual tone (page tint), the data is plain markdown, and connected repos turn the app into a lightweight read/write surface for any markdown content the user keeps in a folder or repository.
 
+md-manager is a sister app to **Designer** (`~/dev/designer/`) — same product family, shared design DNA (sand neutrals, Geist, 3/4/5/6 rhythm, two-tier surface model), but distinct thesis and personality. Where Designer is a manager's cockpit (calm, uniform, monochrome), md-manager is a writing surface (warm, personal, user-tinted). The two should feel like siblings, not clones. See `core-docs/design-language.md` § "Family" for the shared-DNA / intentional-divergence map.
+
 ## Problem
 
 Markdown notes apps tend to one of two failure modes:

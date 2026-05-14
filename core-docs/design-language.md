@@ -6,6 +6,41 @@ Tokens live in `src/styles/globals.css` as CSS custom properties on `:root`.
 
 ---
 
+## Family: sister app to Designer
+
+md-manager and [Designer](/Users/benyamron/dev/designer/) are sister apps in the same product family. They share design DNA but are not copies of each other — each has its own thesis, scope, and personality. The cohesion is intentional; so is the variation.
+
+**Shared DNA — keep these aligned with Designer unless there's a stated reason to diverge:**
+
+- **Foundations:** Radix sand neutrals, Geist (sans) + Geist Mono (mono), no serifs.
+- **Spacing rhythm:** `3/4/5/6` canonical steps (`--space-3` 8px, `--space-4` 16px, `--space-5` 24px, `--space-6` 32px). Other values are exceptions and should be justified.
+- **Radius scale:** badge 3 / button 6 / card 10 / modal 12 / surface 24. Same shape language across both apps.
+- **Type roles in chrome:** three sizes only — caption (13px), body (15px), h3 (18px). Hierarchy is carried by color → weight → size, not by stacking sizes.
+- **Weight policy:** two-and-a-half weights in chrome — regular (400) for prose, medium (500) for labels/buttons/active items, semibold (600) reserved for h3 and numeric-as-signal callouts. No bold in chrome.
+- **Surface tier model:** page + floating surface, not flat panes. The floating content surface sits on the page with `--surface-gutter` breathing room, `--radius-surface` (24px) corners, and a two-layer diffuse shadow stack. Sidebar lives on the page (no fill, no border).
+- **Motion personality:** snappy, mostly functional. Short durations (120–250ms), eased. `prefers-reduced-motion` is required, not optional.
+
+**Where md-manager diverges — on purpose:**
+
+| md-manager has… | Designer has… | Why we diverge |
+|---|---|---|
+| **User-controlled page tint** via the color rail (HSL gradient + presets, set per-doc) | **Monochrome accent policy** — black/white/sand only, no chromatic brand color | Notes are personal artifacts. Designer is a manager's cockpit — calm and uniform serves the user. md-manager is a writing surface — warmth and personalization serve the user. Inverse choices, both intentional. |
+| **Two surface modes** (floating + flat) toggleable per session | One surface posture (floating only) | The note-taking surface is more contemplative than a cockpit. "Posture" matters; the user gets to choose. |
+| **Vanilla CSS** with custom properties in `src/styles/globals.css` | **Mini design system** (`packages/ui/`) with Radix Colors v3 + token layers | md-manager is a small surface area; Mini's tier system is overkill. We may adopt Mini later if scope grows; for now, vanilla CSS with a token discipline is the right weight. |
+| **Light mode only** (currently) | **Light + dark mode parity** required | Punt for the prototype; revisit once persistence + repo sync land. Captured in `roadmap.md`. |
+| **No dev panel** (yet) | **Dev panels** as the canonical design-exploration tool | Same answer as Mini — premature for current scope. Will adopt the pattern if surface tuning becomes ambiguous. |
+
+**When to add a new pattern that diverges from Designer:**
+
+1. **Have a rationalization.** "It's different" isn't a rationale; "the user's primary activity here is X, and the Designer pattern serves Y" is.
+2. **Capture the rationale in `history.md`** when the divergence ships — what was tried, why this won, what we'd revisit.
+3. **Don't reinvent foundations.** Adding a new radius value, a new spacing step, or a new type role requires an axiom-style entry here; ad-hoc one-offs erode the family resemblance.
+4. **Cross-check before committing.** A new pattern in md-manager that *could* benefit Designer is worth flagging in the PR (or a Designer-side issue) so the family stays cohesive.
+
+The goal is sibling resemblance — anyone who knows Designer should recognize md-manager as part of the same family within seconds, but should also feel its distinct personality immediately.
+
+---
+
 ## Core principles
 
 1. **Content over chrome.** The writing surface dominates. Toolbars hide; padding breathes.

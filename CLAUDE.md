@@ -4,6 +4,8 @@ A markdown notes app with a content-forward, warm-neutral interface. Drafts live
 
 **Core thesis:** Notes should feel like a calm, single surface — content over chrome, warmth over sterility, with the user always in control of the visual tone.
 
+**Family:** md-manager is a sister app to [Designer](/Users/benyamron/dev/designer/). They share design DNA (sand neutrals, Geist, 3/4/5/6 spacing rhythm, two-tier floating surface model) but are not copies. New divergent patterns are welcome **with rationalization** — see `core-docs/design-language.md` § "Family: sister app to Designer." The page tint color rail is md-manager's signature divergence (Designer is monochrome by policy; md-manager is user-tinted by policy).
+
 ---
 
 ## Default workflow

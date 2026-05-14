@@ -17,6 +17,9 @@ function escapeQuotes(s: string): string {
 export function safeUrl(raw: string): string {
   const trimmed = raw.trim();
   if (!trimmed) return '#';
+  // Protocol-relative URLs (`//example.com/path`) are treated as https.
+  // Check this BEFORE the generic `/`-prefix branch below.
+  if (trimmed.startsWith('//')) return 'https:' + trimmed;
   // Relative path or fragment is safe.
   if (
     trimmed.startsWith('/') ||
@@ -27,8 +30,6 @@ export function safeUrl(raw: string): string {
   ) {
     return trimmed;
   }
-  // Protocol-relative URLs treated as https.
-  if (trimmed.startsWith('//')) return 'https:' + trimmed;
   const schemeMatch = /^([a-z][a-z0-9+.-]*):/i.exec(trimmed);
   if (!schemeMatch) {
     // No scheme — treat as relative path.

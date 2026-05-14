@@ -819,6 +819,46 @@ body.show-file-icons .md-badge {
   letter-spacing: -0.015em;
   line-height: 1.2;
 }
+/* No-doc placeholder. Warm, terse, no illustration per design-language § Empty states. */
+.editor-empty {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  cursor: default;
+}
+.editor-empty .editor-empty-title {
+  color: var(--sand-11);
+  font-size: var(--type-body);
+  font-weight: var(--weight-medium);
+  margin: 0;
+}
+.editor-empty .editor-empty-hint {
+  color: var(--sand-9);
+  font-size: var(--type-caption);
+  margin: 0;
+}
+.editor-empty .editor-empty-action {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: var(--sand-12);
+  text-decoration: underline;
+  text-decoration-color: var(--gray-a7);
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+.editor-empty .editor-empty-action:hover {
+  text-decoration-color: var(--sand-9);
+}
+.editor-empty kbd {
+  font-family: 'Geist Mono', monospace;
+  font-size: 11px;
+  padding: 1px 5px;
+  background: var(--gray-a5);
+  border-radius: var(--radius-badge);
+  color: var(--sand-11);
+}
 .editor.markdown-mode {
   font-family: 'Geist Mono', monospace;
   font-size: var(--editor-font);

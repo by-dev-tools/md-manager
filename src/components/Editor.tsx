@@ -33,14 +33,30 @@ function updateEmptyState(el: HTMLDivElement) {
 }
 
 export function Editor({ doc, sidebarCollapsed, onToggleSidebar }: EditorProps) {
-  const { updateDraftBody, updateRepoFileBody, deleteDraft, restoreDraft, saving } =
-    useStore();
+  const {
+    createDraft,
+    updateDraftBody,
+    updateRepoFileBody,
+    deleteDraft,
+    restoreDraft,
+    saving,
+  } = useStore();
   const toast = useToast();
   const [viewMode, setViewMode] = useState<ViewMode>('preview');
   const [attachOpen, setAttachOpen] = useState(false);
   const editorRef = useRef<HTMLDivElement>(null);
   const docIdRef = useRef<string | null>(null);
   const lastViewModeRef = useRef<ViewMode>('preview');
+  // Pending debounced round-trip — used by `handleInput` to coalesce keystrokes.
+  // flushPendingPersist() runs the round-trip synchronously; called on blur,
+  // before view-mode switches, and from toolbar commits so persistence is never
+  // stale by more than one frame at those boundaries.
+  const persistTimerRef = useRef<number | null>(null);
+  // Mirror flushPendingPersist into a ref so useLayoutEffect can call it
+  // without making it (or its closure) a dependency. The body callback is
+  // assigned below right after its definition.
+  const flushPendingPersistRef = useRef<() => void>(() => {});
+  const PERSIST_DEBOUNCE_MS = 150;
 
   // When the doc or view mode changes, render fresh content into the
   // contenteditable. The editor is otherwise uncontrolled — we never sync
@@ -50,6 +66,16 @@ export function Editor({ doc, sidebarCollapsed, onToggleSidebar }: EditorProps) 
     if (!el || !doc) return;
     const docChanged = docIdRef.current !== doc.id;
     const viewChanged = lastViewModeRef.current !== viewMode;
+
+    // SAFETY: if there's a pending debounced persist, flush it BEFORE we
+    // overwrite the DOM. The pending snapshot points at the previous doc and
+    // view mode; the DOM still holds the previous content at this point.
+    // Skipping this would either lose the last debounce window of typing or
+    // (worse) attribute it to the new doc.
+    if (docChanged || viewChanged) {
+      flushPendingPersistRef.current();
+    }
+
     docIdRef.current = doc.id;
     lastViewModeRef.current = viewMode;
 
@@ -82,6 +108,36 @@ export function Editor({ doc, sidebarCollapsed, onToggleSidebar }: EditorProps) 
     setAttachOpen(false);
   }, [doc?.id]);
 
+  // The pending work is snapshotted at the moment the user typed — not at
+  // the moment the timer fires. This protects against the case where the user
+  // types in doc A, switches to doc B, and the deferred flush would otherwise
+  // read B's DOM and attribute it to A's id (or vice versa).
+  type Pending = {
+    docId: string;
+    isDraft: boolean;
+    viewMode: ViewMode;
+  };
+  const pendingRef = useRef<Pending | null>(null);
+
+  const flushPendingPersist = useCallback(() => {
+    if (persistTimerRef.current !== null) {
+      window.clearTimeout(persistTimerRef.current);
+      persistTimerRef.current = null;
+    }
+    const pending = pendingRef.current;
+    if (!pending) return;
+    const el = editorRef.current;
+    if (!el) return;
+    pendingRef.current = null;
+    const md =
+      pending.viewMode === 'markdown'
+        ? (el.textContent ?? '')
+        : htmlToMd(el.innerHTML);
+    if (pending.isDraft) updateDraftBody(pending.docId, md);
+    else updateRepoFileBody(pending.docId, md);
+  }, [updateDraftBody, updateRepoFileBody]);
+  flushPendingPersistRef.current = flushPendingPersist;
+
   const handleInput = useCallback(() => {
     const el = editorRef.current;
     if (!el || !doc) return;
@@ -94,25 +150,56 @@ export function Editor({ doc, sidebarCollapsed, onToggleSidebar }: EditorProps) 
     }
     updateEmptyState(el);
 
-    if (viewMode === 'markdown') {
-      const md = el.textContent ?? '';
-      if (doc.kind === 'draft') updateDraftBody(doc.id, md);
-      else updateRepoFileBody(doc.id, md);
-      return;
+    pendingRef.current = {
+      docId: doc.id,
+      isDraft: doc.kind === 'draft',
+      viewMode,
+    };
+    if (persistTimerRef.current !== null) {
+      window.clearTimeout(persistTimerRef.current);
     }
+    persistTimerRef.current = window.setTimeout(
+      flushPendingPersist,
+      PERSIST_DEBOUNCE_MS,
+    );
+  }, [doc, viewMode, flushPendingPersist]);
 
-    // Preview mode: round-trip the contenteditable DOM back to markdown so
-    // formatting toolbar actions and direct edits persist.
-    const md = htmlToMd(el.innerHTML);
-    if (doc.kind === 'draft') updateDraftBody(doc.id, md);
-    else updateRepoFileBody(doc.id, md);
-  }, [doc, viewMode, updateDraftBody, updateRepoFileBody]);
+  // Cancel any outstanding timer on unmount. (The timer itself runs synchronous
+  // work, so a late fire wouldn't crash — but it could write into an unmounted
+  // tree.)
+  useEffect(() => {
+    return () => {
+      if (persistTimerRef.current !== null) {
+        window.clearTimeout(persistTimerRef.current);
+        persistTimerRef.current = null;
+      }
+    };
+  }, []);
 
   const commitFromToolbar = useCallback(() => {
-    // execCommand mutates the DOM directly and doesn't fire input events
-    // in every browser; nudge the input handler manually.
+    // execCommand doesn't always fire an input event. Make sure the pending
+    // snapshot reflects post-toolbar DOM before flushing.
     handleInput();
-  }, [handleInput]);
+    flushPendingPersist();
+  }, [handleInput, flushPendingPersist]);
+
+  // ⌘E / Ctrl+E toggles Preview / Markdown. Document-level so the user can
+  // invoke it without focusing the contenteditable (e.g. right after attaching).
+  useEffect(() => {
+    if (!doc) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (!(e.metaKey || e.ctrlKey)) return;
+      if (e.key.toLowerCase() !== 'e') return;
+      if (e.shiftKey || e.altKey) return;
+      e.preventDefault();
+      // Flush the current view's content before flipping modes so the new
+      // view renders from up-to-date source.
+      flushPendingPersist();
+      setViewMode((v) => (v === 'preview' ? 'markdown' : 'preview'));
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [doc, flushPendingPersist]);
 
   // ⌘/Ctrl-click on a link in preview mode opens the URL in a new tab. Plain
   // click stays as caret-placement so authoring isn't disrupted. The mdToHtml
@@ -199,7 +286,20 @@ export function Editor({ doc, sidebarCollapsed, onToggleSidebar }: EditorProps) 
           />
         </div>
         <div className="editor-wrap">
-          <div className="editor" />
+          <div className="editor editor-empty">
+            <p className="editor-empty-title">No draft selected.</p>
+            <p className="editor-empty-hint">
+              Pick one from the sidebar, or{' '}
+              <button
+                type="button"
+                className="editor-empty-action"
+                onClick={() => createDraft('unattached')}
+              >
+                start a new draft
+              </button>
+              {' '}— <kbd>⌘N</kbd>.
+            </p>
+          </div>
         </div>
       </>
     );
@@ -211,12 +311,7 @@ export function Editor({ doc, sidebarCollapsed, onToggleSidebar }: EditorProps) 
         doc={doc}
         viewMode={viewMode}
         setViewMode={(v) => {
-          const el = editorRef.current;
-          if (el && viewMode === 'markdown') {
-            const md = el.textContent ?? '';
-            if (doc.kind === 'draft') updateDraftBody(doc.id, md);
-            else updateRepoFileBody(doc.id, md);
-          }
+          flushPendingPersist();
           setViewMode(v);
         }}
         attachOpen={attachOpen}
@@ -251,10 +346,18 @@ export function Editor({ doc, sidebarCollapsed, onToggleSidebar }: EditorProps) 
           className="editor"
           contentEditable
           suppressContentEditableWarning
+          role="textbox"
+          aria-multiline="true"
+          aria-label={
+            doc.kind === 'draft'
+              ? doc.title || 'Untitled draft'
+              : `${doc.path}${doc.name}`
+          }
           data-placeholder={placeholder}
           onInput={handleInput}
           onKeyDown={handleKeyDown}
           onClick={handleClick}
+          onBlur={flushPendingPersist}
         />
       </div>
       <FloatingToolbar

@@ -20,8 +20,10 @@ Picked, scoped, ready to start once `Now` clears.
 
 | Workstream | Priority | Status | Notes |
 |---|---|---|---|
-| Persistence (drafts survive a reload) | P0 | Scoped | Pick localStorage vs IndexedDB vs FSA API. Open question in `spec.md`. Likely the first real feature. |
+| **Adopt Mini design system** | P0 | Not scoped | Swap vanilla CSS for Mini (`packages/ui/` style — same pattern Designer uses). User has signaled this is coming soon. Bridge any new tokens to Mini-compatible shapes so the migration is mechanical. |
+| Persistence (drafts survive a reload) | P0 | Scoped | Pick localStorage vs IndexedDB vs FSA API. Open question in `spec.md`. Likely the first real feature after Mini. |
 | Repo-sync v0 (read-only) | P1 | Not scoped | Browse a local path's `.md` files. Decide between FS Access API (browser-only, no install) or a local helper. |
+| **Surface posture decision** | P1 | Open question | Decide: keep both floating + flat, drop one, or rethink. Currently both ship in the prototype; the design-language doc treats this as undecided. |
 
 ## Later (named but not designed yet)
 
@@ -31,9 +33,10 @@ Real intent, not yet ready to pick up.
 - **GitHub repo connections** — clone, read, write, commit via GitHub API or GitHub App
 - **Search** — across drafts + repo files; live filter in the sidebar
 - **Tags / frontmatter** — extract frontmatter; tag-based filtering
-- **Dark mode** — explicit design pass; currently light-only
+- **Dark mode** — explicit design pass; currently light-only. May get pulled forward by Mini adoption (Mini requires light + dark parity).
 - **Keyboard-shortcut help overlay** — `?` opens a cheat sheet
 - **Markdown rendering quality pass** — code blocks with syntax highlighting, task lists, tables
+- **Dev panel** (if surface tuning becomes ambiguous) — same pattern as Designer's SurfaceDevPanel
 
 ## Someday / maybe
 

@@ -11,9 +11,12 @@ Documenting the project and standing up the agent workflow. Prototype scaffold (
 ## Handoff Notes
 
 - Project initialized via `/init-project` on 2026-05-13. Skills (`/staff-review`, `/ship`, `/link`, `/security-review`, `/accessibility-review`) are wired up. Workflow is documented in `workflow.md`.
-- The `package.json` still says `"name": "mumbai"` from the original scaffold. Rename to `md-manager` (or whatever the canonical name is) the next time we touch it — flagged as low-priority cleanup in `roadmap.md`.
-- Stale forge-cache files were wiped from `.claude/forge/cache/`. `.claude/settings.local.json` was inherited from the template and may have stale permission entries — review next session.
-- Persistence, repo sync, and search are all unresolved; see "Open questions" in `spec.md`. The first feature work probably starts with picking one of these.
+- **md-manager is a sister app to Designer.** Shared design DNA (sand, Geist, 3/4/5/6 rhythm, surface tier model); intentional divergence on page tint. See `design-language.md` § "Family" for the full map of confirmed vs. open-question divergences.
+- **Two key things are still undecided** — do not lock them shut without an explicit user call:
+  1. **Surface posture:** keep both floating + flat, drop one, or rethink. Currently both ship.
+  2. **Mini adoption:** likely soon. Treat any new tokens or patterns added before then as bridge work that should port cleanly to Mini.
+- The `package.json` still says `"name": "mumbai"` from the original scaffold. Rename when next touching it — flagged as low-priority cleanup in `roadmap.md`.
+- Persistence, repo sync, and search are all unresolved; see "Open questions" in `spec.md`.
 
 ## Active Work Items
 

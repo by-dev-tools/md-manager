@@ -20,15 +20,22 @@ md-manager and [Designer](/Users/benyamron/dev/designer/) are sister apps in the
 - **Surface tier model:** page + floating surface, not flat panes. The floating content surface sits on the page with `--surface-gutter` breathing room, `--radius-surface` (24px) corners, and a two-layer diffuse shadow stack. Sidebar lives on the page (no fill, no border).
 - **Motion personality:** snappy, mostly functional. Short durations (120–250ms), eased. `prefers-reduced-motion` is required, not optional.
 
-**Where md-manager diverges — on purpose:**
+**Confirmed divergences (intentional, don't undo):**
 
 | md-manager has… | Designer has… | Why we diverge |
 |---|---|---|
 | **User-controlled page tint** via the color rail (HSL gradient + presets, set per-doc) | **Monochrome accent policy** — black/white/sand only, no chromatic brand color | Notes are personal artifacts. Designer is a manager's cockpit — calm and uniform serves the user. md-manager is a writing surface — warmth and personalization serve the user. Inverse choices, both intentional. |
-| **Two surface modes** (floating + flat) toggleable per session | One surface posture (floating only) | The note-taking surface is more contemplative than a cockpit. "Posture" matters; the user gets to choose. |
-| **Vanilla CSS** with custom properties in `src/styles/globals.css` | **Mini design system** (`packages/ui/`) with Radix Colors v3 + token layers | md-manager is a small surface area; Mini's tier system is overkill. We may adopt Mini later if scope grows; for now, vanilla CSS with a token discipline is the right weight. |
-| **Light mode only** (currently) | **Light + dark mode parity** required | Punt for the prototype; revisit once persistence + repo sync land. Captured in `roadmap.md`. |
-| **No dev panel** (yet) | **Dev panels** as the canonical design-exploration tool | Same answer as Mini — premature for current scope. Will adopt the pattern if surface tuning becomes ambiguous. |
+
+**Open questions (currently divergent in the prototype, not yet decided):**
+
+| Area | Current state | Designer's choice | Decision status |
+|---|---|---|---|
+| **Surface posture** | Two modes shipped in the prototype: floating (rounded card on a gutter) and flat (full-bleed). Toggleable per session. | Floating only. | **Undecided.** Keep both, drop one, or rethink entirely is all on the table. Don't treat the current dual-mode as a finalized stance. |
+| **Design system** | Vanilla CSS with custom-property tokens in `src/styles/globals.css`. | Mini (`packages/ui/`) with Radix Colors v3 + token layers. | **Likely adopting Mini soon.** The current vanilla setup is fine for the prototype; treat any new tokens or patterns as bridge work that should port cleanly to Mini when we move. Don't add elaborate token machinery here that Mini already provides. |
+| **Dark mode** | Light only (currently). | Light + dark parity required. | **Punted for the prototype.** Captured in `roadmap.md`. Revisit when persistence + repo sync land, or sooner if Mini adoption forces it. |
+| **Dev panel** | None. | Dev panels as the canonical design-exploration tool. | **Open.** Will adopt the pattern if surface tuning becomes ambiguous; not warranted at current scope. |
+
+When working in any of the "Open questions" rows, treat them as undecided — don't write code or docs that lock the question shut without an explicit user call.
 
 **When to add a new pattern that diverges from Designer:**
 
@@ -119,12 +126,12 @@ Editor body padding: `40px 32px 60px` — wider than the base scale because the 
 
 ## Surface modes
 
-Two postures for the main content surface — set via the segmented control or overflow menu.
+> **Status: undecided.** The prototype currently ships both modes (toggleable via the segmented control or overflow menu). The final answer — flat only, floating only, or both — is an open question. See § "Family: sister app to Designer" for the open-question framing. The shapes below document **current behavior**, not a committed choice.
 
 - **Floating** — `margin: var(--surface-gutter)` (12px), `border-radius: var(--radius-surface)` (24px), `box-shadow: var(--surface-shadow)`, `background: rgba(255,255,255,0.75)`. The surface looks like a card on the page tint.
 - **Flat** — full-bleed, no margin, no radius, no shadow, surface background matches page tint. The page is the surface.
 
-Transition between modes: 200ms ease on margin / border-radius / box-shadow / background — simultaneously, in sync.
+Transition between modes (while both exist): 200ms ease on margin / border-radius / box-shadow / background — simultaneously, in sync.
 
 ## Depth model
 

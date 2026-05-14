@@ -22,7 +22,7 @@ A two-pane app — sidebar + content surface — built on five constraints:
 1. **Content over chrome.** Generous padding, a single-column writing area, no permanent toolbars cluttering the surface.
 2. **Warm neutrals.** Radix-style sand palette with Geist + Geist Mono typography. Modern, not retro.
 3. **User-controlled page tint.** A vertical color rail on the right edge lets the user pick the page's background hue. The entire surface reflows tone in 200ms.
-4. **Two surface modes.** *Floating* (rounded card with shadow, gutter around it) and *flat* (full-bleed, no chrome). Same content, two postures.
+4. **Surface posture is the user's call (open question).** The prototype ships two modes — *floating* (rounded card with shadow, gutter around it) and *flat* (full-bleed, no chrome) — toggleable per session. Whether we keep both, pick one, or rethink is undecided.
 5. **Markdown-first persistence.** Notes are `.md` files. Drafts live in-app; once connected to a repo, files are read from / written to that repo's filesystem.
 
 ## Features
@@ -35,7 +35,7 @@ A two-pane app — sidebar + content surface — built on five constraints:
 | File tree | Folder + file navigation inside a connected repo | Shipped (prototype) |
 | Markdown editor | Contenteditable surface, preview and markdown modes | Shipped (prototype) |
 | Page-tint color rail | HSL gradient slider + presets + manual color picker on the right edge | Shipped (prototype) |
-| Surface mode toggle | Floating vs flat | Shipped (prototype) |
+| Surface mode toggle | Floating vs flat | Prototype only — final answer undecided (keep both / drop one / rethink) |
 | Attach popover | Attach a draft to a repo / detach | Shipped (prototype) |
 | Overflow menu | Per-doc actions (delete, rename, etc.) | Shipped (prototype, scope TBD) |
 | Keyboard shortcuts | ⌘N new draft; ⎋ closes modals | Shipped (prototype) |
@@ -75,4 +75,6 @@ None currently. If GitHub repo sync is implemented, OAuth + rate-limited API cal
   - How does persistence work? (localStorage for drafts? IndexedDB? File System Access API?)
   - How does repo sync actually function — local file watcher? GitHub API? GitHub App?
   - Is there a "publish" concept (draft → repo-file promotion), or do drafts and repo-files always stay distinct?
+  - **Surface posture:** keep both floating and flat? Drop one? Rethink entirely? (Currently both ship in the prototype.)
+  - **Mini adoption:** when to swap vanilla CSS for the Mini design system. Likely soon.
   - Dark mode: needed in v1, or punt?

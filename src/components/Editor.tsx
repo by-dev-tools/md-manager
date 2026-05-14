@@ -128,15 +128,25 @@ export function Editor({ doc, sidebarCollapsed, onToggleSidebar }: EditorProps) 
     if (!pending) return;
     const el = editorRef.current;
     if (!el) return;
-    pendingRef.current = null;
     const md =
       pending.viewMode === 'markdown'
         ? (el.textContent ?? '')
         : htmlToMd(el.innerHTML);
-    if (pending.isDraft) updateDraftBody(pending.docId, md);
-    else updateRepoFileBody(pending.docId, md);
+    // Clear pendingRef only AFTER the write completes. If the update were to
+    // throw, the snapshot stays in place and a later flush can retry.
+    try {
+      if (pending.isDraft) updateDraftBody(pending.docId, md);
+      else updateRepoFileBody(pending.docId, md);
+    } finally {
+      pendingRef.current = null;
+    }
   }, [updateDraftBody, updateRepoFileBody]);
-  flushPendingPersistRef.current = flushPendingPersist;
+  // Mirror current flush into the ref via useEffect, not during render. Assigning
+  // to refs in the render body is technically tolerated but flagged by linters
+  // and can subtly break StrictMode's double-invocation semantics.
+  useEffect(() => {
+    flushPendingPersistRef.current = flushPendingPersist;
+  }, [flushPendingPersist]);
 
   const handleInput = useCallback(() => {
     const el = editorRef.current;
@@ -150,6 +160,18 @@ export function Editor({ doc, sidebarCollapsed, onToggleSidebar }: EditorProps) 
     }
     updateEmptyState(el);
 
+    // SAFETY: mark the draft as edited eagerly. If we waited for the debounced
+    // flush, a quick switch-doc within 150ms could trip the pristine-drop helper
+    // and delete a draft the user just typed in. Setting wasEverEdited on the
+    // first input flips the flag before any nav-away can fire.
+    if (doc.kind === 'draft' && !doc.wasEverEdited) {
+      const text =
+        viewMode === 'markdown' ? (el.textContent ?? '') : htmlToMd(el.innerHTML);
+      if (text.length > 0) {
+        updateDraftBody(doc.id, text);
+      }
+    }
+
     pendingRef.current = {
       docId: doc.id,
       isDraft: doc.kind === 'draft',
@@ -162,7 +184,7 @@ export function Editor({ doc, sidebarCollapsed, onToggleSidebar }: EditorProps) 
       flushPendingPersist,
       PERSIST_DEBOUNCE_MS,
     );
-  }, [doc, viewMode, flushPendingPersist]);
+  }, [doc, viewMode, flushPendingPersist, updateDraftBody]);
 
   // Cancel any outstanding timer on unmount. (The timer itself runs synchronous
   // work, so a late fire wouldn't crash — but it could write into an unmounted
@@ -191,6 +213,13 @@ export function Editor({ doc, sidebarCollapsed, onToggleSidebar }: EditorProps) 
       if (!(e.metaKey || e.ctrlKey)) return;
       if (e.key.toLowerCase() !== 'e') return;
       if (e.shiftKey || e.altKey) return;
+      // Don't steal the shortcut when the user is typing in another input
+      // (sidebar search, link-bubble URL field, AddRepo modal). Allow it
+      // when focus is on the contenteditable — toggling view mid-write is
+      // the whole point of the shortcut.
+      const target = e.target as HTMLElement | null;
+      const tag = target?.tagName.toLowerCase();
+      if (tag === 'input' || tag === 'textarea') return;
       e.preventDefault();
       // Flush the current view's content before flipping modes so the new
       // view renders from up-to-date source.
@@ -331,9 +360,10 @@ export function Editor({ doc, sidebarCollapsed, onToggleSidebar }: EditorProps) 
                 if (!removed) return;
                 toast.push({
                   message: 'Draft deleted',
+                  priority: 'assertive',
                   action: {
                     label: 'Undo',
-                    onClick: () => restoreDraft(removed),
+                    onClick: () => restoreDraft(removed, { reselect: true }),
                   },
                 });
               }
@@ -348,11 +378,7 @@ export function Editor({ doc, sidebarCollapsed, onToggleSidebar }: EditorProps) 
           suppressContentEditableWarning
           role="textbox"
           aria-multiline="true"
-          aria-label={
-            doc.kind === 'draft'
-              ? doc.title || 'Untitled draft'
-              : `${doc.path}${doc.name}`
-          }
+          aria-label={doc.kind === 'draft' ? 'Draft editor' : 'Repo file editor'}
           data-placeholder={placeholder}
           onInput={handleInput}
           onKeyDown={handleKeyDown}
@@ -434,7 +460,7 @@ function EditorHeader({
         <button
           className={viewMode === 'preview' ? 'active' : ''}
           onClick={() => setViewMode('preview')}
-          title="Preview"
+          title="Preview (⌘E)"
           aria-label="Preview"
         >
           <EyeIcon />
@@ -442,7 +468,7 @@ function EditorHeader({
         <button
           className={viewMode === 'markdown' ? 'active' : ''}
           onClick={() => setViewMode('markdown')}
-          title="Markdown"
+          title="Markdown (⌘E)"
           aria-label="Markdown"
         >
           <CodeIcon />

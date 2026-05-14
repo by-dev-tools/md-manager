@@ -15,6 +15,7 @@
   --gray-a7: rgba(0, 0, 0, 0.11);
 
   /* Type */
+  --type-micro: 11px;
   --type-caption: 13px;
   --type-body: 15px;
   --type-h3: 18px;
@@ -805,6 +806,8 @@ body.show-file-icons .md-badge {
 }
 .editor:focus,
 .editor *:focus {
+  /* The blinking text caret is the focus indicator for a contenteditable;
+     a bounding outline around the entire writing surface would be noise. */
   outline: none;
 }
 .editor.is-empty::before {
@@ -847,13 +850,19 @@ body.show-file-icons .md-badge {
   text-decoration-color: var(--gray-a7);
   text-underline-offset: 2px;
   cursor: pointer;
+  border-radius: var(--radius-badge);
 }
 .editor-empty .editor-empty-action:hover {
   text-decoration-color: var(--sand-9);
 }
+.editor-empty .editor-empty-action:focus-visible {
+  outline: 2px solid var(--sand-9);
+  outline-offset: 2px;
+  text-decoration-color: var(--sand-11);
+}
 .editor-empty kbd {
   font-family: 'Geist Mono', monospace;
-  font-size: 11px;
+  font-size: var(--type-micro);
   padding: 1px 5px;
   background: var(--gray-a5);
   border-radius: var(--radius-badge);
@@ -1250,6 +1259,13 @@ body.show-file-icons .md-badge {
 .floating-toolbar-link input[type='url']:focus {
   border-color: rgba(255, 255, 255, 0.4);
   background: rgba(255, 255, 255, 0.12);
+}
+.floating-toolbar-link.has-error input[type='url'] {
+  border-color: rgba(255, 160, 160, 0.65);
+  background: rgba(255, 160, 160, 0.12);
+}
+.floating-toolbar-link.has-error input[type='url']::placeholder {
+  color: rgba(255, 200, 200, 0.75);
 }
 
 /* ───── Toasts ───── */

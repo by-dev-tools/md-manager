@@ -58,7 +58,12 @@ export function FloatingToolbar({ editorRef, onCommit, enabled }: Props) {
   const [pos, setPos] = useState<Pos | null>(null);
   const [linkMode, setLinkMode] = useState(false);
   const [linkUrl, setLinkUrl] = useState('');
+  const [linkError, setLinkError] = useState(false);
   const savedRangeRef = useRef<Range | null>(null);
+  // Where focus lived before the user entered link mode (typically the editor).
+  // Restored on cancel / after submit so keyboard users aren't stranded in the
+  // void when ESC dismisses the bubble.
+  const focusReturnRef = useRef<HTMLElement | null>(null);
   const toolbarRef = useRef<HTMLDivElement>(null);
   const linkInputRef = useRef<HTMLInputElement>(null);
   // Mirror linkMode into a ref so recompute() — which captures via closure
@@ -186,14 +191,37 @@ export function FloatingToolbar({ editorRef, onCommit, enabled }: Props) {
     if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return;
     // Stash the selection — focusing the input below will collapse it.
     savedRangeRef.current = sel.getRangeAt(0).cloneRange();
+    // Remember where focus came from so we can hand it back on cancel/submit.
+    const active = document.activeElement;
+    focusReturnRef.current =
+      active instanceof HTMLElement ? active : editorRef.current;
     setLinkUrl('');
+    setLinkError(false);
     setLinkMode(true);
+  };
+
+  const restoreFocus = () => {
+    // Restore the editor selection range first, then move focus back. Without
+    // the focus call the editor's caret can land in the wrong spot.
+    const range = savedRangeRef.current;
+    if (range) {
+      const sel = window.getSelection();
+      if (sel) {
+        sel.removeAllRanges();
+        sel.addRange(range);
+      }
+    }
+    const target = focusReturnRef.current ?? editorRef.current;
+    target?.focus();
   };
 
   const cancelLink = () => {
     setLinkMode(false);
     setLinkUrl('');
+    setLinkError(false);
+    restoreFocus();
     savedRangeRef.current = null;
+    focusReturnRef.current = null;
   };
 
   const submitLink = () => {
@@ -204,9 +232,13 @@ export function FloatingToolbar({ editorRef, onCommit, enabled }: Props) {
     }
     const safe = safeUrl(raw);
     if (safe === '#') {
-      // Rejected scheme — leave the toolbar in link-input mode so the user
-      // can correct it. We don't surface a visible error UI yet; the input
-      // ringing red on the next iteration would be a Slice-C polish item.
+      // Rejected scheme — surface the failure rather than silently no-op'ing
+      // the submit (that would be a false affordance, see CLAUDE.md § Quality
+      // posture). The user sees the input ring + an inline message; the
+      // toolbar stays in link mode so they can correct.
+      setLinkError(true);
+      linkInputRef.current?.focus();
+      linkInputRef.current?.select();
       return;
     }
     // Restore the editor selection so createLink targets the original range.
@@ -229,7 +261,11 @@ export function FloatingToolbar({ editorRef, onCommit, enabled }: Props) {
         }
       });
     }
-    cancelLink();
+    setLinkMode(false);
+    setLinkUrl('');
+    setLinkError(false);
+    savedRangeRef.current = null;
+    focusReturnRef.current = null;
     onCommit();
   };
 
@@ -279,7 +315,7 @@ export function FloatingToolbar({ editorRef, onCommit, enabled }: Props) {
     >
       {linkMode ? (
         <form
-          className="floating-toolbar-link"
+          className={`floating-toolbar-link${linkError ? ' has-error' : ''}`}
           onSubmit={(e) => {
             e.preventDefault();
             submitLink();
@@ -289,10 +325,14 @@ export function FloatingToolbar({ editorRef, onCommit, enabled }: Props) {
             ref={linkInputRef}
             type="url"
             inputMode="url"
-            placeholder="Paste link"
+            placeholder={linkError ? 'Use http, https, or mailto' : 'Paste link'}
             value={linkUrl}
-            onChange={(e) => setLinkUrl(e.target.value)}
+            onChange={(e) => {
+              setLinkUrl(e.target.value);
+              if (linkError) setLinkError(false);
+            }}
             aria-label="Link URL"
+            aria-invalid={linkError || undefined}
           />
           <button type="submit" title="Apply link" aria-label="Apply link">↵</button>
           <button

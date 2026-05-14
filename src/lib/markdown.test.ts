@@ -51,10 +51,12 @@ describe('mdToHtml — link sanitization', () => {
     expect(html).not.toMatch(/javascript:/i);
   });
 
-  it('preserves valid http link with rel attribute', () => {
+  it('preserves valid http link with rel and discoverability title', () => {
     const html = mdToHtml('[ok](https://example.com)');
     expect(html).toContain('href="https://example.com"');
     expect(html).toContain('rel="noopener noreferrer"');
+    // The title teaches the user that links open on ⌘-click, not plain click.
+    expect(html).toContain('title="⌘-click to open"');
   });
 
   it('escapes quotes in href to prevent attribute-break-out', () => {

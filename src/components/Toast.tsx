@@ -19,8 +19,13 @@ interface ToastInput {
   message: string;
   /** Optional undo / retry action; shown as a button next to the message. */
   action?: ToastAction;
-  /** Auto-dismiss in ms. Default 5000. Pass 0 to require manual dismiss. */
+  /** Auto-dismiss in ms. If omitted, action toasts default to 8000 and
+      passive toasts to 4000. Pass 0 to require manual dismiss. */
   durationMs?: number;
+  /** 'assertive' interrupts screen reader output — use for destructive actions
+      where the user must know immediately. 'polite' (default) waits for a quiet
+      moment. */
+  priority?: 'polite' | 'assertive';
 }
 
 interface Toast extends ToastInput {
@@ -53,7 +58,10 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       const id = nextIdRef.current++;
       const full: Toast = { id, ...toast };
       setToasts((ts) => [...ts, full]);
-      const duration = toast.durationMs ?? 5000;
+      // Action toasts need time to reach + read + click Undo — especially for
+      // motor-impaired users. Default to 8s when there's an action, 4s when not.
+      const defaultDuration = toast.action ? 8000 : 4000;
+      const duration = toast.durationMs ?? defaultDuration;
       if (duration > 0) {
         const timer = window.setTimeout(() => dismiss(id), duration);
         timersRef.current.set(id, timer);
@@ -93,8 +101,16 @@ function ToastHost({
   onDismiss: (id: number) => void;
 }) {
   if (toasts.length === 0) return null;
+  // Use 'assertive' on the host if ANY current toast is assertive; otherwise
+  // 'polite'. ARIA-live regions can't switch politeness per child, so this is
+  // the pragmatic compromise.
+  const liveness: 'assertive' | 'polite' = toasts.some(
+    (t) => t.priority === 'assertive',
+  )
+    ? 'assertive'
+    : 'polite';
   return (
-    <div className="toast-host" role="status" aria-live="polite">
+    <div className="toast-host" role="status" aria-live={liveness}>
       {toasts.map((t) => (
         <div key={t.id} className="toast">
           <span className="toast-message">{t.message}</span>

@@ -73,8 +73,9 @@ interface StoreApi {
   selectDoc: (id: DocId | null) => void;
   createDraft: (target: RepoId | 'unattached') => DraftId;
   deleteDraft: (id: DraftId) => Draft | null;
-  /** Re-insert a previously-deleted draft (used by undo-toast). */
-  restoreDraft: (draft: Draft) => void;
+  /** Re-insert a previously-deleted draft (used by undo-toast). Pass
+      `reselect: true` to also restore selection to the recovered draft. */
+  restoreDraft: (draft: Draft, opts?: { reselect?: boolean }) => void;
   updateDraftBody: (id: DraftId, md: string) => void;
   /** Cheap title-only update for preview-mode edits that don't round-trip. */
   setDraftTitle: (id: DraftId, title: string) => void;
@@ -189,12 +190,19 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     return removed;
   }, []);
 
-  const restoreDraft = useCallback((draft: Draft) => {
-    setState((s) => {
-      if (s.drafts.some((d) => d.id === draft.id)) return s;
-      return { ...s, drafts: [draft, ...s.drafts] };
-    });
-  }, []);
+  const restoreDraft = useCallback(
+    (draft: Draft, opts?: { reselect?: boolean }) => {
+      setState((s) => {
+        if (s.drafts.some((d) => d.id === draft.id)) return s;
+        return {
+          ...s,
+          drafts: [draft, ...s.drafts],
+          selectedDocId: opts?.reselect ? draft.id : s.selectedDocId,
+        };
+      });
+    },
+    [],
+  );
 
   const updateDraftBody = useCallback((id: DraftId, md: string) => {
     setState((s) => ({

@@ -51,7 +51,7 @@ function inline(text: string): string {
     .replace(
       /\[([^\]]+)\]\(([^)]+)\)/g,
       (_match, label, href) =>
-        `<a href="${escapeQuotes(safeUrl(href))}" rel="noopener noreferrer">${label}</a>`,
+        `<a href="${escapeQuotes(safeUrl(href))}" rel="noopener noreferrer" title="⌘-click to open">${label}</a>`,
     );
 }
 

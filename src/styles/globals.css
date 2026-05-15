@@ -9,9 +9,8 @@
   --sand-11: #63615b;
   --sand-12: #21201c;
 
-  /* Tint overlays — alpha-black washes applied over --page-tint.
-     Renamed from --gray-a5/6/7 to avoid the names-clash with Mini's
-     Radix-imported --gray-a* scale (FB-0024, see token-migration.md). */
+  /* Tint overlays — alpha-black washes over --page-tint.
+     Renamed from --gray-a5/6/7 to avoid clash with Mini's Radix --gray-a* scale; see core-docs/token-migration.md. */
   --tint-overlay-light: rgba(0, 0, 0, 0.05);
   --tint-overlay-medium: rgba(0, 0, 0, 0.075);
   --tint-overlay-strong: rgba(0, 0, 0, 0.11);

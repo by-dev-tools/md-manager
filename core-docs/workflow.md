@@ -9,7 +9,7 @@ How features get built and shipped on md-manager. Every non-trivial change follo
 ```
  1. Request         user proposes a feature / change / fix
  2. Clarify         Claude asks targeted questions, reviews relevant docs
- 3. Plan            Claude writes a plan; user approves or redirects
+ 3. Plan            Claude writes a plan; runs /critique-plan; user approves or redirects
  4. Execute         Claude implements
  5. Commit          Claude commits with a clear "why" message
  6. Simplify        /simplify — reuse, clarity, efficiency; fix in-tree
@@ -46,7 +46,15 @@ Claude writes a plan covering:
 - **Files touched** — anticipated paths.
 - **Doc updates expected** — which core docs will change as a result.
 
-User approves, redirects, or asks for revision. **Claude does not start executing until the plan is approved.**
+Then run `/critique-plan` (assumption-auditor plugin). The plan-critic reviews the plan against the user's request and `core-docs/*.md`, returning either `APPROVED` or a `CRITIQUE SUMMARY` with BLOCKER / REDIRECT / FOLLOW-UP findings.
+
+- **BLOCKER** — fix in-plan before showing it to the user.
+- **REDIRECT** — surface to the user as part of the approval conversation.
+- **FOLLOW-UP** — capture to `plan.md` or `roadmap.md`, do not block.
+
+If the assumption-auditor plugin is not installed, skip the critique step and rely on the human gate alone.
+
+User approves, redirects, or asks for revision. **Claude does not start executing until the plan is approved.** The critic informs the user's decision; it does not replace the human gate.
 
 ## 4. Execute
 
@@ -145,6 +153,7 @@ If a `staff-review` or `ship` finding suggests a missing rule, write the rule. I
 | `/security-review` | Diff-focused security audit | Standalone; also invoked by `/ship` |
 | `/accessibility-review` | Diff-focused WCAG 2.1 AA audit | Standalone; also invoked by `/ship` |
 | `/ship` | Final-pass reviews + doc updates + commit + push + PR (no merge) | When the user says "ship it" |
+| `/critique-plan` | Critique plan for scope/spec/coherence vs. core-docs | After writing a plan, before user approval |
 
 ## Optional: context-isolation agents
 

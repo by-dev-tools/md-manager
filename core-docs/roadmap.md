@@ -10,7 +10,7 @@ Deferred follow-ups from `/staff-review` and `/ship` land here when they're real
 
 Work that's actively being designed or about to start.
 
-_(No active workstream — init-project shipped in PR #3. Next session picks from "Next" below.)_
+- **Mini adoption — PR B: Elicit + evolve design language.** PR A (install) shipped on branch `mini-install`. Next session runs `/elicit-design-language` archaeology mode, manually stitches output with the legacy hand-written `design-language.md` (FB-0016). PR C (token + component migration) follows.
 
 ## Next (the next 1–2 features after the current one)
 
@@ -18,10 +18,10 @@ Picked, scoped, ready to start once `Now` clears.
 
 | Workstream | Priority | Status | Notes |
 |---|---|---|---|
-| **Adopt Mini design system** | P0 | Not scoped | Swap vanilla CSS for Mini (`packages/ui/` style — same pattern Designer uses). User has signaled this is coming soon. Bridge any new tokens to Mini-compatible shapes so the migration is mechanical. |
-| Persistence (drafts survive a reload) | P0 | Scoped | Pick localStorage vs IndexedDB vs FSA API. Open question in `spec.md`. Likely the first real feature after Mini. |
+| **Mini adoption — PR C: Token + component migration** | P0 | Scoped (iterative) | After PR B. Tokens first, then Toast → Mini Toast archetype, then dialogs/popovers, then layout primitives. Each component its own PR. Prerequisites captured under "From PR A staff review" below. |
+| Persistence (drafts survive a reload) | P0 | Scoped | Pick localStorage vs IndexedDB vs FSA API. Open question in `spec.md`. First real feature after Mini settles. |
 | Repo-sync v0 (read-only) | P1 | Not scoped | Browse a local path's `.md` files. Decide between FS Access API (browser-only, no install) or a local helper. |
-| **Surface posture decision** | P1 | Open question | Decide: keep both floating + flat, drop one, or rethink. Currently both ship in the prototype; the design-language doc treats this as undecided. |
+| **Surface posture decision** | P1 | Forced by PR B | Mini's "surface hierarchy depth" axiom forces a 1–4 tier choice during elicitation. The currently-prototyped floating + flat duo gets resolved as part of PR B. |
 
 ## Later (named but not designed yet)
 
@@ -79,6 +79,7 @@ Captured by `/staff-review` and `/ship` so they don't get lost.
 - **`tsconfig.json` `include` expansion at PR C entry.** Currently `"include": ["src"]`. The `@mini/*` path alias is defined but inert until the first TS file imports from `@mini/primitives` (PR C). When that happens, TypeScript will need `"packages/ui/src"` added to `include` (or path-mapping alone may suffice, depending on `moduleResolution: "bundler"` behavior). Verify at PR C start; if a test import from `@mini/Box` typechecks without an include change, this is moot.
 - **Alias scheme decision: single `@mini` vs split `@mini`/`@mini-styles`.** Designer uses a single `@mini` aliased to `packages/ui/styles`, so `@mini/tokens.css` works directly. We split into `@mini-styles/*.css` (CSS) and `@mini/*` (TS) for explicit contracts. Both work; PR B or C should pick one for family lockstep with Designer.
 - **`PROJECT_SKILLS` array maintenance burden.** `scripts/sync-mini.sh` hardcodes the 5 project skills to back up. Any new project-owned skill must be added by hand or it silently disappears on the next Mini sync. Cheap mitigation: have the wrapper read `find .claude/skills -maxdepth 1 -mindepth 1 -type d` and subtract Mini's skills (from `templates/` or an explicit list). Defer until a project skill actually gets added without updating the array.
+- **`--accent-8` contrast validation across user page tints.** PR A adds `data-accent="indigo"` to `<html>`, making `var(--accent-8)` resolve to Radix indigo. The neutralization block reverts Mini's `:focus-visible` ring back to browser default, so indigo isn't visible yet in PR A. **PR C is when this becomes load-bearing:** the moment a migrated component uses `var(--accent-8)` (focus rings, links, selected state), it must clear ≥3:1 against every page tint the color rail can produce. Build a contrast matrix (indigo accent × full color-rail hue space) before the first PR C component lands.
 
 ## Definition of done (for any feature)
 

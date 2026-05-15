@@ -33,6 +33,26 @@ Increment from the last entry. Use `FB-0001`, `FB-0002`, etc.
 
 ## Entries
 
+### FB-0017: Review skills must be model-invocable so /ship can compose them
+**Date:** 2026-05-14
+**Source:** user correction
+
+**What was said:** When `/staff-review` couldn't be triggered from within the model loop because its SKILL.md set `disable-model-invocation: true`, the user said "should not be user-invoke-only — update this, then run the skill on the changes." `accessibility-review` and `security-review` were already model-invocable; `staff-review`, `ship`, and `link` were not. The mismatch made the documented workflow (where `/ship` composes `/security-review` and `/accessibility-review`, and the standard loop calls `/staff-review` after execution) inconsistent with what was actually wireable.
+
+**Synthesized rule:** Project review skills (anything ending in `-review`) and pipeline skills that compose other skills (`ship`, `staff-review`) must NOT carry `disable-model-invocation: true` in their frontmatter. User-only skills are limited to tools that genuinely should not auto-fire (e.g., destructive operations, side-effecting actions like `link`'s dev-server start). Review and orchestration skills must be callable both by the user and by the model loop. Reaffirms FB-0003 — skills compose with skills via the Skill tool — by ensuring the composition path is mechanically possible.
+
+**Applies to:** workflow, skills, .claude/skills/*/SKILL.md frontmatter.
+
+### FB-0016: Adopting upstream tooling preserves hand-written docs as the starting point, never replaces them
+**Date:** 2026-05-14
+**Source:** user direction
+
+**What was said:** Asked how to handle the existing `core-docs/design-language.md` (~1700 lines, hand-written, encodes family framing + page-tint rail + surface posture open question + polished-features doctrine + FB-0010..FB-0015 rules) when adopting Mini — whose `/elicit-design-language` skill in archaeology mode would produce its own design-language doc — the user said "I want to preserve the current design-language file as a starting point, but we can do the elicitation interview to supplement it (not replace it, but evolve it)."
+
+**Synthesized rule:** When adopting an upstream tool that wants to generate a project doc (design-language, component-manifest, CLAUDE.md sections, etc.) and a hand-written version already exists, the hand-written doc is the starting point. The tool's output is a *proposal* to merge into ours, never a replacement. The merge protocol: archive the legacy file with a `.legacy.md` suffix, run the tool, manually stitch the legacy doc's narrative content into the tool's output, then verify and delete the `.legacy.md` once the stitch is sound. Applies to PR B (design-language elicitation) and any future Mini skill that proposes new doc shapes.
+
+**Applies to:** workflow, core-docs, mini-adoption.
+
 ### FB-0015: Folder open/closed icon swap is the expansion affordance — no chevrons
 **Date:** 2026-05-13
 **Source:** user correction

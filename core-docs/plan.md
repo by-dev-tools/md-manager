@@ -6,115 +6,21 @@ The living document for what's being worked on right now, what's queued, and wha
 
 ## Current Focus
 
-**Mini design system adoption — PR A: Install.** Land the Mini files (primitives, archetypes, styles, skills, invariants, templates) in the canonical `packages/ui/` layout, wire the stylesheets and HTML root, and verify the build is still green — **without migrating any app code yet**. The current `src/styles/globals.css` and all components keep working unchanged after this PR. PR B (elicit + evolve the existing design language) and PR C (token + component migration) follow in later sessions.
-
-Branch: `mini-install` (create when execution begins).
+**Mini design system adoption — PR B: Elicit + evolve the design language.** PR A (install) shipped on branch `mini-install`. Next session runs `/elicit-design-language` in archaeology mode against the codebase, then manually stitches its output with the existing 1700-line hand-written `design-language.md`. PR C (token + component migration) follows.
 
 ## Handoff Notes
 
-- **PR #6 merged** (`3f5564a`) — sidebar hanging-icon redesign + section-spacing dev knob. Plan.md was not updated post-merge; that work obsoleted parts of the old Slice C (folder counts now live on collapsed sections via the NavSection/Collapse pattern). The remaining open polish items from Slice C/D (contrast audit on italic drafts, drafts visual-treatment revisit, toolbar glyph unification) are deferred — Mini adoption may absorb them and re-litigating before that lands is wasted effort.
-- **PR #5 merged** (`8bede71`) — captured FB-0010..FB-0015 design-rule feedback. Read those before any UI work.
-- **PR #2 merged** — Slices A (safety bundle) + B (editor performance + a11y + vitest) shipped. 20/20 tests passing. `npm run typecheck && npm run build && npm test` should remain clean throughout the Mini install.
-- **md-manager is a sister app to Designer.** Designer is currently synced against Mini SHA `83df0b288523e51ba5ec54f4b126cc7591d1d1db` (`83df0b2`, April 2026). User decision needed: pin md-manager to the same SHA for family lockstep, or sync against Mini HEAD.
-- **Design-language preservation is non-negotiable.** The existing `core-docs/design-language.md` (~1700 lines, hand-written, captures sister-app framing + page-tint rail + surface posture open question) is the **starting point** for PR B's elicitation, not something to overwrite. PR B's `/elicit-design-language` run will operate in **archaeology mode** if we move the existing doc out of the way first (e.g., rename to `design-language.legacy.md`) so the skill produces a fresh Mini-axiom-shaped doc, which we then **merge** with the legacy content (manual stitch). The legacy doc is preserved in git history regardless.
+- **PR A (Mini install) shipped on `mini-install`** — `0d17846` (install) + `a140412` (staff-review fixes) + this ship commit. PR pending push. Three-lens staff review + security review + a11y review all clean. The visible UI is byte-identical to `main`. Mini files sit in `packages/ui/` and `.claude/skills/`, ready for PR B/C consumption.
+- **SAFETY: `scripts/sync-mini.sh` was hardened** to snapshot+restore project skills around Mini syncs. Mini's upstream `install.sh`/`update.sh` use `rsync --delete` on `.claude/skills/`, which clobbered our 5 project skills on first install. The wrapper's `PROJECT_SKILLS` array must be updated whenever a new project-owned skill is added.
+- **`disable-model-invocation` was removed from `staff-review` SKILL.md** so the model loop can call it (FB-0017). `link` and `ship` remain user-only by design.
+- **Two Mini-axiom selectors are neutralized** at the bottom of `globals.css` (`img/video/svg display`, universal `:focus-visible` ring). The block is clearly marked and lists which Mini-axiom rules are intentionally allowed to cascade through. PR C removes the block as components migrate.
+- **PR B's open question — design-language doc strategy.** Confirmed by FB-0016: preserve the existing hand-written `design-language.md` as the starting point; Mini's archaeology-mode output is a proposal to merge into ours, never a replacement. Stitch protocol (archive as `.legacy.md`, run elicit, manual merge, delete legacy) is captured in this plan's "PR B" section below and FB-0016.
+- **PR B will force the surface-posture decision** via Mini's "surface hierarchy depth" axiom (1–4 tiers). The dev panel currently ships both floating and flat — PR B picks one.
+- **PR C prerequisites already captured in `roadmap.md`** under "From PR A staff review (Mini install)": token name collision audit (highest-priority), `--accent-8` contrast validation across user page tints, alias scheme reconciliation (single `@mini` vs split), tsconfig include expansion, sync-mini.sh error-handling hardening.
 - **Polished-features doctrine is canonical.** CLAUDE.md § "Quality posture" + FB-0007 + FB-0008. Every scoping decision runs through wire-vs-defer.
-- **Two open questions Mini will help close:**
-  1. **Surface posture** (floating vs flat vs both) gets forced by Mini's "surface hierarchy depth" axiom (1–4 tiers). Resolve in PR B's elicitation.
-  2. **CSS architecture** (1340-line globals.css, scattered z-index, raw `rgba()` in toast/toolbar) is intentionally deferred to be absorbed by Mini's token + per-component CSS structure in PR C.
-- The `package.json` still says `"name": "mumbai"`. Low-priority cleanup; rename when next touching it.
 - Persistence, repo sync, and search remain unresolved; see "Open questions" in `spec.md`. These come after Mini adoption settles.
 
 ## Active Work Items
-
-### Mini design system adoption — PR A: Install
-
-**Goal:** Land Mini's primitives, archetypes, stylesheets, skills, invariants, and templates in the canonical `packages/ui/` layout. Wire the four Mini stylesheets and the HTML root attributes so the system is *available* to the app. **Do not migrate any app code, tokens, or components in this PR.** The existing `src/styles/globals.css` keeps owning the visible UI; Mini's tokens and primitives sit alongside, ready for PR C to migrate against. Result: build/typecheck/tests green, app renders identically to today, Mini files committed and the sync wrapper installed.
-
-**UX goals:**
-- **Zero user-visible change.** The app must look and behave identically before/after this PR. Pixel parity, not just functional parity.
-- No regressions in keyboard nav, focus visibility, or motion (Mini's `axioms.css` does global reset work; verify it doesn't disturb our current contenteditable, sidebar, modals, toast).
-- Dev panel still works; color rail still works.
-
-**Implementation steps:**
-
-1. **Decide Mini SHA pin** (user call before execution).
-   - Option A: pin to Designer's current SHA `83df0b2` (family lockstep, slower).
-   - Option B: pin to Mini HEAD at install time (latest fixes; family drifts).
-   - Recommendation: **Option A** for sister-app parity, accept a follow-up sync later.
-
-2. **Run the install script.**
-   ```bash
-   cd /Users/benyamron/dev/mini-design-system
-   git checkout 83df0b2          # or stay on HEAD per step 1
-   ./tools/sync/install.sh /Users/benyamron/conductor/workspaces/md-manager/worcester-v1
-   ```
-   This creates: `packages/ui/{src/primitives,src/archetypes,styles}/`, `packages/ui/{MINI-VERSION.md,DEFAULTS.md}`, `.claude/skills/{audit-a11y,check-component-reuse,elicit-design-language,enforce-tokens,generate-ui,propagate-language-update}/`, `tools/invariants/`, `templates/`, `scripts/sync-mini.sh`.
-   - **Collision check passed in planning:** none of `packages/`, `tools/`, `scripts/`, `templates/` exist today; the 5 existing skills (link, ship, staff-review, accessibility-review, security-review) don't collide with Mini's 6.
-
-3. **Install Radix peer deps.**
-   ```bash
-   npm i @radix-ui/colors @radix-ui/react-dialog @radix-ui/react-popover \
-         @radix-ui/react-tooltip @radix-ui/react-dropdown-menu @radix-ui/react-select \
-         @radix-ui/react-tabs @radix-ui/react-accordion @radix-ui/react-toast \
-         @radix-ui/react-checkbox @radix-ui/react-radio-group @radix-ui/react-toggle
-   ```
-   Bumps `dependencies` in `package.json` by ~12 entries. Also opportunistically fix `"name": "mumbai" → "md-manager"` while we're touching the file (cleanup item on roadmap).
-
-4. **Wire the Vite alias** so `@mini/*` and `@mini-styles/*` resolve.
-   - `vite.config.ts`: add `resolve.alias` for `"@mini"` → `packages/ui/src` and `"@mini-styles"` → `packages/ui/styles`.
-   - `tsconfig.json`: add `"baseUrl": "."` and `"paths": { "@mini/*": ["packages/ui/src/*"], "@mini-styles/*": ["packages/ui/styles/*"] }`.
-   - Verify Designer's pattern: it uses `"@mini"` aliased to `packages/ui/styles` directly (so `@mini/tokens.css` works). We use the more explicit `@mini-styles/*` for CSS and `@mini/*` for TS imports to keep the contracts distinct — minor divergence, documented in `history.md` at /ship time.
-
-5. **Import Mini stylesheets at the app root** (`src/main.tsx`).
-   - Add the four imports **before** `./styles/globals.css` so our existing tokens override Mini's defaults at the cascade level (PR C is when we *remove* the override; PR A keeps it for pixel-parity guarantee).
-   ```ts
-   import '@mini-styles/tokens.css';
-   import '@mini-styles/axioms.css';
-   import '@mini-styles/primitives.css';
-   import '@mini-styles/archetypes.css';
-   import './styles/globals.css';
-   ```
-
-6. **Set HTML root attributes** (`index.html`).
-   - Add `class="light-theme"` and `data-accent="indigo"` to `<html>`. Keep `class="mode-floating"` on `<body>` (that's our dev panel's surface-posture toggle; unaffected).
-   - Pixel-parity risk: Mini's `axioms.css` may set `:root` styles that conflict with ours. Audit at execution time; if anything visibly shifts, scope a minimal override in `globals.css` (do **not** edit Mini's files).
-
-7. **Verify pixel parity** by running `/link` and visually comparing against `main`. Critical surfaces to check:
-   - Sidebar (post-PR-#6 hanging-icon nav) — section gap, indent, type sizes, draft italic.
-   - Editor empty state, contenteditable, floating toolbar, link bubble.
-   - Modals (AddRepoModal, AttachPopover), Toast.
-   - Dev panel (all knobs respond as before).
-   - Color rail tints don't shift.
-   - Focus rings still visible on every focusable element.
-   - `prefers-reduced-motion` still respected.
-
-8. **Run the gates.**
-   - `npm run typecheck` — clean.
-   - `npm run build` — clean.
-   - `npm test` — 20/20 still passing (no test should depend on Mini yet).
-   - `node tools/invariants/check.mjs packages/ui` — clean by construction (Mini's own files).
-   - **Do not** run the invariant check against `src/` yet — `globals.css` is full of hex/px which is *intentional* in PR A. PR C is when we tokenize and start passing the invariant.
-
-9. **Reviews + ship.**
-   - `/staff-review` — focus on the wiring, not the design.
-   - `/security-review` — Radix bumps are the main vector; verify no new direct user-content paths.
-   - `/accessibility-review` — confirm pixel parity ≈ a11y parity.
-   - `/ship` — synthesize doc updates; PR title: "Mini: install primitives, archetypes, skills (no app migration)".
-
-**Files expected to change in PR A:**
-- **New (Mini-owned, do not edit):** `packages/ui/src/**`, `packages/ui/styles/{axioms,primitives}.css`, `packages/ui/{MINI-VERSION,DEFAULTS}.md`, `.claude/skills/{audit-a11y,check-component-reuse,elicit-design-language,enforce-tokens,generate-ui,propagate-language-update}/**`, `tools/invariants/**`, `templates/**`, `scripts/sync-mini.sh`.
-- **New (fork-and-own, seeded only):** `packages/ui/styles/{tokens,archetypes}.css`.
-- **Modified:** `package.json` (+ Radix deps, name fix), `package-lock.json`, `vite.config.ts` (alias), `tsconfig.json` (paths), `src/main.tsx` (4 imports + cascade-order comment), `index.html` (root attrs), `src/styles/globals.css` (PR-A neutralization block appended only; PR C removes it), `.claude/skills/staff-review/SKILL.md` (drop `disable-model-invocation` so the skill is callable from the model loop per FB-0003 spirit).
-- **Unchanged:** every file in `src/components/`, `src/store.tsx`, `src/lib/markdown.ts`, all of `core-docs/` (except plan at this commit; history/spec/feedback/roadmap defer to /ship).
-
-**Risks / open questions:**
-
-1. **Mini SHA pin** — A: `83df0b2` (Designer parity) vs B: Mini HEAD. **Recommend A.** User call before step 1.
-2. **`axioms.css` cascade conflict.** Mini's `axioms.css` is a global reset + base setup; ours is hand-rolled in `globals.css`. Importing Mini's first then our `globals.css` should let ours win, but specific selectors (`*`, `html`, `body`) might fight. Mitigation: visual audit at step 7; minimal override in `globals.css` if needed; document any conflict in `history.md` so PR C knows what to reconcile.
-3. **Bundle size.** Adding 12 Radix packages without using them ships their code (tree-shaken at module boundary but not zero). Acceptable for a prototype; revisit if `npm run build` output grows by >100KB gzip.
-4. **`.claude/skills/` namespace pollution.** Mini adds 6 skills that will surface in skill listings before any of them are exercised by md-manager. Cosmetic; resolved naturally as PR B + C use them.
-5. **`/elicit-design-language` accidentally firing.** The skill description matches a wide trigger set ("set up Mini", "initialize the design system"). PR A explicitly does **not** run it. If a user prompt accidentally triggers it during PR A execution, decline and route to PR B.
-6. **Existing `core-docs/design-language.md` strategy.** Confirmed: **preserve as starting point, evolve via PR B**, never overwrite. PR B's plan will specify the stitch protocol (likely: archive current doc as `design-language.legacy.md`, run `/elicit-design-language` in archaeology mode against the codebase, manually merge the legacy doc's narrative content into the Mini-shaped output). PR A doesn't touch `core-docs/design-language.md` at all.
 
 ### PR B: Elicit + evolve the design language (next session, ½ day)
 
@@ -171,11 +77,11 @@ PR C is **iterative across sessions** — each component migration is its own sm
 
 _(Last 3–5 items. Older items live in `history.md`.)_
 
+- **Mini design system installed (PR A)** — Branch `mini-install`, commits `0d17846..[ship]`. Primitives, archetypes, stylesheets, 6 skills, invariants, templates landed in `packages/ui/` at SHA `83df0b2` (Designer parity). 12 Radix peer deps installed. Stylesheets wired in `main.tsx`; HTML root `class="light-theme" data-accent="indigo"`. No app component migrated. SAFETY: `scripts/sync-mini.sh` snapshots+restores project skills around Mini's destructive `rsync --delete`. FB-0016, FB-0017 captured. 2026-05-14.
 - **Sidebar hanging-icon nav redesign + section-spacing dev knob** — PR #6 (`3f5564a`). Replaced SourceRow with NavSection/Collapse/NavRow. Counts now on collapsed sections. Drafts grouped under synthetic folder. DevPanel renamed "Sidebar sans" → "Sidebar mono"; dropped inert File icons toggle + Tree layout select. 2026-05-13.
 - **Design-rule feedback synthesis FB-0010..FB-0015** — PR #5 (`8bede71`). Captured design rules from the sidebar/editor redesign work. 2026-05-13.
 - **Slices A + B of PR #2 staff-review triage** — Safety bundle (drafts, XSS, native dialogs, link wiring), editor performance + a11y + vitest, plus staff-review and ship-pass review fixes. Doctrine: polished features, expand scope not quality (FB-0007). PR #2, branch `address-agentation-comments`. 2026-05-13.
 - **Initialize project documentation + agent workflow** — `/init-project` run shipped in PR #3 (`6d2f0ad..d839127`). 5 skills, 8 core docs, 2 optional agents, 5 auto-loading rules, sister-app framing with Designer, 6 seeded feedback entries. 2026-05-13.
-- **Scaffold Notes app prototype** — Vite + React + TS, in-memory store, full UI (sidebar / editor / color rail / modals). Commit `d504073` (#1). 2026-05-13.
 
 ## Backlog
 

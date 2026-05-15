@@ -72,12 +72,12 @@ None currently. If GitHub repo sync is implemented, OAuth + rate-limited API cal
 
 ## Current status
 
-- **Stage:** Prototype with safety bundle + editor performance + a11y (PR #2) + sidebar redesign (PR #6) + Mini design system installed (PR A on `mini-install`, pending merge — no app migration). Mini PR B (elicit design language) and PR C (component migration) ahead. Persistence and repo sync still ahead.
+- **Stage:** Prototype with safety bundle + editor performance + a11y (PR #2) + sidebar redesign (PR #6) + Mini design system installed (PR A) + Mini design language amended with explicit axioms (PR B on `mini-elicit`, pending push). Mini PR C (token + component migration) is next. Persistence and repo sync still ahead.
 - **Last updated:** 2026-05-14
-- **Branch:** `mini-install` (PR A pending push)
+- **Branch:** `mini-elicit` (PR B pending push)
 - **Open questions:**
   - How does persistence work? (localStorage for drafts? IndexedDB? File System Access API?)
   - How does repo sync actually function — local file watcher? GitHub API? GitHub App?
   - Is there a "publish" concept (draft → repo-file promotion), or do drafts and repo-files always stay distinct?
-  - **Surface posture:** keep both floating and flat? Drop one? Rethink entirely? *Forced by Mini PR B (surface hierarchy depth axiom).*
-  - Dark mode: needed in v1, or punt? Mini supports both; PR B may force a decision.
+  - **Surface posture:** open axiom by design — both floating and flat ship in the DevPanel for dogfooding. Resolution criteria captured in `design-language.md` § "Axioms → Open axiom: surface posture". Not "forced by PR B"; explicitly preserved as open in PR B.
+  - Dark mode: needed in v1, or punt? Mini supports both; PR C may surface contrast issues that force the decision.

@@ -22,21 +22,34 @@ The living document for what's being worked on right now, what's queued, and wha
 
 ## Active Work Items
 
-### PR B: Elicit + evolve the design language (next session, ½ day)
+### PR B: Elicit + evolve the design language (current — branch `mini-elicit`, ½ day)
 
-**Goal:** Run `/elicit-design-language` in archaeology mode against the codebase, then manually merge the proposed Mini-axiom-shaped output with the existing `core-docs/design-language.md` content. Result: a single `design-language.md` that is both Mini-compatible (axiom format, token contract) and preserves the hand-written narrative (family framing, page-tint rail, surface posture decision, polished-features doctrine cross-references, FB-0010..FB-0015 rules).
+**Goal:** Evolve the existing `core-docs/design-language.md` into a Mini-compatible shape — every Mini axiom answered explicitly — while preserving the hand-written narrative (family framing, page-tint rail, surface-posture dual-mode, polished-features doctrine, FB-0010..FB-0015 rules). Seed the Mini support files (`component-manifest.json`, `pattern-log.md`, `generation-log.md`) so PR C and future `generate-ui` invocations have somewhere to write. Append the CLAUDE.md Mini marker section.
 
-**Strategy (not yet committed; finalize in PR B's plan):**
-1. Archive the current doc to `core-docs/design-language.legacy.md` (preserves it in working tree as well as git history).
-2. Run `/elicit-design-language` — archaeology mode auto-selects because the legacy doc is renamed and the codebase is non-empty.
-3. Skill proposes a fresh `core-docs/design-language.md` plus seeded `core-docs/{component-manifest.json, pattern-log.md, generation-log.md}`.
-4. **Manual stitch:** merge the legacy doc's hand-written sections (Family, page-tint rail, surface posture open question, false-affordances doctrine, component patterns documented from PR #2) into the new Mini-shaped doc.
-5. Resolve the surface-posture axiom (1–4 tiers) explicitly — Mini forces this decision.
-6. Delete `design-language.legacy.md` once the stitch is verified.
+**Mode decision: manual amendment, not skill-driven.**
+Pure `/elicit-design-language` amendment mode requires a populated `generation-log.md` (the skill explicitly bails with "no signals to amend" otherwise). We don't have one yet. Archaeology mode would discard the 1700-line hand-written doc as a starting point, which contradicts the user's call (FB-0016: legacy doc is ground truth, not a replacement target). The right move is a **manual amendment** using the skill's templates as the target shape — keep our doc, reshape it, seed the missing files by hand.
 
-**Risks:**
-- Archaeology mode may propose tokens that contradict our existing `--sand-*` values (e.g., different gray flavor). We override in the manual stitch — Mini's archaeology mode is a proposal, not a mandate.
-- The 10 axioms include some we haven't been explicit about (motion personality, type scale ratio, focus style). Forced decisions are good — capture each rationale in the merged doc.
+**Scope: docs-only.** No code changes, no token migration, no component rewrites. Those are PR C.
+
+**Strategy:**
+
+1. **Inventory Mini's 10 axioms against the current doc.** For each axiom — base line-height, density register, accent identity, gray flavor, motion personality, type system, type scale ratio, surface hierarchy depth, radius personality, focus style — find where our doc answers it (often implicit in tokens), or flag it as `[NEEDS DECISION]`.
+2. **Reshape `design-language.md` in place.** Add an "Axioms" section near the top that surfaces all 10 explicitly with rationale. Keep the existing Family, page-tint, surface-posture, principles, typography, color, spacing, motion, components, and FB-rules sections. Don't archive; edit in place.
+3. **Surface-posture axiom — document both, don't decide.** Per user: keep floating + flat in the DevPanel for dogfooding. The Mini axiom entry justifies the dual-mode posture with the family-divergence rationale already captured in the Family section; flag it as an intentional open question, not a deferred decision.
+4. **Seed Mini support files:**
+   - `core-docs/component-manifest.json` — inventory of `src/components/*.tsx` with `status: legacy`, archetype mapping, and a short purpose line each.
+   - `core-docs/pattern-log.md` — empty-but-valid scaffold (header + format example).
+   - `core-docs/generation-log.md` — empty-but-valid scaffold.
+5. **CLAUDE.md Mini section.** Append the marker-delimited Mini block from `templates/claude-md-mini-section.md`. Resolve any contradictions with current CLAUDE.md content by surfacing them, not auto-overwriting.
+6. **Verify:** `npm run typecheck && npm run build` (no code changed, should be a no-op confirmation). Visually skim the new design-language.md for narrative coherence — it should still read like a project doc, not a generated artifact.
+
+**Branch:** `mini-elicit` (new, off current `main` since `review-roadmap-next` has no commits yet).
+
+**Risks / open questions:**
+- **Axiom-shape vs narrative-shape tension.** Mini wants terse axiom-token mapping; our doc is a long narrative with rationale. Resolution: axioms section is additive — concise table near the top — narrative stays. Don't compress the narrative to fit the template.
+- **Token name collisions visible in the audit.** Inventorying axioms may expose mismatches between our `--space-*` / `--radius-*` and Mini's. Note them in the new doc but **don't fix them in PR B** — that's a PR C token-migration task.
+- **Component-manifest accuracy.** Easy to misclassify archetype usage. Conservative call: mark everything `legacy`, leave archetype field as `null` or best-guess with a `?` flag. PR C will tighten this as it migrates.
+- **CLAUDE.md contradictions.** Our CLAUDE.md is opinionated about workflow + quality posture. Mini's section is about generation procedure. Most likely additive, but read both before appending.
 
 ### PR C: Token + component migration (multi-session, iterative)
 

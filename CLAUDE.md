@@ -158,3 +158,41 @@ Code doesn't ship unless it meets all of these:
 - **Performant** — no visible jank on a 4-year-old laptop. Interactions feel instant (<100ms perceived).
 - **On-brand** — uses design tokens, respects `design-language.md`, no hardcoded hex/px values.
 - **Documented** — `history.md` entry exists (added by `/ship`); any new rule lives in the right doc.
+
+---
+
+<!-- mini:start -->
+## Mini Design System
+
+This project uses Mini. UI tasks follow the procedure below.
+
+### Information map
+
+| Concern | Source of truth |
+|---|---|
+| Design tokens and axioms | `core-docs/design-language.md` |
+| Component catalog | `core-docs/component-manifest.json` |
+| Decision rationale | `core-docs/pattern-log.md` |
+| Generation log | `core-docs/generation-log.md` |
+| Skills (runtime) | `.claude/skills/` |
+| Core contracts (reference) | `packages/ui/` (Mini primitives, archetypes, tokens, invariants) |
+
+### Procedure for UI tasks
+
+Before writing or editing UI code:
+
+1. Check `core-docs/component-manifest.json`. Prefer in order: platform-native archetype (Radix on web, native on Swift) → extend an existing component → generate new. Components currently marked `status: legacy` are grandfathered — they predate Mini adoption and don't yet compose Mini primitives. PR C migrates them.
+2. Read `core-docs/design-language.md` for tokens and axioms. Reference tokens, never arbitrary values.
+3. Compose using core primitives (Box, Stack, Cluster, Sidebar, Center, Container, Frame; Overlay on web only). Available from `@mini/*` once a component imports them — the primitives ship in `packages/ui/` but no app code consumes them yet (pre-PR-C).
+4. After generation: verify no arbitrary px / hex / ms / z-index values remain. Run `node tools/invariants/check.mjs <changed files>` to check.
+5. For interactive output: verify focus-visible, keyboard path, contrast across accent × mode, `prefers-reduced-motion`, no animate-in-tree anti-pattern.
+6. Update `core-docs/component-manifest.json` for new or modified components.
+7. Append an entry to `core-docs/generation-log.md` (schema in that file's header).
+8. Log non-obvious decisions to `core-docs/pattern-log.md`.
+
+The per-generation updates in steps 6–8 are **mechanical contract artifacts** — they keep the Mini contract in sync with the code and update inline with the UI change. This is distinct from narrative-doc updates (`history.md`, `plan.md`, `roadmap.md`, `spec.md`, `feedback.md`), which `/ship` owns at the end of the loop.
+
+### Skills
+
+Mini's skills live at `.claude/skills/` and fire on matching user intents. Primary entry for UI tasks is `generate-ui`. If a skill doesn't fire when expected, follow the procedure above manually.
+<!-- mini:end -->

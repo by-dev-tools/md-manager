@@ -12,7 +12,6 @@ description: >
   merges. Use whenever a workstream is implementation-complete, when the
   user asks for a "staff" or "multi-perspective" review, or before opening
   a PR. Defer to `security-review` for security-specific audits.
-disable-model-invocation: true
 allowed-tools: Read, Edit, Write, Glob, Grep, Bash, Agent
 ---
 

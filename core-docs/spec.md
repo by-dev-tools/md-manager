@@ -72,13 +72,12 @@ None currently. If GitHub repo sync is implemented, OAuth + rate-limited API cal
 
 ## Current status
 
-- **Stage:** Prototype with the safety bundle + editor performance + a11y pass shipped (PR #2). Persistence, repo sync, and Mini adoption still ahead.
-- **Last updated:** 2026-05-13
-- **Branch:** `address-agentation-comments` (PR #2 open)
+- **Stage:** Prototype with safety bundle + editor performance + a11y (PR #2) + sidebar redesign (PR #6) + Mini design system installed (PR A on `mini-install`, pending merge — no app migration). Mini PR B (elicit design language) and PR C (component migration) ahead. Persistence and repo sync still ahead.
+- **Last updated:** 2026-05-14
+- **Branch:** `mini-install` (PR A pending push)
 - **Open questions:**
   - How does persistence work? (localStorage for drafts? IndexedDB? File System Access API?)
   - How does repo sync actually function — local file watcher? GitHub API? GitHub App?
   - Is there a "publish" concept (draft → repo-file promotion), or do drafts and repo-files always stay distinct?
-  - **Surface posture:** keep both floating and flat? Drop one? Rethink entirely? (Currently both ship in the prototype.)
-  - **Mini adoption:** when to swap vanilla CSS for the Mini design system. Likely soon.
-  - Dark mode: needed in v1, or punt?
+  - **Surface posture:** keep both floating and flat? Drop one? Rethink entirely? *Forced by Mini PR B (surface hierarchy depth axiom).*
+  - Dark mode: needed in v1, or punt? Mini supports both; PR B may force a decision.

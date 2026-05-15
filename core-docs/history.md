@@ -37,6 +37,49 @@ Use the `SAFETY` marker on any entry that modifies error handling, persistence, 
 
 ## Entries
 
+### Mini design system installed (PR A — no app migration) — SAFETY
+**Date:** 2026-05-14
+**Branch:** mini-install
+**Commit / PR:** `0d17846..[this ship commit]` (3 commits) → [PR pending push]
+
+**What was done:**
+- Installed the Mini design system into `packages/ui/` at pinned SHA `83df0b288523e51ba5ec54f4b126cc7591d1d1db` (Designer's current pin — sister-app lockstep). Ran Mini's `tools/sync/install.sh`, which landed: 8 primitives + 12 archetypes under `packages/ui/src/`, 4 stylesheets under `packages/ui/styles/` (tokens + archetypes are fork-and-own; axioms + primitives are track-closely), `packages/ui/{MINI-VERSION,DEFAULTS}.md`, 6 Mini skills under `.claude/skills/`, `tools/invariants/check.mjs`, `templates/`, and a thin `scripts/sync-mini.sh` wrapper.
+- Installed 12 Radix peer dependencies (`@radix-ui/colors` + 11 `@radix-ui/react-*`) — the JS bundle is unchanged because nothing imports them yet (tree-shaken to zero in PR A).
+- Wired the four Mini stylesheets at the top of `src/main.tsx` (tokens → axioms → primitives → archetypes → globals), with a load-order comment marking the sequence as load-bearing.
+- Set `<html class="light-theme" data-accent="indigo">` in `index.html`; preserved `<body class="mode-floating">` (dev-panel surface-posture toggle, unaffected).
+- Added Vite alias and tsconfig paths: `@mini/*` → `packages/ui/src/*` and `@mini-styles/*` → `packages/ui/styles/*`.
+- Renamed `package.json` `"name"` from `"mumbai"` to `"md-manager"`.
+- Removed `disable-model-invocation: true` from `.claude/skills/staff-review/SKILL.md` so the model loop can call the skill — FB-0017.
+- **No file under `src/components/`, `src/store.tsx`, `src/lib/markdown.ts` was touched.** The visible UI is byte-identical to `main`. Three-lens staff review confirmed; security + a11y final-pass reviews confirmed.
+
+**Why:**
+- Mini is the Now/Next P0 workstream in `roadmap.md`. Adopting it unblocks the deferred CSS architecture work (1340-line `globals.css`, scattered z-index, raw `rgba()` overlays) and forces explicit decisions on the surface-posture and gray-flavor open questions. Doing the install as its own PR — no token migration, no component migration — keeps the change reviewable and decouples "does the system fit" from "does the new aesthetic fit".
+
+**Design decisions:**
+- **Three-PR split: install → elicit → migrate.** Bundling all three would have produced an unreviewable diff (5800+ lines of upstream Mini + 1300-line `globals.css` rewrite + every component refactor). Split keeps PR A reviewable as pure infrastructure, PR B reviewable as a design-language doc evolution, PR C reviewable per-component.
+- **Preserve `design-language.md` as starting point** (FB-0016). The existing 1700-line doc encodes family framing, page-tint rail, surface-posture open question, polished-features doctrine, and FB-0010..FB-0015 rules. PR B will run `/elicit-design-language` in archaeology mode against the codebase, then *manually stitch* its output with the legacy content (archive as `.legacy.md`, merge narrative, delete legacy once verified). Mini's output is a proposal, never a replacement.
+- **Family lockstep on Mini SHA.** Pinned to Designer's current sync (`83df0b2`, April 2026) rather than Mini HEAD. Tradeoff: family parity over latest-fixes. Next sync follows Designer's cadence.
+- **Pixel parity as the UX goal.** PR A must look and behave identically to `main`. Verified visually in browser by the user. Two Mini-axiom selectors needed neutralization to keep parity: `img/video/svg { display: block }` (would break inline SVG icon alignment) and the universal `:focus-visible { outline: 2px solid var(--accent-8) }` (would replace browser-default focus rings with an indigo ring everywhere). Neutralized via a clearly-marked block at the end of `globals.css`; PR C removes the block as components migrate.
+
+**Technical decisions:**
+- **SAFETY — sync-mini.sh wraps Mini's destructive `rsync --delete`.** Mini's upstream `install.sh` and `update.sh` both `rsync --delete .claude/skills/`, which clobbered the project's 5 skills (`link`, `ship`, `staff-review`, `accessibility-review`, `security-review`) on first install. They were restored from HEAD immediately. The thin `exec`-wrapper that Mini's installer generates was replaced with a snapshot-and-restore version: `PROJECT_SKILLS=(...)` array, `mktemp -d`, copy before, `exec update.sh`, copy back, `trap cleanup EXIT`. Every future `./scripts/sync-mini.sh` now preserves project skills automatically. SAFETY because losing skills is invisible until a user types `/staff-review` and gets "Unknown skill".
+- **`outline: revert` (not `unset` or `initial`) in the neutralization block.** `revert` returns to the user-agent default, which is what we want; `unset` would clear the property entirely (browser-default focus ring on `:focus-visible` becomes invisible on some elements); `initial` returns to the CSS spec default (`outline: none`), worse than `revert`. Verified by staff design engineer review.
+- **Split alias scheme `@mini/*` vs `@mini-styles/*`.** Designer uses a single `@mini` aliased to `packages/ui/styles` so `@mini/tokens.css` works directly. We separated TS imports (`@mini/Box`) from CSS imports (`@mini-styles/tokens.css`) for explicit contracts. Diverges from Designer; PR B or C will reconcile if the divergence creates friction.
+- **CSS bundle grew 0.12 KB, JS bundle unchanged.** Mini's 4 stylesheets contribute ~63.56 KB total (was 63.44 KB pre-PR), almost entirely the Radix color CSS imports inlined by Vite's CSS resolver. JS unchanged confirms zero React-side imports — Mini's primitives/archetypes sit on disk waiting for PR C.
+- **`vitest` + jsdom still works.** The 21 existing tests are markdown-round-trip + sanitization; jsdom parses Mini's CSS imports without complaint. No new tests added in PR A — there's nothing functional to test.
+
+**Tradeoffs discussed:**
+- **Install layout — canonical `packages/ui/` vs `src/mini/`.** Canonical matches Designer (sister-app parity) and matches Mini's default invocation; `src/mini/` would have been closer to the existing flat-`src/` shape. Canonical won on family-lockstep grounds.
+- **Stylesheet load order — Mini first or globals first.** Mini first lets our `globals.css` cascade-override Mini's resets, which is the only way to achieve PR-A pixel parity without editing Mini's track-closely files. Reverse order would have required prefixing every overriding rule in `globals.css` with `:where()` or similar — fragile and undocumented.
+- **Token name collisions deferred.** Both systems define `--space-3..6`, `--radius-*`, `--weight-*`, and accent-N numbers. Our values currently win the cascade because `globals.css` loads last. PR C audits and resolves; `roadmap.md` captures the audit as a PR C prerequisite.
+- **`disable-model-invocation` audit.** Removed from `staff-review` mid-session (FB-0017). Did NOT remove from `link` (genuinely user-initiated — starts a dev server with side effects) or `ship` (the user must explicitly opt into a push + PR). The line: review skills and orchestration composers should be model-callable; side-effecting actions can stay user-only.
+- **Reviewer findings spot-checked, not blindly applied.** Staff design engineer flagged a "BLOCKER" claiming Vite couldn't resolve `@radix-ui/colors` from `packages/ui/styles/tokens.css` without an explicit alias. Empirically wrong — `npm run build` already passed (48 modules, 63.56 KB CSS). Vite's CSS resolver walks up to the project's `node_modules/`. Skipped the fix; flagged in the review report.
+
+**Lessons learned:**
+- **Upstream installers can be destructive in non-obvious ways.** Mini's `install.sh` is documented as "track-closely" overwrites — but the implementation uses `rsync --delete` on `.claude/skills/`, which deletes anything in the destination not in the source. A reasonable reading of "track-closely overwrites primitive source code and skills" does not anticipate "and also nukes your project's pre-existing project-owned skills." Always read the install script before running it on a brownfield project. Future SAFETY-tagged adoptions get the same scrutiny.
+- **Pre-emptive neutralization beats post-hoc forensics.** Reading Mini's `axioms.css` line-by-line *before* the visual audit caught two real pixel-parity issues (svg display, focus-visible) that would have been hard to attribute later. Cheap up-front read, expensive late-detection retrofit.
+- **A reviewer's confidence is not a proof.** Both staff design engineer and staff UX designer raised what they labeled "BLOCKER" — one was empirically wrong (Vite alias), one was logically a NIT (form-element font inheritance already explicit). Triage every finding against the actual code; never apply a reviewer fix without spot-check, even when three reviewers run in parallel.
+
 ### Safety bundle, editor performance, and polished-features doctrine — SAFETY
 **Date:** 2026-05-13
 **Branch:** address-agentation-comments (PR #2)

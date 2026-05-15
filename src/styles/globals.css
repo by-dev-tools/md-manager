@@ -1349,3 +1349,35 @@ body.sidebar-mono .sidebar .sidebar-footer {
 .dev-reset:hover {
   color: var(--sand-12);
 }
+
+/* ============================================================
+   MINI PR-A NEUTRALIZATION
+   Reverts the Mini axioms.css selectors that would shift pixels
+   in this PR. PR C removes this block as components migrate to
+   Mini primitives + archetypes and start *using* Mini's resets.
+
+   Not neutralized — intentionally allowed to cascade:
+   - `*, *::before, *::after { box-sizing: border-box }`
+     We set the same rule earlier in this file; matching values.
+   - `body { margin: 0; font-family/-size/-leading/-weight/...; color; background }`
+     Our `body` block later in this file overrides every property.
+   - `h1..h6 { margin: 0; font: inherit }`
+     Our `* { margin: 0 }` already covers margin; our `.editor h1/h2`
+     selectors win on the heading paths that matter.
+   - `input, button, textarea, select { font: inherit; color: inherit }`
+     Every button/input in our codebase already sets these explicitly,
+     so the axiom is a no-op (verified by staff-review on PR A).
+   - `@media (prefers-reduced-motion) { *, *::before, *::after { ... } }`
+     Strictly additive; same intent as our motion policy.
+   ============================================================ */
+img,
+video,
+svg {
+  display: revert;
+  max-width: revert;
+}
+:focus-visible {
+  outline: revert;
+  outline-offset: revert;
+  border-radius: revert;
+}

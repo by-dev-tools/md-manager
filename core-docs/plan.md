@@ -10,9 +10,19 @@ The living document for what's being worked on right now, what's queued, and wha
 
 ## Handoff Notes
 
-- **CI setup shipped on `ci-setup`** — `cacf331` (workflow + dependabot) + `98ab10d` (/simplify concurrency-group fix) + this ship commit. Workflow-level `permissions: { contents: read }` added in this commit per security review. Required-check names that branch protection should gate on: `typecheck`, `build`, `test`.
-- **After merging `ci-setup`, do these repo-settings steps** (none can be done in-tree): (1) Branch protection on `main` → require status checks `typecheck` + `build` + `test`; (2) Same rule → require merge queue (squash method, build concurrency 1, batch min/max 1/5, wait 5 min, timeout 60 min); (3) Settings → Code security and analysis → enable "Dependabot security updates"; (4) repo merge-button settings → restrict to squash-only.
-- **PR B (Mini design-language amendment) shipped on `mini-elicit`** — `97ff141` (axioms + manifest + logs + CLAUDE.md) + `87869d7` (/simplify fixes) + ship commit. Merged as PR #9. `/simplify` ran 3 MUST FIX + 1 NIT; staff/security/a11y reviews skipped per their docs-only rules. No code changed; visible UI byte-identical to `main`.
+- **PR C Step 1 (token name-collision audit) shipped on `pr-c-token-audit`** — `a7c6a07` (initial audit) + `6f27e49` (/simplify fixes for `--gray-a*` miss) + this ship commit. Output: `core-docs/token-migration.md` with the 14-token collision table and work lists for Step 3a + Step 3. Repo: `by-dev-tools/md-manager` (migrated from `byamron/md-manager`). FB-0022, FB-0023, FB-0024 captured. No code changed.
+- **GitHub Org transfer complete** — `byamron/md-manager` is now `by-dev-tools/md-manager`. Branch protection + Rulesets preserved across transfer. Merge queue is **active** with required checks `typecheck` / `build` / `test`. Dependabot security updates enabled (two security PRs already opened: #12 esbuild+vite, #13 vite major). Secret Protection enabled. All git remotes (worktree config and Conductor workspaces) now use HTTPS.
+- **Next two PRs unblock PR C Step 3 (tokens migration):**
+  - **PR C Step 3a** — rename `--gray-a5/6/7` → `--tint-overlay-{light,medium,strong}` (or similar; final name decided at PR time). Touches every reference in `globals.css` + 3 component-manifest entries. Mechanical. Should be next.
+  - **PR C Step 2** — `--accent-8` contrast matrix against every page-tint hue. Required before any component starts using `var(--accent-9)` for focus rings. Can run in parallel with Step 3a.
+- **PR C Step 3 (tokens migration) blocked by both Step 2 and Step 3a.** When unblocked: rebind 4 radius tokens in `packages/ui/styles/tokens.css` to our values; move 29 md-manager-only tokens into a project-additions section of `tokens.css`; delete every `--*` declaration from `globals.css`. Plan in `core-docs/token-migration.md` § "PR C Step 3".
+- **Surface posture is an open axiom with explicit resolution criteria** (FB-0019, `design-language.md` § "Axioms → Open axiom: surface posture"). Both floating and flat continue to ship in the DevPanel. PR C component migrations must support both postures.
+- **Accent identity = `--page-tint`**, not a fixed Mini accent scale (axiom #3). Components using `var(--accent-9)` for focus/links must clear contrast against every page-tint hue (Step 2 above).
+- **All components are `status: legacy`** in `core-docs/component-manifest.json`. PR C flips them to `managed` one at a time, each migration its own commit + manifest update.
+- **The neutralization block at the bottom of `src/styles/globals.css`** stays until PR C migrates the components that depend on the legacy focus styling.
+- **Mini per-generation log updates** are **mechanical contract artifacts** — they update inline with UI changes, not at `/ship` time.
+- **Polished-features doctrine is canonical.** CLAUDE.md § "Quality posture" + FB-0007 + FB-0008.
+- Persistence, repo sync, and search remain unresolved; see "Open questions" in `spec.md`. These come after Mini adoption settles.
 - **Surface posture is an open axiom with explicit resolution criteria** (FB-0019, `design-language.md` § "Axioms → Open axiom: surface posture"). Both floating and flat continue to ship in the DevPanel. PR C component migrations must support both postures — do not assume one. Decision happens via dogfooding signal, an archetype constraint, or an explicit user call.
 - **Accent identity = `--page-tint`**, not a fixed Mini accent scale (axiom #3). `indigo` is reserved at the root via `data-accent="indigo"` for focus-ring rebinding but is currently neutralized. PR C components that use `var(--accent-8)` / `var(--accent-9)` (focus rings, links, selected state) must clear ≥3:1 against every page-tint hue the color rail can produce. The contrast matrix is the first PR-C prerequisite (already in roadmap.md under "From PR A staff review").
 - **All components are `status: legacy`** in `core-docs/component-manifest.json`. PR C flips them to `managed` one at a time, each migration its own commit + manifest update.
@@ -43,6 +53,46 @@ The living document for what's being worked on right now, what's queued, and wha
 
 PR C is **iterative across sessions** — each component migration is its own small PR with its own `/simplify` + `/staff-review` pass.
 
+### PR C / Step 3a: `--gray-a*` rename (next — mechanical, ~½ session)
+
+**Goal:** Rename `--gray-a5/6/7` (our page-tint wash overlays) to `--tint-overlay-{light,medium,strong}` (final name decided at PR time) to remove the names-clash with Mini's Radix-imported `--gray-a*` scale. Mechanical rename across `globals.css` + 3 component-manifest entries. Lands before Step 3 so Step 3's diff stays purely about duplicate-removal + value-rebinding.
+
+**Branch:** `pr-c-gray-a-rename` (off `main`).
+
+**Scope: code change** (small) + manifest update.
+
+**Implementation steps:**
+- [ ] Decide final token names. Recommendation: `--tint-overlay-light`, `--tint-overlay-medium`, `--tint-overlay-strong`. Confirm with user at plan approval.
+- [ ] Rename `--gray-a5/6/7` declarations in `:root` of `src/styles/globals.css`.
+- [ ] Update every CSS selector in `globals.css` that references the old names.
+- [ ] Update `core-docs/component-manifest.json` `tokens_referenced` arrays for any component listing `gray-a*` (search and verify).
+- [ ] `npm run typecheck && npm run build` clean.
+- [ ] Verify in `dist/assets/*.css`: our 3 declarations now use new names; Mini's Radix-imported `--gray-a*` (12-step) still present and untouched.
+- [ ] /simplify + /ship.
+
+**Risks / open questions:**
+- **Token name bikeshed.** `--tint-overlay-*` is one option; `--page-overlay-*` is another. Decide at plan time.
+- **Component-manifest accuracy.** Some components may already be `legacy` and accurate; some may be stale. Verify by grepping `src/components/` for `gray-a` usage and reconciling with manifest entries.
+
+### PR C / Step 2: `--accent-8` contrast matrix (parallel to Step 3a, blocks Step 4+)
+
+**Goal:** Verify that `var(--accent-8)` (Radix indigo-8 = `#8da4ef`) clears ≥3:1 contrast against every page-tint hue the color rail produces. Required before any component starts using `var(--accent-8)` or `var(--accent-9)` for focus rings, links, or selected state. Output: a contrast pass/fail table per hue + an axiom amendment if any hue fails.
+
+**Branch:** `pr-c-accent-contrast` (off `main`).
+
+**Scope: docs-only.** No code changes. Output is an entry in `core-docs/token-migration.md` (or its own doc — decide at plan time).
+
+**Implementation steps:**
+- [ ] Enumerate the color-rail hue space (the HSL gradient + the 8 preset swatches) from `src/components/ColorRail.tsx`.
+- [ ] For each hue, compute the contrast ratio between `--accent-8` (indigo-8) and the corresponding `--page-tint` value.
+- [ ] Flag any hue where contrast < 3:1 (WCAG AA for UI components).
+- [ ] If any fail: propose a fix. Options include (a) using `--accent-9` instead, (b) re-binding accent to a different scale for that hue range, (c) adding axiom #10 (focus style) amendment that names the workaround.
+- [ ] Update `core-docs/token-migration.md` (or new doc) with the matrix + decision.
+
+**Risks / open questions:**
+- **HSL gradient is continuous, not a finite set.** Sampling decision: test the 8 presets + a 16-step sweep of the gradient (24 total). Confirm at plan time.
+- **Indigo-8 may fail on dark page tints.** If so, the resolution affects axiom #10 (focus style) and may force a change to the design-language `--accent-8`-reservation language.
+
 ### Template for a work item
 
 ```
@@ -69,8 +119,10 @@ PR C is **iterative across sessions** — each component migration is its own sm
 
 _(Last 3–5 items. Older items live in `history.md`.)_
 
-- **Workflow: `/critique-plan` inserted into step 3** — Branch `pasted-text-import`, commit `5f128c4..[ship]`. New `.claude/rules/plan-discipline.md` reminds the planner to read `spec.md` / `feedback.md` / `design-language.md` before drafting. `core-docs/workflow.md` step 3 now runs `/critique-plan` (assumption-auditor plugin) between plan draft and user approval, with BLOCKER / REDIRECT / FOLLOW-UP triage. Additive — human gate unchanged. Plugin-absence is a silent skip. No `feedback.md` entry per task scope. 2026-05-14.
-- **CI gates + Dependabot (branch `ci-setup`)** — Three parallel jobs (typecheck/build/test) on `pull_request` and `merge_group` events; concurrency scoped by event-name + ref; workflow-level `permissions: { contents: read }`. Dependabot configured for npm with version-updates suppressed (security updates flow via repo settings). Unblocks the merge queue gate. FB-0020, FB-0021 captured. 2026-05-14.
+- **PR C Step 1 — Token name-collision audit (branch `pr-c-token-audit`)** — Output: `core-docs/token-migration.md` with the 14-token collision table (4 radius, 4 space, 3 weight, 3 gray-a) + work lists for Step 3a (rename) and Step 3 (migration). Ours wins via cascade for every collision as expected. FB-0022/0023/0024 captured. No code changed. 2026-05-15.
+- **GitHub Org transfer + HTTPS remote flip** — `byamron/md-manager` → `by-dev-tools/md-manager` (unlocks merge queue for personal-account repos). Branch protection / Rulesets preserved. Merge queue active with required checks `typecheck` / `build` / `test`. Dependabot security updates + Secret Protection enabled. All worktree remotes on HTTPS so Conductor workspaces can clone/push without SSH keys. FB-0022 captured. 2026-05-14.
+- **Workflow: `/critique-plan` inserted into step 3** — Branch `pasted-text-import`. `.claude/rules/plan-discipline.md` reminds the planner to read `spec.md` / `feedback.md` / `design-language.md` before drafting. `core-docs/workflow.md` step 3 now runs `/critique-plan` (assumption-auditor plugin) between plan draft and user approval. Additive — human gate unchanged. 2026-05-14.
+- **CI gates + Dependabot (PR #10)** — Three parallel jobs (typecheck/build/test) on `pull_request` and `merge_group` events; workflow-level `permissions: { contents: read }`. Dependabot configured for npm with version-updates suppressed. FB-0020, FB-0021 captured. 2026-05-14.
 - **Mini design language amended (PR B, #9)** — Branch `mini-elicit`, commits `97ff141..ship`. Explicit Axioms section answers all 10 Mini axioms; surface-posture flagged as an open axiom (both floating and flat ship for dogfooding). Component manifest, pattern-log, generation-log seeded. CLAUDE.md Mini section appended. FB-0018, FB-0019 captured. No code changed. 2026-05-14.
 - **Mini design system installed (PR A)** — Branch `mini-install`, commits `0d17846..[ship]`. Primitives, archetypes, stylesheets, 6 skills, invariants, templates landed in `packages/ui/` at SHA `83df0b2` (Designer parity). 12 Radix peer deps installed. Stylesheets wired in `main.tsx`; HTML root `class="light-theme" data-accent="indigo"`. No app component migrated. SAFETY: `scripts/sync-mini.sh` snapshots+restores project skills around Mini's destructive `rsync --delete`. FB-0016, FB-0017 captured. 2026-05-14.
 - **Sidebar hanging-icon nav redesign + section-spacing dev knob** — PR #6 (`3f5564a`). Replaced SourceRow with NavSection/Collapse/NavRow. Counts now on collapsed sections. Drafts grouped under synthetic folder. DevPanel renamed "Sidebar sans" → "Sidebar mono"; dropped inert File icons toggle + Tree layout select. 2026-05-13.

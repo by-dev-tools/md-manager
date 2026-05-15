@@ -33,6 +33,36 @@ Increment from the last entry. Use `FB-0001`, `FB-0002`, etc.
 
 ## Entries
 
+### FB-0024: Audits read source files end-to-end, not just grep
+**Date:** 2026-05-15
+**Source:** review feedback
+
+**What was said:** During the PR C token name-collision audit, the assistant computed the intersection of token names between `src/styles/globals.css` and `packages/ui/styles/tokens.css` using `grep --oE '--[a-zA-Z0-9_-]+:'` and produced a collision count of 11. The `/simplify` quality reviewer caught a miss: `--gray-a5/6/7` collides with Mini's Radix-imported alpha-gray scale (declared by `@radix-ui/colors/gray-alpha.css`, which `tokens.css` `@import`s at line 35). A pure grep against `tokens.css` doesn't surface the imported declarations; the true Mini token surface includes transitive imports. Correct count was 14.
+
+**Synthesized rule:** For audit-style work that claims completeness ("the intersection is N tokens", "this is every dependency", "all consumers of X are…"), don't rely solely on grep against immediate-file contents. Open the file end-to-end, follow `@import` / `import` / `require` / `include` directives one level (more if needed) to capture the transitive surface, and re-validate the claim against the union. Verify the audit against built artifacts (e.g., `dist/assets/*.css` after `npm run build`) when bundling exists — the bundle is the ground truth for "what actually ships." Cost: a few extra grep / Read calls per audit. Saves the embarrassing follow-up commit when a reviewer catches the miss.
+
+**Applies to:** audits, codebase surveys, intersection / union claims, refactor scoping.
+
+### FB-0023: Separate naming changes from value migrations — each its own PR
+**Date:** 2026-05-15
+**Source:** review feedback
+
+**What was said:** The PR C audit initially bundled a `--gray-a*` → `--tint-overlay-*` rename into the Step 3 tokens-migration work list. `/simplify` (efficiency agent) flagged it as scope creep: a semantic rename touching every usage in `globals.css` is a different concern from mechanical duplicate-removal + value rebinding. Reviewing both in one diff conflates "did the rename touch all the right call sites?" with "did the duplicate removal preserve every token value?" Resolution: split into PR C Step 3a (rename only, lands first) and PR C Step 3 (migration, lands after).
+
+**Synthesized rule:** When a refactor combines (a) renaming an identifier across many call sites with (b) changing the implementation / values / structure of related identifiers, split into separate PRs. The rename PR has a single question for reviewers ("did every reference get updated and nothing else?"); the migration PR has a different single question ("did the values / behavior change as documented?"). Bundled, both questions land on every line of the diff and review takes 2-3× longer. Order: rename first, migration second — the rename is mechanical, fast to land, and unblocks the migration's review by reducing its surface.
+
+**Applies to:** refactors, migrations, token / API renames, anything that mixes mechanical-renaming with semantic-change.
+
+### FB-0022: HTTPS over SSH for git remotes in this project (agent-heavy workflow)
+**Date:** 2026-05-14
+**Source:** user direction
+
+**What was said:** During the GitHub org transfer, switching the remote from `git@github.com:by-dev-tools/md-manager.git` to `https://github.com/by-dev-tools/md-manager.git` was driven by a concrete failure: Conductor workspace creation couldn't `git fetch` because the workspace had no SSH key. The agent-heavy workflow spawns ephemeral workspaces frequently; provisioning SSH keys per environment is friction. HTTPS via `gh auth` (token in Keychain) works from any environment that has `gh` installed and authenticated, which is the standard tooling baseline. Security comparison: HTTPS + token and SSH + key are equivalent on every dimension that matters (both keychain-stored, both TLS-or-SSH transport-encrypted, both revocable in GitHub UI). The "SSH is more secure" intuition is a holdover from the password-over-HTTPS era and doesn't apply to modern token auth.
+
+**Synthesized rule:** Default to HTTPS remotes (`https://github.com/...`) over SSH (`git@github.com:...`) for repos in this project. SSH may still be appropriate for non-GitHub remotes or when an organization-wide policy requires it; for this project (solo, public, agent-heavy, GitHub-only), HTTPS is the friction-minimizing default and incurs no security tax. The decision lives in this entry; verify any new clone, worktree, or workspace defaults to HTTPS.
+
+**Applies to:** git remote configuration, workspace setup, environment provisioning.
+
 ### FB-0021: Try the automated/operational fix before restructuring the docs
 **Date:** 2026-05-14
 **Source:** user direction

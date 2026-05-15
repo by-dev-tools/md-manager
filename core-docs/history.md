@@ -37,6 +37,51 @@ Use the `SAFETY` marker on any entry that modifies error handling, persistence, 
 
 ## Entries
 
+### PR C Step 1 — Token name-collision audit (unblocks Step 3 tokens migration)
+**Date:** 2026-05-15
+**Branch:** pr-c-token-audit
+**Commit / PR:** `a7c6a07..[this ship commit]` (3 commits) → [PR pending push]
+
+**What was done:**
+- Built `dist/assets/*.css` to capture the merged stylesheet that actually ships.
+- Extracted every `--<name>: <value>;` declaration from `src/styles/globals.css` (42 tokens) and `packages/ui/styles/tokens.css` (~150 declared + ~120 imported from Radix Colors via 14 `@import` directives).
+- Computed the name-intersection: **14 collision tokens** — `--radius-badge/button/card/modal`, `--space-3/4/5/6`, `--weight-regular/medium/semibold`, plus the audit's late catch `--gray-a5/6/7` (Mini imports `@radix-ui/colors/gray-alpha.css`, which declares `--gray-a*` on `:root`).
+- Verified cascade winner in the built CSS: for every collision token, the bundle contains both declarations in source order — Mini's first, ours second — so our value wins via cascade as expected.
+- Categorized:
+  - **Identical values (7):** `--space-*`, `--weight-*`. Same numeric value, different units (rem vs px).
+  - **Different values, ours intentional (7):** all `--radius-*` (ours 1-4px tighter than Mini's defaults, matching axiom #9 "soft with one pillowy signature"); all `--gray-a*` (ours 5-11% black alpha vs Mini's Radix 12-19%; same name, different intent — ours is page-tint wash, Mini's is the full Radix alpha primitive).
+  - **Accidental / Mini-wins / surprising:** none.
+- Output: `core-docs/token-migration.md` — the migration plan that PR C Step 3 will execute. Contains the collision table, categorized decisions with rationale, and work lists for two follow-up PRs (Step 3a rename + Step 3 migration).
+- Plan.md: added the audit step under "Active Work Items," handoff notes updated.
+- No app code changed. `npm run typecheck && npm run build` clean.
+
+**Why:**
+- The token name-collision audit was the highest-priority PR A staff-review follow-up captured in `roadmap.md`. PR C Step 3 (the actual tokens migration that consolidates `--space-*`, `--radius-*`, etc. into a single source of truth in `packages/ui/styles/tokens.css`) couldn't responsibly start without knowing which collisions are identical-value (safe delete), which are semantically different (need explicit re-binding), and which are surprises (warrant pausing the migration).
+- A secondary goal: exercise the new merge queue and CI gates from PR #10 with a small, focused, docs-only PR before doing anything that touches app code. The audit doubles as a queue dry-run.
+
+**Design decisions:**
+- **`--gray-a*` rename split into its own PR ("Step 3a"), not bundled into Step 3.** A semantic rename across globals.css usage is a different reviewer-question than mechanical duplicate-removal + radius rebinding. Bundled, each line of the migration diff carries two questions; split, each PR has one. Captured as FB-0023.
+- **Radius rebinding via fork-and-own of Mini's `tokens.css`, not by keeping `globals.css` declarations.** Mini's `tokens.css` is the contract surface for downstream Mini skills (`generate-ui`, `enforce-tokens`); the fork-and-own pattern is supported (per `packages/ui/MINI-VERSION.md`). Keeping our values in `globals.css` would mean two places to read for "what radius does this project use" — worse for future readers.
+- **Unit shift accepted (px → rem) for identical-value collisions.** Mini uses rem, we use px. Numerically equivalent at the default 16px font-size; rem additionally scales with user font-size preference (accessibility win). Accepting Mini's rem for the deleted duplicates is a no-op visually + a real a11y upgrade. Documented as a Step 3 sub-decision.
+- **`--gray-a*` semantic split surfaced as a third real collision class.** Initially framed as a "near-naming-clash"; the /simplify reviewer caught that Mini's Radix-imported `--gray-a*` is a full value collision (different values under identical names). The rename preserves both intents — Mini's `--gray-a*` becomes available as the Radix alpha-gray primitive (12-step), our specific page-tint overlay opacities live under a name that says what they are. → FB-0024 (audits read end-to-end, not just grep).
+
+**Technical decisions:**
+- **Audit doc lives at `core-docs/token-migration.md`, scoped to PR C.** Once PR C Step 3 ships, the durable parts fold into `design-language.md` (change-log entry, updated Color / Spacing / Corner-radius tables); the audit doc itself can be archived. Scoping to PR C avoids growing `design-language.md` with transient migration content.
+- **rem-to-px conversions assume default 16px font-size.** Documented in the audit doc. If the project ever changes the root font-size, the conversions in the doc would need re-validation.
+- **`dist/assets/*.css` is the ground truth for cascade resolution**, not source-file load order alone. The audit verifies in the bundle, not just in `src/main.tsx`. This is the right discipline because Vite's bundling order could theoretically differ from import order (it doesn't, but the discipline is the safety net).
+
+**Tradeoffs discussed:**
+- **Single tokens file (`tokens.css`) vs. continued split (`tokens.css` + `globals.css` `:root`).** Picked single tokens file. Pro: one grep finds every token. Con: Mini's tokens.css grows from ~150 to ~180 declarations. The clarity payoff outweighs the file-size growth. Documented in the audit doc as a Step 3 decision so the migration PR doesn't re-litigate.
+- **Keep px in `globals.css` vs. accept rem from `tokens.css`** for identical-value collisions. rem wins (a11y benefit, Mini contract alignment, no visual change). Documented as part of the Step 3 plan.
+- **Bundle Step 3a (rename) into Step 3 vs. split.** Split. The /simplify efficiency review was correct that bundling makes both PRs harder to review. Cost: two PR cycles instead of one. Benefit: each diff has one question.
+
+**Lessons learned:**
+- **Pure-grep audits miss transitive imports** (FB-0024). The initial 11-collision count missed `--gray-a*` because `grep` against `tokens.css` doesn't surface declarations from `@import "@radix-ui/colors/gray-alpha.css"`. For audits that claim completeness, open files end-to-end + verify against built artifacts.
+- **Naming changes are their own concern** (FB-0023). Bundling a rename pass into a migration PR conflates two reviewer questions. The principle generalizes to any refactor mixing mechanical rename with semantic change.
+- **The audit doubled as a merge-queue dry-run.** A docs-only PR with no app behavior change is a safe first exercise of CI gating + the queue, separate from substantive code changes. Useful pattern when introducing new infrastructure.
+
+---
+
 ### Workflow: insert `/critique-plan` between plan-draft and user approval
 **Date:** 2026-05-14
 **Branch:** pasted-text-import

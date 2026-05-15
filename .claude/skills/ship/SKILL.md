@@ -30,7 +30,7 @@ If on `main`, create a descriptive kebab-case branch first.
 
 ## 1. Final-pass reviews
 
-`staff-review` should have already run during feature work. `ship` is the **final safety net** with sharper focus on security and accessibility.
+`/simplify` and `/staff-review` should have already run during feature work — they're steps 5 and 6 of the standard loop (`core-docs/workflow.md`). `ship` is the **final safety net** with sharper focus on security and accessibility; it does not re-run the earlier two. If the diff has changed materially since they ran (e.g., several iteration cycles intervened), re-run them before continuing here.
 
 Invoke the two specialized review skills via the Skill tool, in sequence:
 1. **`/security-review`** — diff-focused security audit for this stack. The skill saves its own diff, runs its own greps, spawns its own cold-read Agent, triages findings, and applies BLOCKER/NIT fixes itself. It returns the findings back to this pipeline.

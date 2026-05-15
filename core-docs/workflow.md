@@ -7,16 +7,17 @@ How features get built and shipped on md-manager. Every non-trivial change follo
 ## The loop
 
 ```
-1. Request         user proposes a feature / change / fix
-2. Clarify         Claude asks targeted questions, reviews relevant docs
-3. Plan            Claude writes a plan; user approves or redirects
-4. Execute         Claude implements
-5. Commit          Claude commits with a clear "why" message
-6. Staff review    /staff-review — three lenses in parallel; small fixes in-tree
-7. Present         Claude shares the review report + dev URL + PR (not merged)
-8. Iterate         user gives feedback; Claude addresses it
-9. Ship            /ship — security + a11y final pass, doc updates, PR opens
-10. (user merges)  Claude never merges
+ 1. Request         user proposes a feature / change / fix
+ 2. Clarify         Claude asks targeted questions, reviews relevant docs
+ 3. Plan            Claude writes a plan; user approves or redirects
+ 4. Execute         Claude implements
+ 5. Commit          Claude commits with a clear "why" message
+ 6. Simplify        /simplify — reuse, clarity, efficiency; fix in-tree
+ 7. Staff review    /staff-review — three lenses in parallel; small fixes in-tree
+ 8. Present         Claude shares the review report + dev URL + branch state
+ 9. Iterate         user gives feedback; Claude addresses it
+10. Ship            /ship — security + a11y final pass, doc updates, PR opens
+11. (user merges)   Claude never merges
 ```
 
 Each numbered step is described below.
@@ -64,7 +65,21 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>
 
 Why commit before review? It gives reviewers a stable artifact and avoids losing work to an accidental edit.
 
-## 6. Staff review
+## 6. Simplify
+
+Run `/simplify`. The skill cold-reads the changed code for **reuse, quality, and efficiency** and fixes issues in-tree:
+- Duplicated logic that could collapse into a helper.
+- Functions doing two unrelated things; split them.
+- Premature abstractions to delete (one caller, no second one coming).
+- Dead code, unused imports, commented-out blocks.
+- Mid-function early-returns hiding state machines that want their own function.
+- Performance footguns that match a known pattern (e.g. O(n²) where O(n) reads the same; useEffect deps misses that re-run heavy work).
+
+Why before staff review? If staff-review ran first, half its NITs would be "this is overcomplicated" — `/simplify` removes that class of finding pre-emptively so the three-lens review can focus on architecture, correctness, and craft instead of "this could be shorter."
+
+Commit the simplify fixes separately (or amend if a single line). Re-run `npm run typecheck && npm run build && npm test` before moving on; refactors are exactly where tests earn their keep.
+
+## 7. Staff review
 
 Run `/staff-review`. Three Explore agents review the diff in parallel from three lenses (staff engineer / staff UX / staff design engineer). Findings are triaged:
 - **BLOCKER** — fix in-tree now. User-visible regression, crash, accessibility violation, broken build.
@@ -75,20 +90,20 @@ Run `/staff-review`. Three Explore agents review the diff in parallel from three
 
 If staff-review touches design rules, accessibility patterns, or product decisions that need to persist, the relevant rule goes into `design-language.md` or `feedback.md` so we don't relearn it next time.
 
-## 7. Present
+## 8. Present
 
 Claude returns:
 - The Reviewer notes (findings, what was fixed, what was deferred and where).
 - The dev server URL (`/link` if not running) so the user can verify in-browser.
-- The PR link if one exists; otherwise the local branch state.
+- The branch and commit state. **No PR exists yet** — that's `/ship`'s job (see § 10 below for why).
 
 **Never merged.** The whole point of review is the human hand-off.
 
-## 8. Iterate
+## 9. Iterate
 
 User responds with feedback. Claude addresses it — code changes, doc updates, more review if scope changed materially. Each iteration is a normal request/clarify/plan/execute loop in miniature.
 
-## 9. Ship
+## 10. Ship
 
 User says "ship it" (or `/ship`). Claude runs the ship pipeline:
 1. Final-pass `/security-review` + `/accessibility-review` in parallel (sharper focus than staff-review's general lenses).
@@ -100,6 +115,16 @@ User says "ship it" (or `/ship`). Claude runs the ship pipeline:
 7. Output the PR URL.
 
 **Still never merged.** The user merges.
+
+### Why the PR opens here, not earlier
+
+The PR is **deliberately the last artefact created**, not the first. Three reasons:
+
+1. **Single-reviewer workflow.** The PR isn't a team-collaboration surface; it's "the work is done, please merge." Opening it mid-pipeline would create a half-done state nobody benefits from — the user is the only human reader.
+2. **Doc synthesis is load-bearing and has to be last.** `history.md` / `plan.md` / `roadmap.md` / `spec.md` / `feedback.md` only get written after every review has surfaced its findings. A PR opened before that would either lie about what's been done, or require repeated body edits as each review completed. The canonical "what shipped" record lives in those committed docs — not the PR body — and that record has to exist before the PR opens.
+3. **CI doesn't help us earlier.** The local gates (`npm run typecheck && npm run build && npm test`) already cover what CI would tell us. There's no green/red signal we'd get from a remote that we don't have on the laptop.
+
+**When this calculus changes:** a second human reviewer joins the project, deploy previews land (Vercel/Netlify) giving the PR a clickable URL, or CI starts running checks the laptop can't (visual regression, perf budget). Until then, end-of-pipeline PR creation is correct.
 
 ## Continuous improvement
 
@@ -115,7 +140,8 @@ If a `staff-review` or `ship` finding suggests a missing rule, write the rule. I
 | Skill | What it does | When |
 |---|---|---|
 | `/link` | Start the Vite dev server, return URL | Whenever you need a live preview |
-| `/staff-review` | Three-lens parallel review, fix in-tree, capture follow-ups | After implementation, before presenting |
+| `/simplify` | Cold-read changed code for reuse, clarity, efficiency; fix in-tree | After commit, before staff-review |
+| `/staff-review` | Three-lens parallel review, fix in-tree, capture follow-ups | After `/simplify`, before presenting |
 | `/security-review` | Diff-focused security audit | Standalone; also invoked by `/ship` |
 | `/accessibility-review` | Diff-focused WCAG 2.1 AA audit | Standalone; also invoked by `/ship` |
 | `/ship` | Final-pass reviews + doc updates + commit + push + PR (no merge) | When the user says "ship it" |

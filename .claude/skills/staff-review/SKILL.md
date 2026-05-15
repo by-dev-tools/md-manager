@@ -23,9 +23,11 @@ The source of truth is the workspace diff vs `origin/main`, **not** the PR. Unco
 
 ## When to invoke
 
-- A feature's implementation is complete and the user is ready for review.
+- A feature's implementation is complete, `/simplify` has already run, and the user is ready for review.
 - The user asks for a "staff", "multi-perspective", or "design + engineering" review.
 - Before opening a PR on any non-trivial change.
+
+In the standard loop (`CLAUDE.md` § Default workflow), `/simplify` is **step 5** and `/staff-review` is **step 6**. If you're entering this skill and `/simplify` hasn't run yet, run it first — staff-review wastes lens-time on "this could be shorter" issues that `/simplify` removes pre-emptively.
 
 Skip if:
 - The change is doc-only or a typo fix.

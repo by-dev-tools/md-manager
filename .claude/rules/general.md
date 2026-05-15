@@ -10,6 +10,8 @@ These apply to all work in md-manager. They reinforce the workflow defined in `C
 ## Workflow discipline
 
 - **Plan before code.** Even small changes get a 3–5 line plan written to `core-docs/plan.md`. Wait for user approval before executing. The only exception is a single-line bug fix the user explicitly asked you to "just do."
+- **Run `/simplify` after commit, before `/staff-review`.** Code-quality pass (reuse, clarity, efficiency) lands first so staff-review can focus on architecture and craft instead of "this could be shorter." Both are part of the standard loop — not optional, not just for "big" changes.
+- **The PR opens at `/ship`, not before.** Mid-pipeline PRs create half-done state and force the PR body to lie about completed reviews / doc synthesis. See `core-docs/workflow.md` § "Why the PR opens here, not earlier" for the full rationale.
 - **Doc updates belong to `/ship`, not the implementation commit.** Don't update `history.md`, `plan.md`, `roadmap.md`, `spec.md`, or `feedback.md` mid-feature — let `/ship` synthesize them at the end so the entries reflect the full change, not a partial slice.
 - **During a session, track corrections in your head (or scratchpad).** `/ship` will surface them and write the `feedback.md` entry as part of synthesis. Don't update `feedback.md` mid-conversation.
 - **Read before writing.** At session start: `core-docs/plan.md` for "Current Focus" + "Handoff Notes." Before UI work: also `core-docs/feedback.md` and `core-docs/design-language.md`.

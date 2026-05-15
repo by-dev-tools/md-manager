@@ -13,17 +13,18 @@ A markdown notes app with a content-forward, warm-neutral interface. Drafts live
 **Every non-trivial request follows this loop.** Full detail in [`core-docs/workflow.md`](core-docs/workflow.md); the rules below are non-negotiable.
 
 ```
-1. Clarify       ask 2–4 focused questions; read relevant docs before asking
-2. Plan          write a plan in core-docs/plan.md; WAIT for user approval
-3. Execute       implement the approved plan; stay in scope
-4. Commit        explain "why", not what; co-author trailer at end
-5. /staff-review three lenses in parallel; fix BLOCKERs + cheap NITs in-tree;
-                 capture FOLLOW-UPs to roadmap.md / plan.md (never PR-body-only)
-6. Present       share review report + dev URL (/link) + PR link
-7. Iterate       apply user feedback
-8. /ship         security + a11y final pass → synthesize feedback.md → update
-                 history.md / plan.md / roadmap.md / spec.md → commit → push → PR
-9. STOP          the user merges. Claude never merges.
+1.  Clarify       ask 2–4 focused questions; read relevant docs before asking
+2.  Plan          write a plan in core-docs/plan.md; WAIT for user approval
+3.  Execute       implement the approved plan; stay in scope
+4.  Commit        explain "why", not what; co-author trailer at end
+5.  /simplify     code-quality pass — reuse, clarity, efficiency; fix in-tree
+6.  /staff-review three lenses in parallel; fix BLOCKERs + cheap NITs in-tree;
+                  capture FOLLOW-UPs to roadmap.md / plan.md (never PR-body-only)
+7.  Present       share review report + dev URL (/link) + branch state
+8.  Iterate       apply user feedback
+9.  /ship         security + a11y final pass → synthesize feedback.md → update
+                  history.md / plan.md / roadmap.md / spec.md → commit → push → PR
+10. STOP          the user merges. Claude never merges.
 ```
 
 **Hard rules — these apply even if the user's phrasing seems to skip a step:**

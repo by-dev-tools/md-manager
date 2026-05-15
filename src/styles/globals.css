@@ -9,10 +9,12 @@
   --sand-11: #63615b;
   --sand-12: #21201c;
 
-  /* Alpha grays */
-  --gray-a5: rgba(0, 0, 0, 0.05);
-  --gray-a6: rgba(0, 0, 0, 0.075);
-  --gray-a7: rgba(0, 0, 0, 0.11);
+  /* Tint overlays — alpha-black washes applied over --page-tint.
+     Renamed from --gray-a5/6/7 to avoid the names-clash with Mini's
+     Radix-imported --gray-a* scale (FB-0024, see token-migration.md). */
+  --tint-overlay-light: rgba(0, 0, 0, 0.05);
+  --tint-overlay-medium: rgba(0, 0, 0, 0.075);
+  --tint-overlay-strong: rgba(0, 0, 0, 0.11);
 
   /* Type */
   --type-micro: 11px;
@@ -437,7 +439,7 @@ body.sidebar-mono .sidebar .sidebar-footer {
   transition: background 120ms ease, color 120ms ease;
 }
 .sidebar-toggle:hover {
-  background: var(--gray-a5);
+  background: var(--tint-overlay-light);
   color: var(--sand-12);
 }
 .crumb {
@@ -482,7 +484,7 @@ body.sidebar-mono .sidebar .sidebar-footer {
   height: 28px;
   padding: 0 10px;
   background: rgba(255, 255, 255, 0.4);
-  border: 1px solid var(--gray-a7);
+  border: 1px solid var(--tint-overlay-strong);
   border-radius: var(--radius-button);
   font-size: 12px;
   font-weight: var(--weight-medium);
@@ -528,7 +530,7 @@ body.sidebar-mono .sidebar .sidebar-footer {
 .segmented {
   display: inline-flex;
   align-items: center;
-  background: var(--gray-a5);
+  background: var(--tint-overlay-light);
   border-radius: var(--radius-button);
   padding: 0 2px;
   height: 28px;
@@ -577,7 +579,7 @@ body.sidebar-mono .sidebar .sidebar-footer {
   transition: background 120ms ease, color 120ms ease;
 }
 .header-icon-btn:hover {
-  background: var(--gray-a5);
+  background: var(--tint-overlay-light);
   color: var(--sand-12);
 }
 
@@ -637,7 +639,7 @@ body.sidebar-mono .sidebar .sidebar-footer {
   margin-bottom: 4px;
 }
 .editor blockquote {
-  border-left: 3px solid var(--gray-a7);
+  border-left: 3px solid var(--tint-overlay-strong);
   padding: 2px 0 2px 12px;
   margin: 8px 0 12px;
   color: var(--sand-11);
@@ -648,7 +650,7 @@ body.sidebar-mono .sidebar .sidebar-footer {
 .editor a {
   color: var(--sand-12);
   text-decoration: underline;
-  text-decoration-color: var(--gray-a7);
+  text-decoration-color: var(--tint-overlay-strong);
   text-underline-offset: 2px;
 }
 .editor s,
@@ -659,7 +661,7 @@ body.sidebar-mono .sidebar .sidebar-footer {
   font-style: italic;
 }
 .editor pre {
-  background: var(--gray-a5);
+  background: var(--tint-overlay-light);
   border-radius: var(--radius-button);
   padding: 12px 14px;
   font-family: 'Geist Mono', monospace;
@@ -671,7 +673,7 @@ body.sidebar-mono .sidebar .sidebar-footer {
 .editor code {
   font-family: 'Geist Mono', monospace;
   font-size: 0.92em;
-  background: var(--gray-a5);
+  background: var(--tint-overlay-light);
   padding: 1px 4px;
   border-radius: 3px;
 }
@@ -722,7 +724,7 @@ body.sidebar-mono .sidebar .sidebar-footer {
   font: inherit;
   color: var(--sand-12);
   text-decoration: underline;
-  text-decoration-color: var(--gray-a7);
+  text-decoration-color: var(--tint-overlay-strong);
   text-underline-offset: 2px;
   cursor: pointer;
   border-radius: var(--radius-badge);
@@ -739,7 +741,7 @@ body.sidebar-mono .sidebar .sidebar-footer {
   font-family: 'Geist Mono', monospace;
   font-size: var(--type-micro);
   padding: 1px 5px;
-  background: var(--gray-a5);
+  background: var(--tint-overlay-light);
   border-radius: var(--radius-badge);
   color: var(--sand-11);
 }
@@ -785,7 +787,7 @@ body.sidebar-mono .sidebar .sidebar-footer {
   align-items: center;
   gap: 8px;
   padding: 11px 14px;
-  border-bottom: 1px solid var(--gray-a5);
+  border-bottom: 1px solid var(--tint-overlay-light);
   color: var(--sand-9);
   font-size: 12.5px;
 }
@@ -849,7 +851,7 @@ body.sidebar-mono .sidebar .sidebar-footer {
   color: var(--sand-9);
 }
 .pop-row.detach {
-  border-top: 1px solid var(--gray-a5);
+  border-top: 1px solid var(--tint-overlay-light);
   color: var(--sand-11);
   font-size: 12.5px;
 }
@@ -1266,7 +1268,7 @@ body.sidebar-mono .sidebar .sidebar-footer {
 .dev-panel-body {
   margin-top: 6px;
   background: rgba(255, 255, 255, 0.95);
-  border: 1px solid var(--gray-a7);
+  border: 1px solid var(--tint-overlay-strong);
   border-radius: 8px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
   padding: 10px 12px 12px;
@@ -1311,7 +1313,7 @@ body.sidebar-mono .sidebar .sidebar-footer {
   font-size: 11px;
   color: var(--sand-12);
   background: var(--sand-2);
-  border: 1px solid var(--gray-a7);
+  border: 1px solid var(--tint-overlay-strong);
   border-radius: 4px;
   padding: 2px 4px;
   cursor: pointer;

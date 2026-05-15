@@ -36,7 +36,7 @@ This file loads automatically when you touch UI-related files in md-manager.
 ## Markdown rendering
 
 - Markdown-to-HTML must sanitize. Never `dangerouslySetInnerHTML` raw user content.
-- Code blocks render in `Geist Mono` with the `--gray-a5` wash background, `--radius-button` corners.
+- Code blocks render in `Geist Mono` with the `--tint-overlay-light` wash background, `--radius-button` corners.
 - Headings produce real heading tags (`<h1>`, `<h2>`, etc.) — never visual fakes via `<div class="h1">`.
 
 ## After making UI changes

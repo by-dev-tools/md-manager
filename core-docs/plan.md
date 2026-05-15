@@ -53,26 +53,48 @@ The living document for what's being worked on right now, what's queued, and wha
 
 PR C is **iterative across sessions** — each component migration is its own small PR with its own `/simplify` + `/staff-review` pass.
 
-### PR C / Step 3a: `--gray-a*` rename (next — mechanical, ~½ session)
+### PR C / Step 3a: `--gray-a*` rename (current — ½ session)
 
-**Goal:** Rename `--gray-a5/6/7` (our page-tint wash overlays) to `--tint-overlay-{light,medium,strong}` (final name decided at PR time) to remove the names-clash with Mini's Radix-imported `--gray-a*` scale. Mechanical rename across `globals.css` + 3 component-manifest entries. Lands before Step 3 so Step 3's diff stays purely about duplicate-removal + value-rebinding.
+**Goal:** Rename our `--gray-a5/6/7` page-tint wash overlays to a name that doesn't clash with Mini's Radix-imported `--gray-a*` scale. Mechanical rename across `globals.css` + 2 references in `design-language.md`. Lands before PR C Step 3 (tokens migration) so Step 3's diff stays purely about duplicate-removal + radius rebinding.
 
-**Branch:** `pr-c-gray-a-rename` (off `main`).
+**Branch:** `pr-c-gray-a-rename` (off `main` at `6f25c0e`).
 
-**Scope: code change** (small) + manifest update.
+**Scope:** CSS rename in `src/styles/globals.css` (3 declarations + 14 usages = 17 line edits) + 2 references in `core-docs/design-language.md`. No TSX changes. No component-manifest changes (the manifest's `tokens_referenced` arrays don't currently list these tokens — verified).
+
+**Token name proposal: `--tint-overlay-{light,medium,strong}`**
+
+| Old | New | Value (unchanged) |
+|---|---|---|
+| `--gray-a5` | `--tint-overlay-light` | `rgba(0, 0, 0, 0.05)` |
+| `--gray-a6` | `--tint-overlay-medium` | `rgba(0, 0, 0, 0.075)` |
+| `--gray-a7` | `--tint-overlay-strong` | `rgba(0, 0, 0, 0.11)` |
+
+**Rationale:** these tokens are alpha-black overlays applied *over* the page tint to create subtle washes (skeleton blocks per design-language § Loading states, code-block backgrounds, hairline borders, dividers). "Tint-overlay" names what they do; "light/medium/strong" describes the opacity progression. Preserves Mini's `--gray-a*` namespace for the full Radix alpha primitive (12-step scale; we don't use it today but could later without a re-rename).
+
+**Alternatives considered:**
+- `--page-overlay-*` — also accurate but congests the `--page-*` namespace (`--page-tint`, `--page-text`, `--page-overlay`).
+- `--wash-*` — short, but less self-explanatory.
+- `--overlay-*` — too generic; Mini may want a true overlay layer token (modal scrims etc.) later.
 
 **Implementation steps:**
-- [ ] Decide final token names. Recommendation: `--tint-overlay-light`, `--tint-overlay-medium`, `--tint-overlay-strong`. Confirm with user at plan approval.
-- [ ] Rename `--gray-a5/6/7` declarations in `:root` of `src/styles/globals.css`.
-- [ ] Update every CSS selector in `globals.css` that references the old names.
-- [ ] Update `core-docs/component-manifest.json` `tokens_referenced` arrays for any component listing `gray-a*` (search and verify).
-- [ ] `npm run typecheck && npm run build` clean.
-- [ ] Verify in `dist/assets/*.css`: our 3 declarations now use new names; Mini's Radix-imported `--gray-a*` (12-step) still present and untouched.
-- [ ] /simplify + /ship.
+1. Rename 3 declarations in `src/styles/globals.css:13-15`.
+2. Replace 14 `var(--gray-a*)` usages in `globals.css` (verified locations: lines 440, 485, 531, 580, 640, 651, 662, 674, 725, 742, 788, 852, 1269, 1314). Mechanical search-and-replace.
+3. Update `core-docs/design-language.md`:
+   - § Color system table (line 123) — token name + the cell-label `--gray-a5 / a6 / a7`
+   - § Loading states (line 212) — prose reference to "skeleton blocks in `--gray-a5`"
+4. `npm run typecheck && npm run build` clean.
+5. Spot-check `dist/assets/*.css`: our 3 declarations now use new names; Mini's Radix-imported `--gray-a1..12` (12-step) still present and untouched.
+6. /simplify + /ship through the merge queue.
+
+**Out of scope (for this PR):**
+- Token consolidation, radius rebinding, deleting duplicate space/weight declarations — that's PR C Step 3, blocked by this PR + Step 2 (contrast matrix).
+- Component-manifest updates — manifest doesn't currently reference these tokens.
+- `design-language.md` change-log entry — `/ship` synthesizes that.
 
 **Risks / open questions:**
-- **Token name bikeshed.** `--tint-overlay-*` is one option; `--page-overlay-*` is another. Decide at plan time.
-- **Component-manifest accuracy.** Some components may already be `legacy` and accurate; some may be stale. Verify by grepping `src/components/` for `gray-a` usage and reconciling with manifest entries.
+- **Final token names.** Confirm `--tint-overlay-light/medium/strong` at approval. Other strong contenders: `--wash-{light,medium,strong}`, `--page-overlay-*`.
+- **Stale references in core-docs/** (`history.md`, `token-migration.md`) refer to `--gray-a*` as historical state. **Do not update those** — they describe the state at writing time; updating them rewrites history.
+- **Visual change risk: zero.** Values are unchanged. Bundle output is byte-identical for all selectors using these tokens, only with different token names in the declarations.
 
 ### PR C / Step 2: `--accent-8` contrast matrix (parallel to Step 3a, blocks Step 4+)
 

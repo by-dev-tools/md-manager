@@ -50,10 +50,15 @@ Nice-to-haves and explorations.
 
 Captured by `/staff-review` and `/ship` so they don't get lost.
 
-- Rename `package.json` from `"mumbai"` to `"md-manager"`
+- Rename `package.json` from `"mumbai"` to `"md-manager"` — **done** (lockfile sync landed in PR #9)
 - Review `.claude/settings.local.json` for stale template permissions
 - Decide co-author trailer model version (currently Opus 4.7) and document the choice
 - Audit `src/lib/markdown.ts` for sanitization posture before any user-content pasting feature ships
+- **GitHub Actions pinning policy.** Currently using `@v4` tags for `actions/checkout` and `actions/setup-node` — acceptable for a solo public repo with no secrets in workflow scope. Document the policy in `core-docs/workflow.md` (or a dedicated `core-docs/ci.md`) so the next session knows when to migrate to commit SHAs: any of (a) workflow gains a `${{ secrets.* }}` reference, (b) a step writes to the repo (auto-fix, coverage badge, etc.), (c) project grows to a meaningful supply-chain target. Captured by `/ship` security review on `ci-setup`.
+- **Document the `agentation` dependency** in `core-docs/spec.md` § "Tech stack" — what it provides (dev-mode visual feedback toolbar), why it's a dev-only concern, and a note on the caret pin (`^3.0.2` allows patch + minor). Captured by `/ship` security review on `ci-setup`.
+- **Workflow.md commit-boundary rule.** Formalize the per-phase commit pattern (Execute / /simplify / /staff-review / /ship) as an explicit step in `core-docs/workflow.md` rather than relying on agent judgment. See FB-0020. Cheap doc edit; deferred from `ci-setup` to keep that PR's scope tight.
+- **CLAUDE.md merge-strategy note.** Add a one-paragraph note to `CLAUDE.md` § "Where to look" or a new short § "Merge strategy" pointing out that the repo squash-merges PRs to keep `main` linear, and that intermediate branch commits live on the PR page. Cheap; deferred from `ci-setup`.
+- **Lint pattern: reject `github.event.pull_request.*.body` / `.title` interpolation in CI yaml.** Premature at one workflow file; revisit if the `.github/workflows/` set grows past 2-3 files. Captured by `/ship` security review on `ci-setup`.
 
 ### From Slices A+B staff review (PR #2)
 

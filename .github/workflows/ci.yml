@@ -4,6 +4,11 @@ on:
   pull_request:
   merge_group:
 
+# Explicit minimum scope. Add `contents: write` (or narrower) only if a job
+# needs to push to the repo (e.g., auto-generated coverage badges, lint fixes).
+permissions:
+  contents: read
+
 concurrency:
   group: ci-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: true

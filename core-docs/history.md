@@ -37,6 +37,43 @@ Use the `SAFETY` marker on any entry that modifies error handling, persistence, 
 
 ## Entries
 
+### Workflow: insert `/critique-plan` between plan-draft and user approval
+**Date:** 2026-05-14
+**Branch:** pasted-text-import
+**Commit / PR:** `5f128c4..[this ship commit]` → [PR pending push]
+
+**What was done:**
+- Added `.claude/rules/plan-discipline.md` — a new rule file that loads when editing `core-docs/plan.md` and reminds the planner to read `spec.md`, `feedback.md`, `design-language.md`, and any user-pointed-to doc before drafting. The rule explains both consumers (the planner itself, and `/critique-plan` if installed) and treats silent contradictions with source-of-truth docs as a wasted-iteration anti-pattern that should be surfaced during Clarify.
+- Updated `core-docs/workflow.md` step 3:
+  - Loop diagram line: "Claude writes a plan; runs /critique-plan; user approves or redirects".
+  - § 3 body: spelled out the critic's three severity tiers (BLOCKER fixed in-plan, REDIRECT surfaced to user, FOLLOW-UP captured to `plan.md` / `roadmap.md`), the plugin-absence fallback, and the explicit statement that the critic informs the human gate without replacing it.
+  - Skills cheat sheet: added a row for `/critique-plan`.
+
+**Why:**
+Until now, step 3's only quality gate was human approval. There was no automated check that a drafted plan actually aligned with the user's request, respected `feedback.md` / `spec.md` rules, or stayed internally coherent. The plan-critic (shipped in the `assumption-auditor` plugin, repo `llm-auditor`, branch `guangzhou-v3`) closes that gap by auditing plans for scope drift, spec violation, and internal incoherence — using a deterministic preprocessor that loads every `core-docs/*.md` (except `history.md` / `plan.md` / `roadmap.md`) so the critic's context doesn't depend on what Claude happened to `Read` earlier in the session.
+
+**Design decisions:**
+- **Additive, not replacement.** The critic's output is input to the user's approval decision, not a substitute for it. Step 3 still ends at "user approves."
+- **Plugin-absence is silent and safe.** If `/critique-plan` isn't installed, the workflow falls back to the prior behavior (human gate only) without erroring. This keeps the workflow doc honest for collaborators who haven't installed the plugin.
+- **Plan-discipline rule narrows scope to `core-docs/plan.md`.** The rule fires when editing that path, which is where plans get drafted. The alternative (always-on, like `general.md`) would have surfaced the rule to every UI / code edit too — noise without benefit.
+- **No `feedback.md` entry for this change.** This is workflow infrastructure, not a synthesized user preference. Capturing it as feedback would have miscategorized it.
+
+**Technical decisions:**
+- **Verbatim adoption of the task spec's rule body and § 3 body.** The task came with exact prose for both surfaces; rewriting it would have introduced drift between this repo and any sibling adopter of the same plugin convention.
+- **No plugin vendoring.** The plugin lives in a separate repo and is installed via `/plugin install`. This change references the plugin's commands but does not bundle, mirror, or modify the plugin's files.
+- **No `package.json` / build / script changes.** Doc-only diff.
+
+**Tradeoffs discussed:**
+- **Added review step vs. better-aligned plans.** Every plan now incurs an extra `/critique-plan` invocation before reaching the user. The cost is one extra agent call per request; the benefit is catching scope-drift / spec-violation / incoherence findings before they consume real human review bandwidth. Acceptable given plans tend to be short and the critic is fast.
+- **Where the rule loads.** Option A: trigger on `core-docs/plan.md` path (chosen). Option B: always-on like `general.md`. Option A keeps the noise floor low at the cost of a slightly weaker enforcement guarantee (the rule won't fire if a plan is sketched outside `plan.md` first). The user was flagged on this choice during plan approval and accepted it.
+- **Trust staging.** The plan-critic is new and unproven on real md-manager sessions. The workflow doc explicitly frames its findings as input to the human decision rather than authoritative — so a false positive doesn't block the loop, it just gets noted and proceeds.
+
+**Lessons learned:**
+- Verbatim adoption of an external spec is the right move when the spec is well-defined and the project is one of several adopters of a shared convention — drift between adopters is the worse failure mode than slightly-suboptimal local phrasing.
+- Doc-only changes can skip `/staff-review` and `/security-review` + `/accessibility-review` legitimately. The skill files themselves document this skip condition; following it saves real cycle time without losing signal.
+
+---
+
 ### Mini design language amended (PR B — axioms made explicit, both surface postures stay open)
 **Date:** 2026-05-14
 **Branch:** mini-elicit

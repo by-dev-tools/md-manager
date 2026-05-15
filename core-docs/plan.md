@@ -6,10 +6,11 @@ The living document for what's being worked on right now, what's queued, and wha
 
 ## Current Focus
 
-**Mini design system adoption — PR C: Token + component migration.** PR A (install) and PR B (elicit + amend design language) shipped. PR C migrates `src/styles/globals.css` tokens into `packages/ui/styles/tokens.css` and migrates components one at a time to Mini primitives + archetypes. Multi-session, iterative — each component is its own small PR with its own staff-review pass.
+**Workflow unification — PR 2: Port preflight + failure-pattern memory infrastructure.** PR 1 (canonical workflow + spike mode + confidence gates + memory tooling + 5 anti-slop guardrails) shipped on `unify-workflows`. PR 2 ports designer's `tools/preflight/check.mjs` adapted to md-manager's TS-only stack, implements the `/ship-spike` runtime stubbed in PR 1, and ports designer's existing failure-pattern memory entries (filtered through guardrails 1–3 before importing). PR C (Mini token+component migration) is paused until workflow infra settles.
 
 ## Handoff Notes
 
+- **PR 1 (workflow unification) shipped on `unify-workflows`.** Doc + tooling only. New canonical workflow.md (11 steps, 1=Clarify), spike/tiny modes, confidence gates, three-layer feedback model with 5 guardrails on agent memory. `tools/memory/check.mjs` resolves to harness-canonical memory dir via candidate scoring; override via `MEMORY_DIR` env var or gitignored `tools/memory/.memory-dir` file. Path-validates external inputs (defense-in-depth). PR C (Mini migration) paused until PR 2 settles.
 - **CI setup shipped on `ci-setup`** — `cacf331` (workflow + dependabot) + `98ab10d` (/simplify concurrency-group fix) + this ship commit. Workflow-level `permissions: { contents: read }` added in this commit per security review. Required-check names that branch protection should gate on: `typecheck`, `build`, `test`.
 - **After merging `ci-setup`, do these repo-settings steps** (none can be done in-tree): (1) Branch protection on `main` → require status checks `typecheck` + `build` + `test`; (2) Same rule → require merge queue (squash method, build concurrency 1, batch min/max 1/5, wait 5 min, timeout 60 min); (3) Settings → Code security and analysis → enable "Dependabot security updates"; (4) repo merge-button settings → restrict to squash-only.
 - **PR B (Mini design-language amendment) shipped on `mini-elicit`** — `97ff141` (axioms + manifest + logs + CLAUDE.md) + `87869d7` (/simplify fixes) + ship commit. Merged as PR #9. `/simplify` ran 3 MUST FIX + 1 NIT; staff/security/a11y reviews skipped per their docs-only rules. No code changed; visible UI byte-identical to `main`.
@@ -24,7 +25,50 @@ The living document for what's being worked on right now, what's queued, and wha
 
 ## Active Work Items
 
-### PR C: Token + component migration (multi-session, iterative — current)
+### Workflow unification — PR 2: Port preflight + failure-pattern memory (current)
+
+**Goal:** Adapt designer's `tools/preflight/check.mjs` to md-manager's TS-only stack and wire it as the required gate between Execute (step 3) and /simplify (step 6). Implement the `/ship-spike` runtime stubbed in PR 1. Port the relevant failure-pattern memory entries from designer (filtered through PR 1's source-diversity bar before importing).
+
+**Mode:** feature
+
+**Scope (in):**
+- `tools/preflight/check.mjs` for md-manager: typecheck + build + test + token-invariant check + manifest check (drop cargo gates entirely; keep TS gates only). Wire as the bundled command referenced by `core-docs/workflow.md` § Preflight.
+- Implement `.claude/skills/ship-spike/SKILL.md` runtime — currently a doc/spec; needs to actually orchestrate (read plan, write history entry, commit, push, open labeled PR).
+- Port designer's failure-pattern memory entries through PR 1's source-diversity bar:
+  - `feedback_verify_tokens.md` — likely passes (markdown app uses tokens too).
+  - `feedback_aria_live_for_spec_announcements.md` — needs adaptation; markdown app has no spec-driven announcements yet.
+  - `feedback_doc_orphans_after_merge.md` — TypeScript analog (orphan exports after merge).
+- Add a preflight rule for "tool inputs that resolve to filesystem paths must be path-validated against an allow-list root" — the rule that would have caught the `tools/memory/check.mjs` finding before the security review did. Filed during PR 1's security review.
+
+**Scope (out):**
+- New invariants beyond what designer already has — port, don't extend.
+- Designer-side adoption (PR 3 in a separate workspace).
+
+**Spec-walk checkboxes:**
+- [ ] `tools/preflight/check.mjs` exists and passes on the current tree
+- [ ] Each gate (typecheck, build, test, invariants, manifest) is independently invocable
+- [ ] `/ship-spike` skill orchestrates a real spike-mode commit + push + labeled PR (manual smoke test on a throwaway branch)
+- [ ] Ported memory entries each meet PR 1's source-diversity bar (recurrence in time + at least one other source)
+- [ ] Path-validation preflight rule added; `tools/memory/check.mjs` passes it
+- [ ] `core-docs/workflow.md` § Preflight no longer says "if present" — the script is now real
+
+**Confidence verdict:**
+- **Preflight script port: HIGH** — designer's is well-trodden; adapting to TS-only is mechanical.
+- **`/ship-spike` runtime shape: MEDIUM** — never built one; might need iteration on the smoke test. Risk: discovers the spec is incomplete; surfaces gaps to fold back into PR 1 doc. If it flips: one extra commit on this branch to fix the spec, no architectural change.
+- **Memory-entry port through guardrails: MEDIUM** — Designer's entries were written before the source-diversity bar existed; some may not pass on import. If one fails: skip the import (it's not a regression — md-manager has zero memory entries today). If multiple fail: the bar may be too strict; revisit after PR 5 per the 5-PR review baked into PR 1.
+
+**Risks / open questions:**
+- The path-validation preflight rule is broader than just `tools/memory/check.mjs` — should it also cover any future `tools/*` script? Likely yes; scope explicitly during PR 2.
+- `/ship-spike` smoke test requires creating a throwaway branch + PR + closing it. Choose a benign research question for the smoke (e.g. "does the harness load memory entries from the canonical path?").
+
+**Files touched (anticipated):**
+- `tools/preflight/check.mjs` (new)
+- `tools/preflight/.gitignore` (probably empty initially)
+- `.claude/skills/ship-spike/SKILL.md` (already exists; implementation may add helpers)
+- `~/.claude/projects/<canonical>/memory/feedback_*.md` (~3 entries imported)
+- `core-docs/workflow.md` (§ Preflight updated to point at real script)
+
+### PR C: Token + component migration (multi-session, iterative — paused for workflow work)
 
 **Goal:** Migrate `src/styles/globals.css` tokens to Mini's `packages/ui/styles/tokens.css`. Migrate components one at a time to Mini primitives + archetypes. Remove duplicate machinery (custom Toast → Mini Toast archetype). Pass the invariant check on `src/`. Flip each component's `status` in `core-docs/component-manifest.json` from `legacy` → `managed` as it migrates.
 
@@ -69,6 +113,7 @@ PR C is **iterative across sessions** — each component migration is its own sm
 
 _(Last 3–5 items. Older items live in `history.md`.)_
 
+- **Workflow unification: canonical loop + spike mode + confidence gates + agent self-feedback** — Branch `unify-workflows`, this ship commit. Doc + tooling PR. New canonical `core-docs/workflow.md` (11 steps; intended to drop into both md-manager and Designer), spike/tiny mode escape hatches, confidence gates with LOW=human-gate, spec-walk-as-checkboxes, three-layer continuous-improvement model (user feedback → agent memory → preflight), 5 guardrails on agent memory to prevent compounding slop. New `.claude/skills/ship-spike/SKILL.md` (lightweight terminal for exploratory PRs), `tools/memory/check.mjs` (corpus health + audit-due counter with harness-canonical dir resolution + path validation). Updated `CLAUDE.md`, `.claude/rules/plan-discipline.md`, `.claude/skills/ship/SKILL.md`. FB-0022 (self-audit before /ship for workflow infra), FB-0023 (surface feedback-loop failure modes proactively) captured. 2026-05-15.
 - **Workflow: `/critique-plan` inserted into step 3** — Branch `pasted-text-import`, commit `5f128c4..[ship]`. New `.claude/rules/plan-discipline.md` reminds the planner to read `spec.md` / `feedback.md` / `design-language.md` before drafting. `core-docs/workflow.md` step 3 now runs `/critique-plan` (assumption-auditor plugin) between plan draft and user approval, with BLOCKER / REDIRECT / FOLLOW-UP triage. Additive — human gate unchanged. Plugin-absence is a silent skip. No `feedback.md` entry per task scope. 2026-05-14.
 - **CI gates + Dependabot (branch `ci-setup`)** — Three parallel jobs (typecheck/build/test) on `pull_request` and `merge_group` events; concurrency scoped by event-name + ref; workflow-level `permissions: { contents: read }`. Dependabot configured for npm with version-updates suppressed (security updates flow via repo settings). Unblocks the merge queue gate. FB-0020, FB-0021 captured. 2026-05-14.
 - **Mini design language amended (PR B, #9)** — Branch `mini-elicit`, commits `97ff141..ship`. Explicit Axioms section answers all 10 Mini axioms; surface-posture flagged as an open axiom (both floating and flat ship for dogfooding). Component manifest, pattern-log, generation-log seeded. CLAUDE.md Mini section appended. FB-0018, FB-0019 captured. No code changed. 2026-05-14.

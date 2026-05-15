@@ -13,28 +13,38 @@ A markdown notes app with a content-forward, warm-neutral interface. Drafts live
 **Every non-trivial request follows this loop.** Full detail in [`core-docs/workflow.md`](core-docs/workflow.md); the rules below are non-negotiable.
 
 ```
-1.  Clarify       ask 2–4 focused questions; read relevant docs before asking
-2.  Plan          write a plan in core-docs/plan.md; WAIT for user approval
-3.  Execute       implement the approved plan; stay in scope
-4.  Commit        explain "why", not what; co-author trailer at end
-5.  /simplify     code-quality pass — reuse, clarity, efficiency; fix in-tree
-6.  /staff-review three lenses in parallel; fix BLOCKERs + cheap NITs in-tree;
-                  capture FOLLOW-UPs to roadmap.md / plan.md (never PR-body-only)
-7.  Present       share review report + dev URL (/link) + branch state
-8.  Iterate       apply user feedback
-9.  /ship         security + a11y final pass → synthesize feedback.md → update
-                  history.md / plan.md / roadmap.md / spec.md → commit → push → PR
-10. STOP          the user merges. Claude never merges.
+ 1. Clarify          read docs; ask 2–4 questions (or list assumptions if autonomous)
+ 2. Plan             write plan with spec-walk + confidence verdict; /critique-plan;
+                     WAIT for user approval (LOW-confidence cannot bypass this gate)
+ 3. Execute          implement against checkboxes; stay in scope
+ 4. Preflight        typecheck/build/test/invariants must be green
+ 5. Commit           explain "why", not what; co-author trailer; per-phase
+ 6. /simplify        reuse, clarity, efficiency; fix in-tree; re-preflight; commit
+ 7. /staff-review    three lenses in parallel; BLOCKER + cheap NIT in-tree;
+                     FOLLOW-UPs → roadmap.md / plan.md (never PR-body-only)
+ 8. Present          reviewer notes + dev URL + branch state; flag MEDIUM-confidence
+ 9. Iterate          apply user feedback
+10. /ship            security + a11y final pass → synthesize feedback.md → update
+                     history.md / plan.md / roadmap.md / spec.md → commit → push → PR
+11. STOP             the user merges. Claude never merges.
 ```
+
+**Mode flags** (declared in the plan):
+- `feature` (default) — full loop above.
+- `spike` — exploratory PR that answers a question. Skips /simplify + /staff-review; uses `/ship-spike`. See `core-docs/workflow.md` § "Spike mode".
+- `tiny` — 1–3 line fix the user said "just do." Skips spec-walk, confidence verdict, /simplify, /staff-review. Rarely the right call.
 
 **Hard rules — these apply even if the user's phrasing seems to skip a step:**
 
 - **Never start coding without an approved plan.** Even a "small" change. Write the plan, wait.
+- **Plans require spec-walk checkboxes + confidence verdict.** Every numbered requirement → a checkbox bound to a test. Every load-bearing assumption → HIGH/MEDIUM/LOW. LOW = automatic human gate; the assumption must be resolved by an explicit user answer before the plan proceeds. `/critique-plan` is advisory; the workflow's enforcement is the human gate.
 - **Never merge.** `gh pr merge` is not a Claude action. Hand to the user with a PR link.
 - **Follow-ups go to `roadmap.md` or `plan.md`**, not only the PR body. PR bodies vanish at merge.
 - **Read before writing.** `plan.md` at session start; `feedback.md` + `design-language.md` before any UI work.
 - **Use tokens, not raw values.** `--sand-*`, `--space-*`, `--radius-*` in `src/styles/globals.css` — never hardcode hex or px.
-- **`/ship` owns doc updates** (history, plan, roadmap, spec, feedback). Don't update them piecemeal during execution — let `/ship` synthesize at the end.
+- **`/ship` owns narrative doc updates** (history, plan "Recently Completed", roadmap, spec, feedback). Don't update them piecemeal during execution. Mechanical contract artifacts (component-manifest, generation-log, pattern-log) update inline with the change.
+- **Preflight is a required step, not a tool.** Mechanical gates green before /simplify runs. No exceptions outside `spike`/`tiny` mode (and even those keep preflight).
+- **Capture agent self-feedback at `/ship`.** Review findings that name a recurring failure pattern (and aren't mechanically checkable yet) get a memory entry at `~/.claude/projects/.../memory/feedback_*.md`. Patterns that fire repeatedly graduate to preflight checks. See `core-docs/workflow.md` § "Continuous improvement" for the three-layer feedback model: user feedback → agent memory → preflight.
 
 ---
 

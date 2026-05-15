@@ -33,6 +33,26 @@ Increment from the last entry. Use `FB-0001`, `FB-0002`, etc.
 
 ## Entries
 
+### FB-0023: Surface failure modes proactively when proposing a feedback-loop primitive
+**Date:** 2026-05-15
+**Source:** user direction
+
+**What was said:** While building agent self-feedback memory into the workflow, the user asked: "are there any checks that we should add with the self-feedback additions to prevent compounding ai slop? does this relate to the danger of the concept of ai training on its own data and getting further and further from reality over time?" The assistant had proposed the primitive without surfacing the model-collapse / process-ossification risk; the user had to ask. The right shape would have been to flag the risk and propose mitigations as part of the original proposal, not in response to a follow-up.
+
+**Synthesized rule:** When proposing a primitive that creates a feedback loop (memory entries, learned heuristics, auto-promoted rules, anything where today's output shapes tomorrow's input), surface the failure mode and propose guardrails as part of the original proposal — don't wait for the user to ask. The rule generalizes beyond memory: any compounding mechanism (auto-applied lint suggestions from past PRs, learned formatting preferences, accumulated codegen templates) carries the same risk shape. The questions to pre-answer: (1) how does this compound? (2) what's the failure direction if it compounds badly? (3) what bounds it? The answer doesn't need to be perfect mitigations on day one — just naming the failure mode earns the user's trust that the primitive isn't naive.
+
+**Applies to:** workflow design, memory/feedback systems, any auto-learning mechanism, scoping discussions.
+
+### FB-0022: Self-audit pass on workflow-infra changes before /ship
+**Date:** 2026-05-15
+**Source:** user direction
+
+**What was said:** Before shipping the workflow-unification PR, the user said: "review PR1 for any logical errors or oversights, then we will ship it and start PR 2." The audit caught 4 BLOCKERs (numbering inconsistency between workflow.md and CLAUDE.md, memory script defaulting to wrong harness path on Conductor workspaces, preflight script referenced but doesn't exist yet, off-by-one in plan-discipline.md) and 6 NITs that would have shipped if /ship had run directly. The audit took ~10 minutes; recovering from a stale or incoherent workflow rule across both repos would have taken much longer.
+
+**Synthesized rule:** Workflow-infrastructure changes (edits to `core-docs/workflow.md`, `CLAUDE.md`, `.claude/rules/*`, `.claude/skills/*`, `tools/preflight/*`, `tools/memory/*`) get an explicit self-audit pass before /ship — distinct from /staff-review. The audit looks specifically for: cross-file numbering / step-reference consistency, dead references to files that don't exist yet, internal contradictions across CLAUDE.md / workflow.md / rules / skills, brittle path assumptions, "aspirational" enforcement claims that no actual code enforces. The asymmetric cost justifies the explicit gate: a stale workflow rule taxes every future PR; a 10-minute audit prevents that. Add this as a step in /ship for workflow-infra PRs, OR codify it as an anti-pattern reminder ("don't ship workflow infra without a coherence pass").
+
+**Applies to:** workflow, scoping decisions, /ship pipeline for infra PRs.
+
 ### FB-0021: Try the automated/operational fix before restructuring the docs
 **Date:** 2026-05-14
 **Source:** user direction

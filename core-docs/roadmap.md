@@ -10,7 +10,8 @@ Deferred follow-ups from `/staff-review` and `/ship` land here when they're real
 
 Work that's actively being designed or about to start.
 
-- **Mini adoption — PR C: Token + component migration.** PR A (install) and PR B (axioms + manifest + logs + CLAUDE.md) shipped. PR C migrates tokens first, then Toast → Mini Toast archetype, then dialogs/popovers, then layout primitives. Each component is its own PR. Prerequisites captured under "From PR A staff review" below; constraints from PR B captured in `plan.md` "Active Work Items".
+- **Workflow unification — PR 2: Port preflight + failure-pattern memory.** PR 1 (canonical workflow + spike mode + confidence gates + memory tooling + 5 anti-slop guardrails) shipped on `unify-workflows`. PR 2 ports designer's preflight script (TS-only adaptation), implements `/ship-spike` runtime, and ports designer's memory entries through PR 1's source-diversity bar. See `plan.md` Active Work Items for the full scope.
+- **Mini adoption — PR C: Token + component migration (paused).** Resumes after PR 2 settles. PR A (install) and PR B (axioms + manifest + logs + CLAUDE.md) shipped. PR C migrates tokens first, then Toast → Mini Toast archetype, then dialogs/popovers, then layout primitives. Each component is its own PR. Prerequisites captured under "From PR A staff review" below; constraints from PR B captured in `plan.md` "Active Work Items".
 
 ## Next (the next 1–2 features after the current one)
 
@@ -18,6 +19,7 @@ Picked, scoped, ready to start once `Now` clears.
 
 | Workstream | Priority | Status | Notes |
 |---|---|---|---|
+| **Workflow unification — PR 3: designer-side port** | P0 | Scoped (separate workspace) | Copy the canonical `core-docs/workflow.md`, `/ship`, `/simplify`, `/ship-spike`, and `tools/memory/check.mjs` from md-manager into the designer repo. Preserve designer's Build/Harden cadence + ADR 0009 release-tag discipline as a layer ABOVE the per-PR loop, not inside it. Designer-specific adaptations: cargo gates in Preflight, Rust-aware invariants. Done in a designer Conductor workspace, not here. |
 | Persistence (drafts survive a reload) | P0 | Scoped | Pick localStorage vs IndexedDB vs FSA API. Open question in `spec.md`. First real feature after Mini settles. |
 | Repo-sync v0 (read-only) | P1 | Not scoped | Browse a local path's `.md` files. Decide between FS Access API (browser-only, no install) or a local helper. |
 | **Surface posture decision** | P2 (open axiom) | Dogfooded | Resolved into an explicit open axiom in PR B — both floating and flat continue to ship in the DevPanel. Resolution criteria are explicit: dogfooding signal, an archetype constraint surfaces during PR C, or an explicit user call. Promote out of "Next" only when one of those fires. |
@@ -59,6 +61,10 @@ Captured by `/staff-review` and `/ship` so they don't get lost.
 - **Workflow.md commit-boundary rule.** Formalize the per-phase commit pattern (Execute / /simplify / /staff-review / /ship) as an explicit step in `core-docs/workflow.md` rather than relying on agent judgment. See FB-0020. Cheap doc edit; deferred from `ci-setup` to keep that PR's scope tight.
 - **CLAUDE.md merge-strategy note.** Add a one-paragraph note to `CLAUDE.md` § "Where to look" or a new short § "Merge strategy" pointing out that the repo squash-merges PRs to keep `main` linear, and that intermediate branch commits live on the PR page. Cheap; deferred from `ci-setup`.
 - **Lint pattern: reject `github.event.pull_request.*.body` / `.title` interpolation in CI yaml.** Premature at one workflow file; revisit if the `.github/workflows/` set grows past 2-3 files. Captured by `/ship` security review on `ci-setup`.
+
+### From PR 1 security review (workflow unification)
+
+- **Preflight rule: tool inputs that resolve to filesystem paths must be path-validated against an allow-list root.** Would have caught the unvalidated `MEMORY_DIR` / `.memory-dir` inputs in `tools/memory/check.mjs` before the security reviewer did (defense-in-depth fix already applied in PR 1; the rule is the mechanization). Belongs in `tools/preflight/check.mjs` once it lands in PR 2. Scope: any `tools/**/*.mjs` script that takes a path from env var or external file. Reject if `path.resolve(input)` doesn't startWith an allow-list prefix (cwd, `~/.claude/projects/`, `/tmp/`, etc.).
 
 ### From Slices A+B staff review (PR #2)
 

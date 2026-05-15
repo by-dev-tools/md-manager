@@ -43,6 +43,37 @@ The living document for what's being worked on right now, what's queued, and wha
 
 PR C is **iterative across sessions** — each component migration is its own small PR with its own `/simplify` + `/staff-review` pass.
 
+### PR C / Step 1: Token name-collision audit (current — ½ session, ~1 hour)
+
+**Goal:** Identify every token name that exists in both `src/styles/globals.css` and `packages/ui/styles/tokens.css`. Determine which value wins via cascade, flag semantically-different values, and output a migration plan that names every collision and its explicit re-binding decision. This is the prerequisite for PR C Step 3 (tokens migration).
+
+**Branch:** `pr-c-token-audit` (off `main`).
+
+**Scope: docs-only.** No code changes. Output is a new doc `core-docs/token-migration.md`.
+
+**Steps:**
+1. `npm run build` to regenerate `dist/assets/*.css` (the merged stylesheet that ships).
+2. Extract every `--<token-name>: <value>;` declaration from `src/styles/globals.css` and from `packages/ui/styles/tokens.css`. Normalize values (e.g., `0.5rem` → `8px` for comparison).
+3. Compute the intersection — every token name appearing in both.
+4. For each duplicate: grep `dist/assets/*.css` to confirm which value the built bundle uses (cascade winner — should be ours since `globals.css` loads last in `src/main.tsx`, but verify).
+5. Categorize into:
+   - **Identical values** — no migration needed; pick one source of truth in Step 3
+   - **Different values, ours wins, intentional** — document the re-binding rationale (e.g., "our `--space-3: 8px` over Mini's `0.5rem` — same value, different unit, prefer px for math clarity")
+   - **Different values, ours wins, accidental** — surface for explicit decision (keep ours, or accept Mini's at Step 3?)
+   - **Different values, Mini's wins** — surprising; investigate cascade order assumption
+6. Write `core-docs/token-migration.md` with the collision table, categorized decisions, and the Step-3 work list.
+7. `npm run typecheck && npm run build` — should be no-op (no code changed).
+
+**Out of scope (for this PR):**
+- Actually changing any token values (Step 3)
+- The `--accent-8` contrast matrix (Step 2)
+- Component migration (Steps 4+)
+
+**Risks / open questions:**
+- **Token indirection.** Some of our tokens are derived (e.g., `--page-text: var(--sand-12)`). The audit should record the resolved value, not just the literal RHS, where indirection matters.
+- **Mini exports fewer tokens than we have.** Likely — Mini's `tokens.css` is structural (axiom-driven); our `globals.css` has many project-specific tokens (`--page-tint`, `--surface-gutter`, etc.) that won't collide. The audit only needs to cover the intersection.
+- **Vite bundling order.** The cascade winner depends on import order in `src/main.tsx` (Mini stylesheets → `globals.css` last) AND Vite's bundling behavior. Worth confirming by inspecting `dist/assets/*.css` directly, not assuming.
+
 ### Template for a work item
 
 ```

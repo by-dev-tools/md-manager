@@ -72,9 +72,9 @@ None currently. If GitHub repo sync is implemented, OAuth + rate-limited API cal
 
 ## Current status
 
-- **Stage:** Prototype with safety bundle + editor performance + a11y (PR #2) + sidebar redesign (PR #6) + Mini design system installed (PR A) + Mini design language amended with explicit axioms (PR B on `mini-elicit`, pending push). Mini PR C (token + component migration) is next. Persistence and repo sync still ahead.
+- **Stage:** Prototype with safety bundle + editor performance + a11y (PR #2) + sidebar redesign (PR #6) + Mini design system installed (PR A, #7) + Mini design language amended with explicit axioms (PR B, #9) + CI gates (typecheck/build/test) and merge-queue scaffolding (`ci-setup`, pending push). Mini PR C (token + component migration) is next. Persistence and repo sync still ahead.
 - **Last updated:** 2026-05-14
-- **Branch:** `mini-elicit` (PR B pending push)
+- **Branch:** `ci-setup` (pending push)
 - **Open questions:**
   - How does persistence work? (localStorage for drafts? IndexedDB? File System Access API?)
   - How does repo sync actually function — local file watcher? GitHub API? GitHub App?

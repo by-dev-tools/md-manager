@@ -74,6 +74,44 @@ Until now, step 3's only quality gate was human approval. There was no automated
 
 ---
 
+### CI gates + Dependabot config (unblocks merge queue + parallel-worktree flow)
+**Date:** 2026-05-14
+**Branch:** ci-setup
+**Commit / PR:** `cacf331..[this ship commit]` (3 commits) → [PR pending push]
+
+**What was done:**
+- Added `.github/workflows/ci.yml` — three parallel jobs (`typecheck`, `build`, `test`) running on `pull_request` and `merge_group` events. Each job uses `actions/setup-node@v4` with npm cache, runs `npm ci`, then the relevant script. Concurrency group scoped by `github.event_name + github.ref` so PR-mode and merge-queue runs of the same ref don't cross-cancel. Workflow-level `permissions: { contents: read }` declared explicitly as defense-in-depth.
+- Added `.github/dependabot.yml` — npm ecosystem, monthly schedule, `open-pull-requests-limit: 0` to suppress routine version-update PRs. Security updates flow independently via repo Settings → Code security and analysis. Inline comment documents both decisions plus the escape hatch (commented-out grouping rules) for enabling version updates later.
+
+**Why:**
+- The parallel-worktree workflow this project leans on (multiple feature branches open at once, each touching shared core-docs via /ship) was producing serialized merge dances: merge PR A → rebase PR B → wait for checks → merge → repeat. The fix is GitHub merge queue, which auto-rebases queued PRs and merges in order — but the queue needs required status checks to gate on. PR existed to provide those checks.
+- A secondary benefit: until now there was no automated build/test gate at all. Local `/ship` runs verified, but a stale checkout that hadn't pulled recently could ship type errors. Three required checks close that gap.
+
+**Design decisions:**
+- **Three parallel jobs vs one job with three steps vs matrix.** Picked parallel. Wall-clock is `max(typecheck, build, test) ≈ 45s` instead of `sum ≈ 90s`. Branch protection naming is also cleaner — required checks read `typecheck` / `build` / `test` instead of `ci (typecheck)` matrix-style. Three jobs of intentional duplication is below the DRY-extraction threshold; revisit at 5+ jobs or when adding OS/Node matrices.
+- **Keep `typecheck` even though `build` subsumes it.** `npm run build` is `tsc -b && vite build`, which does the typecheck work already. Keeping a dedicated `typecheck` job costs ~10s of duplicate tsc and provides a sharper failure signal (typecheck red while build green = pure type error; both red = harder to triage but rare). At free-tier CI minutes, the duplication is free.
+- **`permissions: { contents: read }`** at workflow level rather than per-job. No job needs write today; declaring read explicitly means a future step that needs write must opt in deliberately. Defensive — caught by the security review as worth adding now even though current behavior is identical to the implicit default.
+- **Dependabot security-only, not version-update-on-schedule.** With 18 deps, routine bumps are noise — a PR every other week to bump a minor on a single Radix package would dominate the review queue. Security updates (CVE-driven, sparse) get all the value with none of the noise. Comment block names the escape hatch for when this calculus changes (more deps, more developers).
+- **Action pinning at `@v4` tags, not commit SHAs.** Solo public repo, no secrets in workflow scope — fine. Documented the migration trigger (any of: secret reference, write step, becoming a meaningful supply-chain target) in `roadmap.md`.
+
+**Technical decisions:**
+- **Node `'20'` (string, current LTS)** vs `lts/*` (drifts silently) vs `20.x` (equivalent). Pinned string. Bump deliberately.
+- **`npm ci`** over `npm install` — lockfile present, deterministic install, faster on cache hit, errors on lockfile drift.
+- **Cache strategy** — `actions/setup-node` built-in npm cache keyed on `package-lock.json` hash. Caches `~/.npm` (global tarball cache), which `npm ci` consumes. Explicitly caching `node_modules` is fragile (Node-version-sensitive) and not recommended.
+- **`concurrency: cancel-in-progress: true`** — supersede in-flight runs when new commits land on the same PR. Safe for merge queue because queue runs use distinct `gh-readonly-queue/*` refs that won't share a concurrency group with PR runs.
+
+**Tradeoffs discussed:**
+- **`pull_request_target` vs `pull_request`.** Picked `pull_request` (runs against PR head, no secrets exposed). `pull_request_target` runs against base + has secrets — the dangerous trigger that's been exploited in multiple supply-chain incidents. No reason to use it here.
+- **One workflow file vs separate per-check.** Single file with three jobs. Easier to read, single concurrency declaration, easier to maintain at this scale.
+- **Workflow scope: CI only, no merge-queue settings change in-tree.** Merge-queue is a repo-settings toggle (branch protection), not a yaml file. Couldn't be done in-PR even if we wanted. Decision: ship the CI gate first; user enables the queue + required-checks via Settings after merge.
+
+**Lessons learned:**
+- **Try the automated/operational fix before restructuring the docs.** The parallel-worktree pain has two candidate fixes — merge queue (operational, reversible) and per-entry-file docs (structural, irreversible). Did the operational one first to observe whether residual pain justifies the structural one. → FB-0021.
+- **Workflow phase boundaries should be commits.** This PR followed the pattern (`cacf331` = Execute, `98ab10d` = /simplify NIT, ship commit = security-review fix + doc synth). Worth formalizing as an explicit workflow.md rule. → FB-0020.
+- **Security review on a CI yaml diff is not the same review as on a code diff.** The standard categories (XSS, URL handling, persistence) don't apply; CI-specific categories (trigger safety, permission scope, action pinning, workflow injection) do. The security-review skill ran on the diff and the reviewer correctly pivoted to those CI-specific lenses without prompting — worth noting as a strength of the cold-read posture.
+
+---
+
 ### Mini design language amended (PR B — axioms made explicit, both surface postures stay open)
 **Date:** 2026-05-14
 **Branch:** mini-elicit

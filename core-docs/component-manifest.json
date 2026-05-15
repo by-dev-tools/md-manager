@@ -1,0 +1,105 @@
+{
+  "$schema": "../templates/component-manifest.schema.json",
+  "version": "1",
+  "components": [
+    {
+      "name": "Editor",
+      "path": "src/components/Editor.tsx",
+      "purpose": "The writing surface. Contenteditable, autosaves to the store, renders markdown back to HTML on blur for read mode. Owns title (h1) + body, the saved/idle indicator, and the FloatingToolbar mount. The content surface that the page tint frames (floating mode) or merges into (flat mode).",
+      "status": "legacy",
+      "native_wrapped": false,
+      "archetypes_used": [],
+      "primitives_used": [],
+      "tokens_referenced": ["sand-12", "sand-11", "sand-9", "page-tint", "space-3", "space-4", "space-5", "space-6", "radius-surface", "type-h3", "type-body", "type-caption"],
+      "last_updated": "2026-05-14"
+    },
+    {
+      "name": "FloatingToolbar",
+      "path": "src/components/FloatingToolbar.tsx",
+      "purpose": "Selection-triggered formatting toolbar (bold, italic, code, link, headings). Dark-on-light inverted surface that floats above the selection. Uses raw rgba overlays — flagged in roadmap.md for --overlay-* tokenization at PR C time.",
+      "status": "legacy",
+      "native_wrapped": false,
+      "archetypes_used": [],
+      "primitives_used": [],
+      "tokens_referenced": ["radius-modal", "type-caption"],
+      "last_updated": "2026-05-13"
+    },
+    {
+      "name": "Sidebar",
+      "path": "src/components/Sidebar.tsx",
+      "purpose": "Left rail with hanging-icon nav (NavSection + Collapse + NavRow). Lists drafts (synthetic folder) and attached repos with their .md files. Sits directly on the page tint (no fill, no border) per the surface model. Search + new-draft entry point.",
+      "status": "legacy",
+      "native_wrapped": false,
+      "archetypes_used": [],
+      "primitives_used": [],
+      "tokens_referenced": ["sand-12", "sand-11", "sand-9", "sand-4", "page-tint", "page-text", "page-muted", "space-3", "space-4", "radius-button", "type-caption"],
+      "last_updated": "2026-05-13"
+    },
+    {
+      "name": "ColorRail",
+      "path": "src/components/ColorRail.tsx",
+      "purpose": "Signature element. Vertical 12px strip on the right edge of the content surface — HSL gradient marker + 8 preset swatches + manual color picker. Drives --page-tint. The user-controlled tone axiom (#3) made visible.",
+      "status": "legacy",
+      "native_wrapped": false,
+      "archetypes_used": [],
+      "primitives_used": [],
+      "tokens_referenced": ["page-tint", "sand-12", "sand-9", "radius-button"],
+      "last_updated": "2026-05-13"
+    },
+    {
+      "name": "AttachPopover",
+      "path": "src/components/AttachPopover.tsx",
+      "purpose": "Popover for attaching the current draft to a repo + folder path. Anchored to its trigger, closes on Escape / outside click / item activation. Candidate for Mini Popover archetype migration in PR C.",
+      "status": "legacy",
+      "native_wrapped": false,
+      "archetypes_used": ["popover?"],
+      "primitives_used": [],
+      "tokens_referenced": ["sand-1", "sand-12", "radius-modal", "space-3", "space-4"],
+      "last_updated": "2026-05-13"
+    },
+    {
+      "name": "AddRepoModal",
+      "path": "src/components/AddRepoModal.tsx",
+      "purpose": "Modal dialog for adding a new repo source (label + path). Traps focus, closes on Escape, restores focus on close. Candidate for Mini Dialog archetype migration in PR C.",
+      "status": "legacy",
+      "native_wrapped": false,
+      "archetypes_used": ["dialog?"],
+      "primitives_used": [],
+      "tokens_referenced": ["sand-1", "sand-2", "sand-12", "sand-4", "sand-9", "radius-modal", "space-4", "space-5"],
+      "last_updated": "2026-05-13"
+    },
+    {
+      "name": "Toast",
+      "path": "src/components/Toast.tsx",
+      "purpose": "ToastProvider + useToast hook. Bottom-anchored inverted dark surface with an Undo affordance (used by draft delete). Pause-on-hover deferred to roadmap.md. Slated for Mini Toast archetype replacement in PR C while keeping the <ToastProvider> API surface.",
+      "status": "legacy",
+      "native_wrapped": false,
+      "archetypes_used": ["toast?"],
+      "primitives_used": [],
+      "tokens_referenced": ["radius-modal", "type-caption"],
+      "last_updated": "2026-05-13"
+    },
+    {
+      "name": "DevPanel",
+      "path": "src/components/DevPanel.tsx",
+      "purpose": "Bottom-right developer panel for live-toggling surface posture (floating vs flat), section spacing, and other in-progress knobs. Persisted to localStorage. Production-gated (dev builds only). The dogfooding surface for the surface-posture open axiom.",
+      "status": "legacy",
+      "native_wrapped": false,
+      "archetypes_used": [],
+      "primitives_used": [],
+      "tokens_referenced": ["sand-1", "sand-12", "radius-modal", "space-3", "space-4"],
+      "last_updated": "2026-05-13"
+    },
+    {
+      "name": "icons",
+      "path": "src/components/icons.tsx",
+      "purpose": "SVG icon set. Stroke-based, currentColor, 1.5 stroke-width. Single source for all chrome icons — Folder, File, Search, Palette, Close, Chevron, etc.",
+      "status": "legacy",
+      "native_wrapped": false,
+      "archetypes_used": [],
+      "primitives_used": [],
+      "tokens_referenced": [],
+      "last_updated": "2026-05-13"
+    }
+  ]
+}

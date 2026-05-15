@@ -37,6 +37,48 @@ Use the `SAFETY` marker on any entry that modifies error handling, persistence, 
 
 ## Entries
 
+### Mini design language amended (PR B — axioms made explicit, both surface postures stay open)
+**Date:** 2026-05-14
+**Branch:** mini-elicit
+**Commit / PR:** `97ff141..[this ship commit]` (3 commits) → [PR pending push]
+
+**What was done:**
+- Added an explicit **Axioms** section to `core-docs/design-language.md` answering all 10 of Mini's axioms (base line-height, density register, accent identity, gray flavor, motion personality, type system, type scale ratio, surface hierarchy depth, radius personality, focus style). Each axiom is named, its value committed, and its rationale tied to a downstream section.
+- Reframed surface-posture (floating vs flat) as an **open axiom** with explicit resolution criteria — both modes continue to ship in the DevPanel for dogfooding. The Family § "Open questions" → "Surface posture" row was reconciled to point at the new framing instead of describing it as "undecided".
+- Added Patterns + Change log sections at the end of `design-language.md`.
+- Seeded `core-docs/component-manifest.json` with 9 inventoried components (all `status: legacy`, archetype targets noted for PR C).
+- Seeded `core-docs/pattern-log.md` (with two real entries on accent identity and the open surface-posture axiom) and `core-docs/generation-log.md` (empty-but-valid scaffold). These give Mini's `generate-ui` and amendment-mode skills somewhere to write.
+- Appended a marker-delimited Mini section to `CLAUDE.md`. Adjusted the template's "Core contracts" row to point at `packages/ui/` since `docs/core-reference/` doesn't exist in this project. Noted the legacy-grandfathering rule and the mechanical-vs-narrative doc-update distinction so the Mini per-generation log updates don't collide with the "`/ship` owns narrative docs" rule.
+- Picked up an incidental `package-lock.json` name sync (`mumbai` → `md-manager`) — was stale in `main` against the already-renamed `package.json`. Aligned with the roadmap cleanup entry.
+
+**Why:**
+- PR B is the unblocker for PR C (token + component migration). Mini's downstream skills (`generate-ui`, `enforce-tokens`, `propagate-language-update`) read `design-language.md` looking for axiom-shaped content + a component manifest + the log files. Without those in place, PR C couldn't run those skills end-to-end — and the alternative (PR C migrating components against an unspecified contract) would re-invent decisions per component.
+- The Mini "surface hierarchy depth" axiom forced a decision; the floating-vs-flat posture question got pulled along with it in the plan even though it's a separate question. PR B disentangles them: depth is settled at 3 tiers, posture is an explicit open axiom with resolution criteria. The user's call (dogfood both, justify both, decide later) is preserved as a first-class artifact.
+
+**Design decisions:**
+- **Manual amendment, not skill-driven.** Pure `/elicit-design-language` amendment mode requires a populated `generation-log.md` (the skill explicitly bails with "no signals to amend" otherwise). Archaeology mode would discard the existing 1700-line hand-written `design-language.md` as a starting point, contradicting FB-0016. We did the amendment by hand, using the skill's templates as the target shape. → New rule (FB-0018).
+- **Surface posture stays open by design.** The user wants both floating and flat in the DevPanel until extended dogfooding produces a signal. We codified resolution criteria — dogfooding signal, an archetype constraint, or an explicit user call — so this isn't a deferred decision but a present-tense one with structured exit. → New rule (FB-0019), reinforces FB-0005.
+- **Accent identity = user-controlled page tint** (axiom #3) is a real divergence from Mini's standard contract. Most Mini projects ship a fixed accent scale (`accent-9`); ours reserves `indigo` only for focus-ring rebinding at the root and lets `--page-tint` carry the role of "the warm color you see." Tradeoff: tooling that assumes a fixed accent will need explicit per-tint contrast validation at PR C (already captured in roadmap.md under "From PR A staff review").
+- **All components marked `legacy`** in the manifest. None compose Mini primitives yet; PR C migrates them. Marking them all `legacy` is the only honest answer; archetype targets are noted with `?` flags as best-guesses.
+
+**Technical decisions:**
+- **Edit `design-language.md` in place, don't archive.** The plan considered archiving the legacy doc and running archaeology-mode fresh, then stitching. The simpler path — keep the doc, layer axioms on top — preserved git-blame continuity and avoided a temporary `.legacy.md` artifact in the tree.
+- **JSON manifest uses bare token names** (`"sand-12"`) without the `--` prefix. design-language.md uses `--sand-12`. Consistent within each file, not a contradiction; the manifest's tokens are looked up by name without CSS-specific syntax.
+- **CLAUDE.md template adjusted, not rewritten.** Only one row of the template's "Information map" needed correction (the `docs/core-reference/` path doesn't exist here). Everything else was contradiction-free.
+- **`/simplify` ran on the docs.** Three lenses (reuse, quality, efficiency) found 3 MUST FIX issues (cross-ref typo + 2 stale Family-table rows) and 1 NIT (tighten "Open axiom" subsection). All applied in commit `87869d7`. `/staff-review`, `/security-review`, `/accessibility-review` all skipped per their docs-only rules.
+
+**Tradeoffs discussed:**
+- **Archive-and-archaeology vs. manual amendment.** Archaeology would have given a more complete mechanical scan (every token clustered, every color literal cataloged), but at the cost of treating the existing narrative as a replaceable proposal. Manual amendment kept the narrative intact at the cost of skipping the full mechanical scan. The user's call (FB-0016: legacy doc is ground truth) decided it.
+- **Force the surface-posture decision vs. preserve it as open.** Forcing now would have unblocked Mini archetype work that needs a single posture (e.g., a Mini Modal archetype that assumes the surface chrome). Preserving it costs us per-component "which posture does this match?" judgments in PR C. The user's call: preserve. We codified resolution criteria so the openness has structure, not drift.
+- **One PR vs. split into smaller commits.** PR B is intentionally docs-only — pulling in even minor app code (e.g., DevPanel labels referencing the new axiom framing) would have broken the strict scope boundary and forced staff-review on the same diff /simplify had already covered.
+
+**Lessons learned:**
+- **A skill that can't run as designed doesn't mean the work doesn't happen.** Pure-skill amendment failed (no log to read). The right move was to do the amendment by hand with the templates as the target shape. The wrong move would have been forcing archaeology mode and discarding our doc, or skipping the work because the skill bailed. → FB-0018.
+- **Open axioms with explicit resolution criteria are first-class artifacts, not deferred decisions.** The Mini axiom contract pulls toward closing every question; sometimes the right answer is "not yet, here's how we'll know." → FB-0019.
+- **The `/simplify` three-lens pass works on docs.** The reuse-lens caught the cross-doc contradiction (Family table vs new Axioms section); the quality-lens caught the broken cross-reference; the efficiency-lens flagged the scope creep (package-lock.json — which I kept, with reasoning). Worth running on every meaningful doc PR even though the lenses are calibrated for code.
+
+---
+
 ### Mini design system installed (PR A — no app migration) — SAFETY
 **Date:** 2026-05-14
 **Branch:** mini-install

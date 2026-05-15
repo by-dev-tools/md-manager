@@ -33,6 +33,26 @@ Increment from the last entry. Use `FB-0001`, `FB-0002`, etc.
 
 ## Entries
 
+### FB-0019: Open axioms with explicit resolution criteria are first-class artifacts, not deferred decisions
+**Date:** 2026-05-14
+**Source:** user direction
+
+**What was said:** During PR B planning, the assistant asked whether to resolve the surface-posture axiom (floating vs flat — Mini's "surface hierarchy depth" axiom forces a 1–4 tier choice during elicitation). The user said: "i still want both in the dev panel - i won't get a feel for this until dogfooding. We should be able to justify both in the design language, acknowledging the differences." This reframed the question — not "decide now or defer" but "the right answer is to keep it open and codify why both ship."
+
+**Synthesized rule:** When upstream tooling (Mini axioms, schema fields, framework conventions) pulls toward closing a question that doesn't yet have a clear answer, the correct move is often a third option: codify the open question as a first-class artifact with explicit resolution criteria. Document both alternatives with their arguments, name the signal(s) that would resolve it (dogfooding pattern, archetype constraint, explicit user call), and treat the open state as the deliberate current answer — not as deferred indecision. Reinforces FB-0005 ("Don't lock open questions shut") with a structural pattern: a doc section, in the affected design system / spec / contract, that names both branches and the resolution criteria.
+
+**Applies to:** design language, spec, contracts, any decision that benefits from dogfooding signal before commitment.
+
+### FB-0018: When a skill can't run as designed, do the work by hand using its templates as the target shape
+**Date:** 2026-05-14
+**Source:** challenge solved
+
+**What was said:** During PR B, the user asked for amendment mode on `/elicit-design-language`. The skill's amendment mode requires a populated `core-docs/generation-log.md` to read recurring deviations from — but the log doesn't exist yet (it's seeded as part of PR B itself). The skill explicitly bails with "design-language exists but generation-log is empty. No signals to amend." Archaeology mode (the other applicable mode) would discard the existing 1700-line hand-written `design-language.md`, contradicting FB-0016. Neither documented mode worked. The pragmatic resolution was to do the amendment by hand — read the skill's templates (`templates/design-language.md`, `templates/claude-md-mini-section.md`), use them as the target shape, and write the output directly.
+
+**Synthesized rule:** A skill failing its preconditions does not mean the underlying work is impossible or should be skipped. The skill's templates encode the target output shape; copying that shape by hand is a legitimate fallback. Specifically: forcing the skill into a wrong mode (archaeology when amendment is what's wanted) corrupts the output; manually following the skill's procedure produces the right artifact. Capture why the skill couldn't run in `history.md` / `pattern-log.md` so future sessions don't re-discover the same dead end.
+
+**Applies to:** workflow, skill use, .claude/skills/*, brownfield adoption of new tooling.
+
 ### FB-0017: Review skills must be model-invocable so /ship can compose them
 **Date:** 2026-05-14
 **Source:** user correction

@@ -30,8 +30,8 @@ md-manager and [Designer](/Users/benyamron/dev/designer/) are sister apps in the
 
 | Area | Current state | Designer's choice | Decision status |
 |---|---|---|---|
-| **Surface posture** | Two modes shipped in the prototype: floating (rounded card on a gutter) and flat (full-bleed). Toggleable per session. | Floating only. | **Undecided.** Keep both, drop one, or rethink entirely is all on the table. Don't treat the current dual-mode as a finalized stance. |
-| **Design system** | Vanilla CSS with custom-property tokens in `src/styles/globals.css`. | Mini (`packages/ui/`) with Radix Colors v3 + token layers. | **Likely adopting Mini soon.** The current vanilla setup is fine for the prototype; treat any new tokens or patterns as bridge work that should port cleanly to Mini when we move. Don't add elaborate token machinery here that Mini already provides. |
+| **Surface posture** | Two modes shipped in the prototype: floating (rounded card on a gutter) and flat (full-bleed). Toggleable per session. | Floating only. | **Open axiom — both ship, dogfooded.** See § "Axioms" → "Open axiom: surface posture" for the full framing and resolution criteria. |
+| **Design system** | Mini (`packages/ui/`) installed (PR A); design language amended to Mini's axiom contract (PR B). App code is still vanilla CSS pending PR C token + component migration. | Mini (`packages/ui/`) with Radix Colors v3 + token layers. | **Adopting in PR B/C.** Mini scaffolding is in place; legacy components stay grandfathered until PR C migrates them. |
 | **Dark mode** | Light only (currently). | Light + dark parity required. | **Punted for the prototype.** Captured in `roadmap.md`. Revisit when persistence + repo sync land, or sooner if Mini adoption forces it. |
 | **Dev panel** | None. | Dev panels as the canonical design-exploration tool. | **Open.** Will adopt the pattern if surface tuning becomes ambiguous; not warranted at current scope. |
 
@@ -45,6 +45,36 @@ When working in any of the "Open questions" rows, treat them as undecided — do
 4. **Cross-check before committing.** A new pattern in md-manager that *could* benefit Designer is worth flagging in the PR (or a Designer-side issue) so the family stays cohesive.
 
 The goal is sibling resemblance — anyone who knows Designer should recognize md-manager as part of the same family within seconds, but should also feel its distinct personality immediately.
+
+---
+
+## Axioms
+
+The 10 top-level rules from which every token derives. This is Mini's design-language contract — every axiom must be answered. Changing one is a propagation event; log it in § "Change log" and follow up with `propagate-language-update` if any derived tokens move.
+
+| # | Axiom | Value | Rationale (see also) |
+|---|---|---|---|
+| 1 | Base line-height | **1.5** (balanced) | Comfortable for editor prose without feeling airy. Drives the 8px spacing base. § Typography, § Spacing |
+| 2 | Density register | **balanced** | 8/16/24/32 chrome rhythm; editor body intentionally breathes wider (40/32/60) — the writing surface is its own thing. § Spacing |
+| 3 | Accent identity | **user-controlled page tint** (signature divergence). `indigo` reserved for focus-ring use; currently neutralized at root. | Notes are personal artifacts — the user owns the tone. The family's monochrome-accent default (Designer) is intentionally inverted here. § Family · § Color system |
+| 4 | Gray flavor | **sand** | Warm-neutral foundation; never cool grays. Shared across the family. § Color system |
+| 5 | Motion personality | **snappy** | 120ms interactive / 200ms surface / 60ms color marker; ease only, no custom curves yet. § Animation |
+| 6 | Type system | **[sans, mono]** — Geist + Geist Mono | No serif. Sans for prose and chrome; mono for file paths, code, sub-labels, captions in chrome. § Typography |
+| 7 | Type scale ratio | **custom** (non-modular by design) | 26/18/15/13/12/10.5/8.5 — chosen per role, not generated from a ratio. Hierarchy is carried by weight + color, not by stacking sizes (principle #6). § Typography |
+| 8 | Surface hierarchy depth | **3 tiers** — page tint / content surface / float layer | Orthogonal to the floating-vs-flat posture question below: modals and popovers always live in the overlay tier regardless of which posture the surface ships. § Depth model |
+| 9 | Radius personality | **soft with one pillowy signature** | 3/6/10/12px across chrome (soft); 24px on the content surface is the signature pillowy shape. § Corner radius |
+| 10 | Focus style | **ring-outside** (browser default, currently) | Mini's universal `:focus-visible` ring is neutralized at root in PR A; per-component focus styling lives in `globals.css`. PR C may rebind via Mini tokens — see Change log. § Accessibility checklist |
+
+### Open axiom: surface posture
+
+Mini's "surface hierarchy depth" axiom (above) is settled at **3 tiers**. The orthogonal question — does the content surface present as a **floating card** or a **flat full-bleed plane**? — is **actively dogfooded as an open axiom**. Both ship in the DevPanel.
+
+| Posture | Shape | Argument for |
+|---|---|---|
+| **Floating** | content surface as a card on the page tint — `--surface-gutter` margin, `--radius-surface` (24px), two-layer diffuse shadow | The page tint becomes a frame for the writing. Warmth lives at the edges; the content has its own territory. Strongest family resemblance with Designer's floating-only stance. |
+| **Flat** | full-bleed — no margin, no radius, no shadow; surface background merges with page tint | The writing surface *is* the page. Maximum content-over-chrome; the tint becomes the room rather than the frame. |
+
+Both express the page-tint signature — they just assign it different roles (frame vs. room). Resolution happens via dogfooding signal, a Mini archetype that can't gracefully express both, or an explicit user call. Until then, the DevPanel toggle stays and both postures are first-class.
 
 ---
 
@@ -126,12 +156,12 @@ Editor body padding: `40px 32px 60px` — wider than the base scale because the 
 
 ## Surface modes
 
-> **Status: undecided.** The prototype currently ships both modes (toggleable via the segmented control or overflow menu). The final answer — flat only, floating only, or both — is an open question. See § "Family: sister app to Designer" for the open-question framing. The shapes below document **current behavior**, not a committed choice.
+> **Status: open axiom, both ship.** See § "Axioms" → "Open axiom: surface posture" for the rationale. This section documents the **shapes** of each mode; the framing of *why both ship* lives in the axioms section.
 
 - **Floating** — `margin: var(--surface-gutter)` (12px), `border-radius: var(--radius-surface)` (24px), `box-shadow: var(--surface-shadow)`, `background: rgba(255,255,255,0.75)`. The surface looks like a card on the page tint.
 - **Flat** — full-bleed, no margin, no radius, no shadow, surface background matches page tint. The page is the surface.
 
-Transition between modes (while both exist): 200ms ease on margin / border-radius / box-shadow / background — simultaneously, in sync.
+Transition between modes: 200ms ease on margin / border-radius / box-shadow / background — simultaneously, in sync. (Both modes also respect `prefers-reduced-motion`.)
 
 ## Depth model
 
@@ -229,3 +259,21 @@ Before merging:
 - [ ] Works against a representative range of page tints (light warm, light cool, mid-saturation)
 - [ ] Transitions feel quiet (not bouncy, not slow)
 - [ ] New surfaces match the existing chrome — same radii, same shadow scale, same hue family
+
+---
+
+## Patterns
+
+High-level design patterns explicitly chosen for this project. Not axioms (they don't drive token values) but recurring decisions worth codifying. Each pattern's elaboration lives in the section linked from it.
+
+- **Color rail as signature element.** Vertical 12px strip on the right edge of the content surface; HSL gradient + 8 presets + manual picker. The user always has the page tint in reach. → § Component guidelines → "Color rail"
+- **False affordances are a bug.** Every visible control does its job today. Half-implementations are wired (if cheap) or removed (if not). → § Component guidelines → "False affordances are a bug"; CLAUDE.md § "Quality posture"
+- **Three-layer depth model.** Page tint → content surface → float layer. Modals and popovers always live on the float layer regardless of surface posture. → § Depth model
+- **Hierarchy via weight + color, not size stacking.** Type roles use a small set of sizes; emphasis comes from weight and color. → axiom #7; § Typography; principle #6
+- **Mono in chrome, sans in content.** File paths, sub-labels, badges, code, captions use Geist Mono; prose uses Geist sans. → § Typography
+
+## Change log
+
+Axiom and token changes are logged here with date and rationale. Minor adjustments (one component, one value) belong in `pattern-log.md`; axiom moves and token-contract changes belong here.
+
+- **2026-05-14 · PR B (`mini-elicit`)** — Axioms section added explicitly to align with Mini's design-language contract. Inventory of the 10 axioms; surface-posture flagged as an intentional open axiom (both floating and flat ship in the DevPanel for dogfooding). No token values changed. Seeded `component-manifest.json`, `pattern-log.md`, `generation-log.md`. CLAUDE.md Mini marker section appended.

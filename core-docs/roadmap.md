@@ -10,7 +10,7 @@ Deferred follow-ups from `/staff-review` and `/ship` land here when they're real
 
 Work that's actively being designed or about to start.
 
-- **Mini adoption — PR B: Elicit + evolve design language.** PR A (install) shipped on branch `mini-install`. Next session runs `/elicit-design-language` archaeology mode, manually stitches output with the legacy hand-written `design-language.md` (FB-0016). PR C (token + component migration) follows.
+- **Mini adoption — PR C: Token + component migration.** PR A (install) and PR B (axioms + manifest + logs + CLAUDE.md) shipped. PR C migrates tokens first, then Toast → Mini Toast archetype, then dialogs/popovers, then layout primitives. Each component is its own PR. Prerequisites captured under "From PR A staff review" below; constraints from PR B captured in `plan.md` "Active Work Items".
 
 ## Next (the next 1–2 features after the current one)
 
@@ -18,10 +18,9 @@ Picked, scoped, ready to start once `Now` clears.
 
 | Workstream | Priority | Status | Notes |
 |---|---|---|---|
-| **Mini adoption — PR C: Token + component migration** | P0 | Scoped (iterative) | After PR B. Tokens first, then Toast → Mini Toast archetype, then dialogs/popovers, then layout primitives. Each component its own PR. Prerequisites captured under "From PR A staff review" below. |
 | Persistence (drafts survive a reload) | P0 | Scoped | Pick localStorage vs IndexedDB vs FSA API. Open question in `spec.md`. First real feature after Mini settles. |
 | Repo-sync v0 (read-only) | P1 | Not scoped | Browse a local path's `.md` files. Decide between FS Access API (browser-only, no install) or a local helper. |
-| **Surface posture decision** | P1 | Forced by PR B | Mini's "surface hierarchy depth" axiom forces a 1–4 tier choice during elicitation. The currently-prototyped floating + flat duo gets resolved as part of PR B. |
+| **Surface posture decision** | P2 (open axiom) | Dogfooded | Resolved into an explicit open axiom in PR B — both floating and flat continue to ship in the DevPanel. Resolution criteria are explicit: dogfooding signal, an archetype constraint surfaces during PR C, or an explicit user call. Promote out of "Next" only when one of those fires. |
 
 ## Later (named but not designed yet)
 

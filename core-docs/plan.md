@@ -104,8 +104,8 @@ Branch: `mini-install` (create when execution begins).
 **Files expected to change in PR A:**
 - **New (Mini-owned, do not edit):** `packages/ui/src/**`, `packages/ui/styles/{axioms,primitives}.css`, `packages/ui/{MINI-VERSION,DEFAULTS}.md`, `.claude/skills/{audit-a11y,check-component-reuse,elicit-design-language,enforce-tokens,generate-ui,propagate-language-update}/**`, `tools/invariants/**`, `templates/**`, `scripts/sync-mini.sh`.
 - **New (fork-and-own, seeded only):** `packages/ui/styles/{tokens,archetypes}.css`.
-- **Modified:** `package.json` (+ Radix deps, name fix), `package-lock.json`, `vite.config.ts` (alias), `tsconfig.json` (paths), `src/main.tsx` (4 imports), `index.html` (root attrs).
-- **Unchanged:** every file in `src/components/`, `src/styles/globals.css`, `src/store.tsx`, `src/lib/markdown.ts`, all of `core-docs/` (except plan/history/spec at /ship).
+- **Modified:** `package.json` (+ Radix deps, name fix), `package-lock.json`, `vite.config.ts` (alias), `tsconfig.json` (paths), `src/main.tsx` (4 imports + cascade-order comment), `index.html` (root attrs), `src/styles/globals.css` (PR-A neutralization block appended only; PR C removes it), `.claude/skills/staff-review/SKILL.md` (drop `disable-model-invocation` so the skill is callable from the model loop per FB-0003 spirit).
+- **Unchanged:** every file in `src/components/`, `src/store.tsx`, `src/lib/markdown.ts`, all of `core-docs/` (except plan at this commit; history/spec/feedback/roadmap defer to /ship).
 
 **Risks / open questions:**
 

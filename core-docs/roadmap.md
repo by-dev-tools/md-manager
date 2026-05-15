@@ -72,6 +72,14 @@ Captured by `/staff-review` and `/ship` so they don't get lost.
 - **Document `<kbd>` and link-style-button patterns in `design-language.md`.** Both are emerging shared patterns introduced in Slice B; promote them so the next session reuses rather than re-invents.
 - **Document the toast pattern in `design-language.md`.** New surface tier (inverted dark, bottom-anchored, transient) deserves its own entry under "Component guidelines" with the rationale for why it diverges from the warm card-on-tint norm.
 
+### From PR A staff review (Mini install)
+
+- **Token name collision verification before PR C.** Both md-manager's `globals.css` and Mini's `tokens.css` define overlapping token names (`--weight-{regular,medium,semibold}`, `--space-3..6`, `--radius-{badge,button,card,modal}`, and accent-N numbers). The cascade currently favors ours (globals.css loads last), but PR C — which migrates *components* to use Mini's token contract — needs an explicit audit: build the project, grep `dist/assets/*.css` for each duplicated token name, confirm which value wins, and document any intentional re-binding in PR C's history entry. If two values are semantically different (e.g., `--space-3: 8px` vs Mini's `0.5rem`), name-collide them out or rebind explicitly.
+- **`scripts/sync-mini.sh` error-handling hardening.** Current wrapper uses `trap cleanup EXIT` which removes the snapshot dir even when `update.sh` exits non-zero. For future syncs (post-PR-A), add exit-code awareness so a failed sync preserves the backup and prints the recovery path. Touch `scripts/sync-mini.sh`; no code-change risk to the app.
+- **`tsconfig.json` `include` expansion at PR C entry.** Currently `"include": ["src"]`. The `@mini/*` path alias is defined but inert until the first TS file imports from `@mini/primitives` (PR C). When that happens, TypeScript will need `"packages/ui/src"` added to `include` (or path-mapping alone may suffice, depending on `moduleResolution: "bundler"` behavior). Verify at PR C start; if a test import from `@mini/Box` typechecks without an include change, this is moot.
+- **Alias scheme decision: single `@mini` vs split `@mini`/`@mini-styles`.** Designer uses a single `@mini` aliased to `packages/ui/styles`, so `@mini/tokens.css` works directly. We split into `@mini-styles/*.css` (CSS) and `@mini/*` (TS) for explicit contracts. Both work; PR B or C should pick one for family lockstep with Designer.
+- **`PROJECT_SKILLS` array maintenance burden.** `scripts/sync-mini.sh` hardcodes the 5 project skills to back up. Any new project-owned skill must be added by hand or it silently disappears on the next Mini sync. Cheap mitigation: have the wrapper read `find .claude/skills -maxdepth 1 -mindepth 1 -type d` and subtract Mini's skills (from `templates/` or an explicit list). Defer until a project skill actually gets added without updating the array.
+
 ## Definition of done (for any feature)
 
 A feature is "done" when:

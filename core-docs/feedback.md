@@ -33,6 +33,26 @@ Increment from the last entry. Use `FB-0001`, `FB-0002`, etc.
 
 ## Entries
 
+### FB-0021: Try the automated/operational fix before restructuring the docs
+**Date:** 2026-05-14
+**Source:** user direction
+
+**What was said:** Discussing the parallel-worktree merge-conflict pain (every PR touches the same shared docs — `history.md`, `feedback.md`, `plan.md` — so concurrent PRs serialize on conflicts even when their `src/` work doesn't overlap). The assistant proposed a structural fix (split append-only docs into per-entry files) alongside an automation fix (GitHub merge queue). User asked: "do you recommend the docs restructure over using merge queue? should i worry about creating a ton of files?" The right answer was: do merge queue first, watch what conflicts survive, only restructure docs if the residual pain is real.
+
+**Synthesized rule:** When a workflow pain point has both an automation fix (zero-cost, observable, reversible) and a structural fix (real migration cost, changes file layout, harder to undo), do the automation fix first and measure the residual pain before paying for the structural one. The automation fix usually addresses the common case; the structural fix is only worth it if the residual is meaningful after automation. Generalizes: don't refactor docs/code structure to dodge friction that tooling can absorb. Applies to: merge automation before docs sharding, CI gates before manual review checklists, lint rules before convention docs.
+
+**Applies to:** workflow, scoping decisions, friction reduction.
+
+### FB-0020: Commit at each workflow phase boundary; squash on PR close
+**Date:** 2026-05-14
+**Source:** user direction
+
+**What was said:** User asked whether intermediate commits between workflow phases (Execute → /simplify → /staff-review → /ship) matter for software-engineering best practices, or whether to leave commit timing to agent judgment. Discussion resolved on: commit at every phase boundary that produced changes (skip if no diff), preserve those commits during branch life for review/recovery/blame, then squash-merge on PR close so `main` stays linear (one commit per PR = one logical unit). Branch commits live on the GitHub PR page indefinitely, so the audit trail isn't lost on squash.
+
+**Synthesized rule:** Every pipeline phase (Execute, /simplify, /staff-review, /ship) that produced changes gets its own commit. This is a deterministic rule, not a judgment call — agents should not skip a phase-boundary commit "because the diff is small." Repository default merge strategy is **squash** so `main` reads as one-commit-per-PR. Phase granularity is for branch-life clarity (mid-PR review, recovery, mental phase boundaries) and lives on the PR page after merge; it is intentionally not preserved on `main`. To formalize: add the explicit per-phase commit rule to `core-docs/workflow.md` and a one-paragraph "Merge strategy" note to `CLAUDE.md` (both deferred to a separate small PR — captured in `roadmap.md` Cleanup).
+
+**Applies to:** workflow, git practice, merge configuration.
+
 ### FB-0019: Open axioms with explicit resolution criteria are first-class artifacts, not deferred decisions
 **Date:** 2026-05-14
 **Source:** user direction

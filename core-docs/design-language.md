@@ -30,8 +30,8 @@ md-manager and [Designer](/Users/benyamron/dev/designer/) are sister apps in the
 
 | Area | Current state | Designer's choice | Decision status |
 |---|---|---|---|
-| **Surface posture** | Two modes shipped in the prototype: floating (rounded card on a gutter) and flat (full-bleed). Toggleable per session. | Floating only. | **Undecided.** Keep both, drop one, or rethink entirely is all on the table. Don't treat the current dual-mode as a finalized stance. |
-| **Design system** | Vanilla CSS with custom-property tokens in `src/styles/globals.css`. | Mini (`packages/ui/`) with Radix Colors v3 + token layers. | **Likely adopting Mini soon.** The current vanilla setup is fine for the prototype; treat any new tokens or patterns as bridge work that should port cleanly to Mini when we move. Don't add elaborate token machinery here that Mini already provides. |
+| **Surface posture** | Two modes shipped in the prototype: floating (rounded card on a gutter) and flat (full-bleed). Toggleable per session. | Floating only. | **Open axiom — both ship, dogfooded.** See § "Axioms" → "Open axiom: surface posture" for the full framing and resolution criteria. |
+| **Design system** | Mini (`packages/ui/`) installed (PR A); design language amended to Mini's axiom contract (PR B). App code is still vanilla CSS pending PR C token + component migration. | Mini (`packages/ui/`) with Radix Colors v3 + token layers. | **Adopting in PR B/C.** Mini scaffolding is in place; legacy components stay grandfathered until PR C migrates them. |
 | **Dark mode** | Light only (currently). | Light + dark parity required. | **Punted for the prototype.** Captured in `roadmap.md`. Revisit when persistence + repo sync land, or sooner if Mini adoption forces it. |
 | **Dev panel** | None. | Dev panels as the canonical design-exploration tool. | **Open.** Will adopt the pattern if surface tuning becomes ambiguous; not warranted at current scope. |
 
@@ -63,18 +63,18 @@ The 10 top-level rules from which every token derives. This is Mini's design-lan
 | 7 | Type scale ratio | **custom** (non-modular by design) | 26/18/15/13/12/10.5/8.5 — chosen per role, not generated from a ratio. Hierarchy is carried by weight + color, not by stacking sizes (principle #6). § Typography |
 | 8 | Surface hierarchy depth | **3 tiers** — page tint / content surface / float layer | Orthogonal to the floating-vs-flat posture question below: modals and popovers always live in the overlay tier regardless of which posture the surface ships. § Depth model |
 | 9 | Radius personality | **soft with one pillowy signature** | 3/6/10/12px across chrome (soft); 24px on the content surface is the signature pillowy shape. § Corner radius |
-| 10 | Focus style | **ring-outside** (browser default, currently) | Mini's universal `:focus-visible` ring is neutralized at root in PR A; per-component focus styling lives in `globals.css`. PR C may rebind via Mini tokens — see Change log. § Accessibility |
+| 10 | Focus style | **ring-outside** (browser default, currently) | Mini's universal `:focus-visible` ring is neutralized at root in PR A; per-component focus styling lives in `globals.css`. PR C may rebind via Mini tokens — see Change log. § Accessibility checklist |
 
-### Open axiom: surface posture (both ship, both justified)
+### Open axiom: surface posture
 
-Mini's "surface hierarchy depth" axiom (above) is settled at **3 tiers**. The orthogonal question — does the content surface present as a **floating card** or a **flat full-bleed plane**? — is **actively dogfooded as an open question**. Both ship in the DevPanel.
+Mini's "surface hierarchy depth" axiom (above) is settled at **3 tiers**. The orthogonal question — does the content surface present as a **floating card** or a **flat full-bleed plane**? — is **actively dogfooded as an open axiom**. Both ship in the DevPanel.
 
 | Posture | Shape | Argument for |
 |---|---|---|
 | **Floating** | content surface as a card on the page tint — `--surface-gutter` margin, `--radius-surface` (24px), two-layer diffuse shadow | The page tint becomes a frame for the writing. Warmth lives at the edges; the content has its own territory. Strongest family resemblance with Designer's floating-only stance. |
 | **Flat** | full-bleed — no margin, no radius, no shadow; surface background merges with page tint | The writing surface *is* the page. Maximum content-over-chrome; the tint becomes the room rather than the frame. |
 
-Both express the page-tint signature — they just assign it different roles (frame vs. room). This is not a deferred decision; it is a present-tense question that gets resolved by dogfooding signal, by a Mini archetype that can't gracefully express both, or by an explicit user call. Until one of those happens, the DevPanel toggle stays and both postures are first-class.
+Both express the page-tint signature — they just assign it different roles (frame vs. room). Resolution happens via dogfooding signal, a Mini archetype that can't gracefully express both, or an explicit user call. Until then, the DevPanel toggle stays and both postures are first-class.
 
 ---
 

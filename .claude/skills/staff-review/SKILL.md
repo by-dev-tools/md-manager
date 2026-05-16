@@ -1,23 +1,26 @@
 ---
 name: staff-review
 description: >
-  Reviews the current workspace's pending changes from three parallel
-  staff-level perspectives — staff engineer, staff UX designer, and staff
-  design engineer — to catch bugs, regressions, accessibility gaps, and
-  craft issues before requesting human review. Works on any branch with
-  changes vs `origin/main`, whether or not a PR exists. Triages findings
-  into BLOCKER, NIT, FOLLOW-UP; fixes blockers and cheap nits in the same
-  workspace; captures follow-ups to roadmap.md/plan.md (not just the PR
-  body); updates the PR body with reviewer notes when a PR exists; never
-  merges. Use whenever a workstream is implementation-complete, when the
-  user asks for a "staff" or "multi-perspective" review, or before opening
-  a PR. Defer to `security-review` for security-specific audits.
+  Reviews the current workspace's pending changes from four parallel
+  staff-level perspectives — staff engineer, staff UX designer, staff
+  design engineer, and push-further (uncommon-care lens) — to catch
+  bugs, regressions, accessibility gaps, craft issues, and missed
+  opportunities to push the surface beyond on-system to memorable.
+  Works on any branch with changes vs `origin/main`, whether or not a
+  PR exists. Triages findings into BLOCKER, NIT, FOLLOW-UP, and
+  EXPLORATION; fixes blockers and cheap nits in the same workspace;
+  captures follow-ups to roadmap.md/plan.md and exploration directions
+  to roadmap.md § Exploration (not just the PR body); updates the PR
+  body with reviewer notes when a PR exists; never merges. Use whenever
+  a workstream is implementation-complete, when the user asks for a
+  "staff" or "multi-perspective" review, or before opening a PR. Defer
+  to `security-review` for security-specific audits.
 allowed-tools: Read, Edit, Write, Glob, Grep, Bash, Agent
 ---
 
 # Staff-perspective review
 
-A workstream is implementation-complete. Run three independent reviews **in parallel**, each from a distinct staff-level lens, then triage and fix before requesting human review. **Never merge.**
+A workstream is implementation-complete. Run four independent reviews **in parallel**, each from a distinct staff-level lens, then triage and fix before requesting human review. **Never merge.**
 
 The source of truth is the workspace diff vs `origin/main`, **not** the PR. Uncommitted edits, committed-but-unpushed work, and an open PR are all valid inputs.
 
@@ -35,11 +38,11 @@ Skip if:
 - The user asked for a security review — use `security-review`.
 - There is no diff vs `origin/main`.
 
-## Why three perspectives, in parallel
+## Why four perspectives, in parallel
 
-Three lenses catch different classes of issue. Running them sequentially lets each prime the next; running them in parallel keeps each independent so the findings actually triangulate.
+Four lenses catch different classes of issue. Three ask "is this good" (engineer, UX-designer, design-engineer); the fourth asks "could this be pushed further." Running them sequentially lets each prime the next; running them in parallel keeps each independent so the findings actually triangulate. **Do not skip a lens** because a human gave a visual opinion or because another lens already ran — AI review and human opinion catch different things, and the four lenses cover distinct surfaces. The only legitimate skip is when a lens genuinely doesn't apply (e.g., backend-only change → no design-engineer surface); in that case say so explicitly rather than running an empty review.
 
-## The three perspectives
+## The four perspectives
 
 Each is a separate `Agent` call (`subagent_type: Explore`) in **a single tool message with multiple tool uses**, so they run concurrently.
 
@@ -78,6 +81,31 @@ Specifically asks:
 - Does motion duration/easing match existing patterns?
 - Where the change introduces a new surface (modal, popover, card), does the chrome match the rest of the system — same radii, same shadow scale, same hue tier?
 
+### Push-further (uncommon-care lens)
+
+Hunts: opportunities to push the surface beyond on-system to memorable. This is a **generative** lens — the other three ask "is this good"; this one asks "could this go further." Grounded in the project's `design-language.md` and Josh Puckett's "uncommon care" — executing limited scope to an extraordinarily high bar rather than expanding scope.
+
+For the diff in front of you, ask:
+- Could a tactile / playful interaction replace a static one, without expanding surface area?
+- Does the surface invite curiosity ("what happens if I…") or only support its function?
+- Is there a moment that breaks spatial continuity (modal-spawn, transition replacement, sudden mode change) that could morph in-place instead?
+- Where does the change collapse complexity vs. expose it? Could a multi-control area resolve into one satisfying gesture?
+- Is there sound / motion / materiality the surface could carry that it doesn't?
+- What can be **cut** to make this tighter? (Shaker test: as simple as it can be while being as good as it can be.)
+
+> **Empty is valid and often correct.** Before reading the bucket definitions, remember: if the surface is at its appropriate ceiling for its scope, your output is "Nothing to push — surface at ceiling for its scope." False-positive findings pollute the roadmap and train the next session to mistrust the lens. The bar is honesty, not productivity.
+
+Findings go in three buckets — name the bucket explicitly per finding:
+- **inline-cheap** — a concrete improvement small enough to apply in this PR (single file, single concern, ≤30 min). Treated like a NIT — fix in-tree.
+- **roadmap-concrete** — a deferred-but-scoped extension worth a roadmap entry. Specific shape, named cost. Routes to `roadmap.md` under the appropriate horizon (Now / Next / Later) or — if it's open-ended — Exploration.
+- **future-exploration** — an area inviting exploration without a clear shape yet. Routes to `roadmap.md` § Exploration with a "Surfaces when:" trigger naming the file paths / area that should re-surface it later.
+
+**Tiebreakers when a finding straddles buckets:**
+- Between **inline-cheap** and **roadmap-concrete** — prefer **roadmap-concrete**. Bundling small generative fixes into the current PR breaks the lens's restraint contract (the lens is meant to identify pushes, not auto-apply them); deferring keeps the PR diff focused on its stated scope.
+- Between **roadmap-concrete** and **future-exploration** — prefer **future-exploration** when you can't write a concrete shape + cost. A vague roadmap entry is worse than an honest Exploration entry that names what we don't yet know.
+
+Output typically ≤2 items per bucket. If the lens turns up more than that, the surface deserves a dedicated standalone `/uncommon-care` pass, not a /staff-review side-channel — flag the overflow rather than cramming everything in.
+
 ## Workflow
 
 1. **Detect what artefact exists.** Run in parallel:
@@ -95,20 +123,22 @@ Specifically asks:
    ```
    Reviewers reference both so the prompt stays small.
 
-3. **Launch the three reviews in parallel.** A single tool message with three `Agent` calls, each `subagent_type: Explore`. Each prompt names its lens, the diff path, the untracked-files list, the changed files, the relevant docs to read (`core-docs/design-language.md`, `core-docs/spec.md`, `core-docs/feedback.md`, and the PR body or workstream prompt if relevant), and asks for findings classified **BLOCKER / NIT / FOLLOW-UP**. Cap each review at ~1200 words.
+3. **Launch the four reviews in parallel.** A single tool message with four `Agent` calls, each `subagent_type: Explore`. Each prompt names its lens, the diff path, the untracked-files list, the changed files, the relevant docs to read (`core-docs/design-language.md`, `core-docs/spec.md`, `core-docs/feedback.md`, and the PR body or workstream prompt if relevant), and asks for findings classified **BLOCKER / NIT / FOLLOW-UP** (engineer / UX designer / design engineer lenses) or **inline-cheap / roadmap-concrete / future-exploration** (push-further lens). Cap each review at ~1200 words.
 
 4. **Triage.** A finding is:
    - **BLOCKER** — user-visible regression, crash, data loss, accessibility violation, contract break, broken build. **Fix in this workspace.**
-   - **NIT** — real improvement, cheap (single-file, no architectural change, no new tests). **Fix in this workspace.**
-   - **FOLLOW-UP** — real issue but expanding scope here is wrong (different workstream, requires design input, large refactor). **Capture, don't fix.**
+   - **NIT** / **inline-cheap** — real improvement, cheap (single-file, no architectural change, no new tests). **Fix in this workspace.**
+   - **FOLLOW-UP** / **roadmap-concrete** — real issue or scoped extension; expanding scope here is wrong. **Capture, don't fix.**
+   - **future-exploration** — open-ended direction without a clear shape yet. **Capture to `roadmap.md` § Exploration.**
 
    Spot-check high-impact findings against the actual code before fixing — reviewers can be confidently wrong.
 
-5. **Apply blocker + cheap-nit fixes.** Re-run `npm run typecheck` and `npm run build` after the fixes. If a test suite exists, run it.
+5. **Apply blocker + cheap-nit + inline-cheap fixes.** Re-run `npm run typecheck` and `npm run build` after the fixes. If a test suite exists, run it.
 
-6. **Capture follow-ups so they aren't lost.** **Never only in the PR body.** Route them:
-   - Belongs to active work → `core-docs/plan.md` under the current work item.
-   - Larger / future work → `core-docs/roadmap.md` under the relevant horizon.
+6. **Capture follow-ups + exploration findings so they aren't lost.** **Never only in the PR body.** Route them:
+   - **FOLLOW-UP** belongs to active work → `core-docs/plan.md` under the current work item.
+   - **FOLLOW-UP / roadmap-concrete** larger / future work → `core-docs/roadmap.md` under the relevant horizon.
+   - **future-exploration** → `core-docs/roadmap.md` § Exploration, with a "Surfaces when:" trigger that names the file paths or area that should re-surface the item later (so `.claude/rules/exploration.md` can find it during future work in that area).
    - Can also mention in the PR body for reviewer awareness, but the doc entry is canonical.
 
 7. **Communicate reviewer notes.**
@@ -122,13 +152,15 @@ Specifically asks:
 ```markdown
 ## Reviewer notes
 
-Three parallel reviews ran before this opened for human review.
+Four parallel reviews ran before this opened for human review. The first three (engineer / UX designer / design engineer) asked "is this good?"; the fourth (push-further) asked "could this go further?" and routes its findings to inline fixes, scoped roadmap items, or `roadmap.md § Exploration`.
 
 **Staff engineer.** _Findings:_ [one-line summary]. _Acted on:_ [what was fixed]. _Deferred:_ [follow-ups → roadmap.md/plan.md location].
 
 **Staff UX designer.** _Findings:_ ... _Acted on:_ ... _Deferred:_ ...
 
 **Staff design engineer.** _Findings:_ ... _Acted on:_ ... _Deferred:_ ...
+
+**Push-further (uncommon-care).** _Findings:_ [N inline-cheap / N roadmap-concrete / N future-exploration — or "Nothing to push — surface at ceiling for its scope"]. _Acted on:_ [what was applied inline]. _Deferred:_ [roadmap-concrete → roadmap.md horizon, future-exploration → roadmap.md § Exploration].
 
 Build (`npm run typecheck && npm run build`) re-run after fixes: [pass/fail].
 Dev URL for in-browser check: [link from /link, if running].
@@ -146,6 +178,6 @@ The bar is honesty over polish — if a review found nothing of consequence, say
 - **Untracked files are invisible to `git diff`.** Hand reviewers the `git ls-files --others --exclude-standard` list and tell them to `Read` each one.
 - **Reviewers can be confidently wrong.** Spot-check high-impact findings before acting.
 - **Grep finds what reviewers miss.** After the reviews, run a focused grep for patterns this change claims to introduce or migrate. Treat survivors as findings.
-- **One review missing isn't a deal-breaker.** If a perspective genuinely doesn't apply (e.g. a pure data-layer change has nothing for the design engineer), say so explicitly rather than running empty reviews.
+- **Don't skip a lens because human approval or another lens already ran.** AI review and human visual approval catch different things; the four lenses cover distinct surfaces (correctness / UX / craft / push-further). The only legitimate skip is when a lens genuinely doesn't apply (e.g., a backend-only change has nothing for the design engineer or push-further). In that case say so explicitly rather than running an empty review; never skip with "live-tested" or "scope is tight" as the reason.
 - **Scope creep is the failure mode.** "While you're here" suggestions are FOLLOW-UPs.
 - **The skill ends with work ready, not merged.** No merge, no approval, no LGTM comment.

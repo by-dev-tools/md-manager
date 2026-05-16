@@ -37,6 +37,47 @@ Use the `SAFETY` marker on any entry that modifies error handling, persistence, 
 
 ## Entries
 
+### Workflow: add push-further lens to /staff-review + roadmap.md § Exploration
+**Date:** 2026-05-15
+**Branch:** push-further-lens
+**Commit / PR:** `45443ad..[this ship commit]` (4 commits) → [PR pending push]
+
+**What was done:**
+- Added a fourth lens ("push-further") to `/staff-review`'s parallel-agent run. The first three lenses (engineer / UX designer / design engineer) ask "is this good?"; the fourth asks "could this go further?" — grounded in `core-docs/design-language.md` and Josh Puckett's "uncommon care" (executing limited scope to an extraordinarily high bar). Three output buckets: **inline-cheap** (apply this PR; treated like a NIT), **roadmap-concrete** (deferred but scoped, named cost), **future-exploration** (open-ended direction, routes to `roadmap.md § Exploration`).
+- Added `core-docs/roadmap.md § Exploration` between "Later" and "Someday / maybe." Format spec includes the entry shape, the area-grouped organization, and the three-form `Surfaces when:` trigger spec (exact file paths, path patterns, conceptual areas — combinable, with guidance on when to use each).
+- Added `.claude/rules/exploration.md` — auto-loads on `src/**/*.{ts,tsx,css}`. Reminds the agent to grep `roadmap.md § Exploration` for items whose `Surfaces when:` trigger names the file(s) touched.
+- Updated `core-docs/workflow.md` step 7 to describe the four lenses, the bucket mapping (NIT ↔ inline-cheap, FOLLOW-UP ↔ roadmap-concrete, plus future-exploration), and the tightened skip-discipline rule.
+- Updated `CLAUDE.md` loop diagram, skills cheat sheet, and rules table to reference the four lenses + the new `exploration.md` rule.
+- Updated FB-0009 (the founding three-lens entry) to reflect four lenses with push-further named.
+- Seeded `roadmap.md § Exploration` with two entries: (1) **Color rail / per-tint edge color** — `--page-tint-edge` hardcoded warm-orange in `src/store.tsx`, doesn't follow user-selected hues; (2) **Color rail / strip → Settings + onboarding** — user's parking-lot direction to relocate the always-on color rail to a Settings surface.
+
+**Why:**
+Across three consecutive PRs (PR B, PR #17, PR #18), the assistant skipped one or more `/staff-review` lenses with rationalizations like "live-tested by the user" or "engineer lens already covered by /simplify." The user called this out directly: "agentic UX designer review should not be replaced by human review." AI review and human opinion catch different things; the three lenses cover distinct framings; skipping erodes the loop's value over time. Adding a fourth lens (push-further) addresses a separate gap simultaneously — the existing three ask adherence questions; there was no canonical home for "where could this surface go further." The Exploration section + `Surfaces when:` triggers gives those observations a durable home that re-surfaces them contextually.
+
+**Design decisions:**
+- **Lens lives inside `/staff-review`, not as a separate skill.** Runs every PR by default; shares /staff-review's parallel-agent infrastructure; one extra agent call's cost is bounded.
+- **"Empty is valid and often correct" guard.** False-positive "we could add X" findings pollute the roadmap and train the next session to mistrust the lens. The guard is repeated three times in SKILL.md (blockquote callout, "max 2 per bucket" budget, tiebreaker rules favoring restraint) and reinforced in workflow.md. Self-test on this very PR worked: push-further self-review returned empty, honored.
+- **Exploration section lives in `roadmap.md`, not a separate doc.** Co-locating exploration items keeps them adjacent to other forward-looking work. The longer-roadmap.md cost is mitigated by the `Surfaces when:` triggers + the `.claude/rules/exploration.md` auto-load.
+- **`Surfaces when:` triggers can mix file paths, path patterns, and conceptual areas.** Conceptual triggers handle items that name surfaces that don't exist yet (Settings page, onboarding flow).
+- **Heavyweight standalone `/uncommon-care` skill is a separate PR (PR b).** Per FB-0030 (this PR's other new entry), the standalone version will be adapted to md-manager's context, not vendored from Designer.
+
+**Technical decisions:**
+- **`.claude/rules/exploration.md` glob is `src/**/*.{ts,tsx,css}`** (split into three array entries to match other rules' format). Broad enough to catch substantive code work; narrow enough to skip `.claude/`, `packages/ui/`, and `core-docs/`.
+- **Role title standardization across docs.** Picked "engineer / UX designer / design engineer / push-further" as the canonical short reference everywhere a short ref is used.
+- **FB-0009 updated in-place rather than queued for /ship.** FB-0009 became factually wrong the moment this PR's diff hit — leaving it stale would mean shipping a known-wrong doc.
+
+**Tradeoffs discussed:**
+- **Run the full four-lens /staff-review on this very PR vs. skip per the skill's doc-only escape.** Ran it as a self-test of the new skip-discipline rule (FB-0029) being written *in* this PR. 2 of 4 lenses returned non-empty findings; 2 returned empty. Validated the model.
+- **Empty self-review on push-further lens vs. force a finding.** Honored the empty signal. The lens passed its own design test by refusing to fabricate.
+- **Update FB-0009 in-tree vs. capture in this PR's history.md only.** Updated in-tree to prevent shipping a doc that contradicts SKILL.md edits in the same PR.
+
+**Lessons learned:**
+- **Doc-only PRs benefit from the full /staff-review when the doc changes workflow.** The skill's "doc-only" skip is calibrated for prose tweaks; workflow-rule changes have real surface for the lenses.
+- **The push-further lens passed its own design test by returning empty.** First real exercise of the empty-is-valid guard.
+- **Forward-references to future FB IDs are stale references.** I originally hardcoded "FB-0027" in workflow.md and plan.md for this PR's eventual FB — but the merge-queue numbering race made even that wrong (PR #16 took FB-0025/26, PR #18 took FB-0027/28, this PR ended up at FB-0029/30). /simplify caught the initial hardcoded FB-0027; the queue-race surfaced the deeper lesson. Rule: when writing about a not-yet-numbered FB, point at the ledger generically ("see feedback.md") and let `/ship` synthesis pick the actual number.
+
+---
+
 ### Workflow unification: canonical loop + spike mode + confidence gates + agent self-feedback
 **Date:** 2026-05-15
 **Branch:** unify-workflows

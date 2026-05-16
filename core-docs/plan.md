@@ -10,7 +10,8 @@ The living document for what's being worked on right now, what's queued, and wha
 
 ## Handoff Notes
 
-- **Color-rail portfolio-derived presets shipped on `color-rail-presets`** — `9295d93` (presets + page-tint default) + `95cd024` (/simplify MUST FIX: store.tsx default drift) + this ship commit. Visible product change: rail now shows 5 portfolio-derived presets at t=0.25 (Sand, Bone, Blush, Sage, Mist); default page tint is Sand. FB-0027 / FB-0028 captured (renumbered from FB-0025/0026 after PR #16 merged first and took those numbers).
+- **Push-further lens + roadmap.md § Exploration shipped on `push-further-lens`** — `45443ad` (lens + Exploration + rule + doc updates) + `4ff1fc9` (/simplify fixes) + `4a47708` (/staff-review fixes) + this ship commit. `/staff-review` now runs four lenses; SKILL.md / workflow.md / CLAUDE.md / FB-0009 all updated. `.claude/rules/exploration.md` auto-loads on UI/code work to surface relevant Exploration items. FB-0029 (no lens-skipping) and FB-0030 (adapt skills, don't vendor) captured (renumbered from FB-0025/0026 after PR #16, #18 merged first and took those numbers). Heavyweight `/uncommon-care` skill is PR b — not in this PR.
+- **Color-rail portfolio-derived presets merged as PR #18** on `color-rail-presets`. Rail now shows 5 portfolio-derived presets at t=0.25 (Sand, Bone, Blush, Sage, Mist); default page tint is Sand. FB-0027 / FB-0028 captured.
 - **PR 1 (workflow unification) merged as PR #16** on `unify-workflows`. Doc + tooling only. New canonical workflow.md (11 steps), spike/tiny modes, confidence gates, three-layer feedback model with 5 guardrails on agent memory. FB-0025 / FB-0026 captured.
 - **PR C Step 3a (`--gray-a*` rename) merged as PR #17.** All `--tint-overlay-*` references now in place; Mini's Radix `--gray-a*` scale is available for future use.
 - **PR C Step 1 (token name-collision audit) merged as PR #15** on branch `pr-c-token-audit`. Output: `core-docs/token-migration.md` with the 14-token collision table.
@@ -92,11 +93,18 @@ The living document for what's being worked on right now, what's queued, and wha
 
 PR C is **iterative across sessions** — each component migration is its own small PR with its own `/simplify` + `/staff-review` pass.
 
-### PR C / Step 2: `--accent-8` contrast matrix (next — investigation, ~1 session)
+### Workflow PR b: Heavyweight `/uncommon-care` skill (next workflow item)
 
-(See section below for the original scope. This is the remaining unblocker for PR C Step 3 alongside Step 3a, which just shipped.)
+**Goal:** Standalone, manual-invoke skill that runs Josh Puckett's full uncommon-care lens (8 dimensions: fidgetability, flow continuity, three-slider problem, hospitality, conceptual range→depth, reduction, metaphor integrity, materiality) against a target surface. Sister to the lightweight push-further lens shipped in PR a but with deeper output and an episodic cadence (not every PR).
 
-### PR C / Step 2: `--accent-8` contrast matrix (parallel to Step 3a, blocks Step 4+)
+**Constraints:**
+- **Adapt, don't vendor** (FB-0030). Designer has `~/dev/designer/.claude/skills/uncommon-care/SKILL.md` — re-write for md-manager's context, don't copy verbatim. Drop references to Designer-specific docs (`tensions.md`, `mini-gaps.md`, `decisions.md`); map outputs to md-manager's surfaces (`roadmap.md § Exploration`, `pattern-log.md`).
+- Output routes to `roadmap.md § Exploration` (using the same `Surfaces when:` format the push-further lens uses), not a separate ledger.
+- Manual-invoke only (`user_invocable: true`); not auto-loaded by `/staff-review` or `/ship`.
+
+**Out of scope:** changes to the lightweight push-further lens — PR a is its baseline.
+
+### PR C / Step 2: `--accent-8` contrast matrix (queued — investigation, ~1 session)
 
 **Goal:** Verify that `var(--accent-8)` (Radix indigo-8 = `#8da4ef`) clears ≥3:1 contrast against every page-tint hue the color rail produces. Required before any component starts using `var(--accent-8)` or `var(--accent-9)` for focus rings, links, or selected state. Output: a contrast pass/fail table per hue + an axiom amendment if any hue fails.
 

@@ -37,6 +37,36 @@ Real intent, not yet ready to pick up.
 - **Markdown rendering quality pass** — code blocks with syntax highlighting, task lists, tables
 - **Dev panel** (if surface tuning becomes ambiguous) — same pattern as Designer's SurfaceDevPanel
 
+## Exploration
+
+Open-ended directions surfaced by review (especially the `/staff-review` push-further lens) or curiosity. **Not planned work** — these become roadmap items when scoped, or get applied inline when working in the named area. Each carries a **Surfaces when:** trigger so future sessions encounter the right item at the right moment instead of having to scan the whole list.
+
+`.claude/rules/exploration.md` auto-loads on UI/code work and reminds the agent to grep this section for trigger matches before finishing.
+
+### Format
+
+```
+### <Area>
+- **<Headline>** — <one paragraph: what's there now, what could be pushed,
+  a concrete shape if one exists.> Surfaces when: <triggers, comma-separated>.
+  Cost: <small | medium | large>.
+```
+
+**Group by area** (Color rail, Sidebar, Markdown, Editor, etc.), not by date or priority. The area heading is the retrieval index.
+
+**`Surfaces when:` triggers** can mix three forms — combine them freely with commas; `.claude/rules/exploration.md` greps the section for matches:
+- **Exact file paths** — `src/components/ColorRail.tsx`, `src/store.tsx` — best for known surfaces; greppable verbatim.
+- **Path patterns** — `src/components/*.tsx`, `src/styles/**/*.css` — best for cross-cutting concerns.
+- **Conceptual areas or future surfaces** — `Settings page`, `onboarding flow`, `persistence layer` — best when the item should fire on work that hasn't been scaffolded yet. Use a noun phrase a future session would naturally name when starting the relevant work.
+
+Use the most specific form available. Conceptual triggers are looser — write them so a grep for the area name during related work will hit.
+
+### Color rail
+
+- **Per-tint edge color.** Today, `--page-tint-edge` is hardcoded to `hsla(30, 30%, 50%, 0.10)` in `src/store.tsx` — a warm-orange wash that doesn't follow the user's selected page tint. Visually subtle but real: when the user picks the Mist preset (hue 200), the page-edge wash still reads warm-orange, breaking the tint coherence. A function `edgeFor(hue)` already exists in `ColorRail.tsx` for the gradient marker; the same approach could derive the edge color from the active tint. Surfaces when: editing `src/components/ColorRail.tsx`, `src/store.tsx` page-tint handling, or `src/styles/globals.css` page-tint section. Cost: small.
+
+- **Color strip → Settings page; onboarding "pick your favorite color" step.** The color rail currently lives on the right edge of every page. Direction: relocate it to a Settings page (very visible when Settings is open, recedes everywhere else), and adapt it into an onboarding step ("Pick your favorite color") that sets the user's initial default preset. Reduces ambient chrome on the main writing surface; gives the personalization moment a deliberate location. Implies introducing a Settings surface and a first-run flow — substantive scope. Surfaces when: building a Settings page, building first-run / onboarding, redesigning the main-surface chrome, or anyone proposes "where should this control live." Cost: medium (new surface + relocation).
+
 ## Someday / maybe
 
 Nice-to-haves and explorations.

@@ -6,7 +6,7 @@ This is the long-form narrative. `CLAUDE.md` carries the cheat-sheet. The two **
 
 ## What this workflow is (and isn't)
 
-This is **hybrid managed autonomy**, not pure autonomous coding. The human stays in the loop at two load-bearing gates: (1) **Plan approval** before any code is written, and (2) **Merge** at the end. Between those, the agent operates with autonomy-friendly primitives — spec-walk checkboxes, confidence verdicts, preflight gates, /simplify, three-lens staff-review, agent self-feedback memory.
+This is **hybrid managed autonomy**, not pure autonomous coding. The human stays in the loop at two load-bearing gates: (1) **Plan approval** before any code is written, and (2) **Merge** at the end. Between those, the agent operates with autonomy-friendly primitives — spec-walk checkboxes, confidence verdicts, preflight gates, /simplify, four-lens staff-review (engineer / UX designer / design engineer / push-further), agent self-feedback memory.
 
 Confidence gates explicitly add a third gate when an assumption is LOW — surfacing a question that must be resolved before the plan can proceed. The implicit gate at Execute time (new scope discovered → re-plan → re-approve) is currently judgment-based, not enforced; extending the confidence-gate primitive into Execute and into /staff-review BLOCKER triage is a roadmap item.
 
@@ -29,8 +29,10 @@ The user's request kicks the loop off (input, not a Claude step). From there:
  5. Commit           explain "why" not what; co-author trailer; per-phase
  6. /simplify        cold-read for reuse, clarity, efficiency; fix in-tree;
                      re-run preflight; commit
- 7. /staff-review    three lenses in parallel; fix BLOCKER + cheap NIT
-                     in-tree; FOLLOW-UP → roadmap / plan; commit
+ 7. /staff-review    four lenses in parallel (engineer / UX designer /
+                     design engineer / push-further); fix BLOCKER + cheap
+                     NIT in-tree; FOLLOW-UP → roadmap / plan; EXPLORATION
+                     → roadmap.md § Exploration; commit
  8. Present          reviewer notes + dev URL + branch state; NO PR yet;
                      flag MEDIUM-confidence assumptions for user redirect
  9. Iterate          apply user feedback (mini-loop of 1–7)
@@ -156,19 +158,24 @@ Cold-read the changed code for **reuse, quality, and efficiency** and fix issues
 - Mid-function early-returns hiding state machines that want their own function.
 - Performance footguns matching known patterns (O(n²) where O(n) reads the same; useEffect deps misses that re-run heavy work).
 
-**Why before staff-review.** If staff-review ran first, ~half its NITs would be "this is overcomplicated." `/simplify` removes that class of finding pre-emptively so the three-lens review focuses on architecture, correctness, and craft instead of bloat.
+**Why before staff-review.** If staff-review ran first, ~half its NITs would be "this is overcomplicated." `/simplify` removes that class of finding pre-emptively so the four-lens review focuses on architecture, correctness, craft, and push-further opportunities instead of bloat.
 
 Re-run **Preflight** before committing the simplify fixes. Refactors are exactly where mechanical gates earn their keep.
 
 ## 7. /staff-review
 
-Three agents review the diff in parallel from three lenses (staff engineer / staff UX / staff design engineer). Findings triaged:
+**Four** Explore agents review the diff in parallel from four lenses (engineer / UX designer / design engineer / push-further). The first three ask "is this good?"; the fourth asks "could this be pushed further?" — grounded in `design-language.md` and Josh Puckett's "uncommon care" (executing limited scope to an extraordinarily high bar).
+
+Findings triaged:
 
 - **BLOCKER** — fix in-tree now. User-visible regression, crash, accessibility violation, broken build.
-- **NIT** — fix in-tree if cheap (single-file, no architectural change).
-- **FOLLOW-UP** — capture to `roadmap.md` or `plan.md`. **Never only in the PR body.** Mention in PR body for reviewer awareness; the doc entry is canonical.
+- **NIT** / **inline-cheap** — fix in-tree if cheap (single-file, no architectural change). (`inline-cheap` is the push-further lens's equivalent of NIT.)
+- **FOLLOW-UP** / **roadmap-concrete** — capture to `roadmap.md` or `plan.md`, **never only in the PR body.** Mention in PR body for reviewer awareness; the doc entry is canonical.
+- **future-exploration** — open-ended direction without a clear shape yet. Routes to `roadmap.md` § Exploration with a `Surfaces when:` trigger naming the file paths / area that should re-surface the item later. `.claude/rules/exploration.md` auto-loads on UI / code work and reminds the agent to grep this section for trigger matches.
 
-**Bias toward fixing small, defined issues.** Larger questions and deferred items go to roadmap/plan with rationale, not into review-comment limbo. **For FOLLOW-UPs, prefer doing over filing** — if it's small enough to land in the same PR without meaningfully expanding scope, just do it now.
+**Bias toward fixing small, defined issues.** Larger questions and deferred items go to roadmap/plan with rationale, not into review-comment limbo. **For FOLLOW-UPs, prefer doing over filing** — if it's small enough to land in the same PR without meaningfully expanding scope, just do it now. The push-further lens is permitted to return "Nothing to push — surface at ceiling for its scope" — empty is valid and often correct; false-positive "we could add X" findings are worse than no findings.
+
+**Don't skip a lens** because a human gave a visual opinion or because another lens already ran. AI review and human opinion catch different things; the four lenses cover distinct surfaces. The only legitimate skip is when a lens genuinely doesn't apply (e.g., a backend-only change has nothing for the design-engineer or push-further lens) — in that case say so explicitly rather than running an empty review. "Live-tested" and "scope is tight" are not legitimate skip reasons; see `feedback.md` for the captured rule on this.
 
 If staff-review touches design rules, accessibility patterns, or product decisions that need to persist, the relevant rule goes into `design-language.md` or `feedback.md` so we don't relearn it next time.
 
@@ -436,7 +443,7 @@ With more human checkpoints, the human catches recurring patterns and corrects t
 | `/link` | Start the dev server, return URL | Whenever you need a live preview |
 | `/critique-plan` | Critique plan vs. core-docs (assumption-auditor plugin) | After writing a plan, before user approval |
 | `/simplify` | Cold-read changed code for reuse, clarity, efficiency; fix in-tree | After commit, before staff-review |
-| `/staff-review` | Three-lens parallel review, fix in-tree, capture follow-ups | After `/simplify`, before presenting |
+| `/staff-review` | Four-lens parallel review (engineer / UX / design-engineer / push-further), fix in-tree, capture follow-ups + exploration | After `/simplify`, before presenting |
 | `/security-review` | Diff-focused security audit | Standalone; also invoked by `/ship` |
 | `/accessibility-review` | Diff-focused WCAG 2.1 AA audit | Standalone; also invoked by `/ship` |
 | `/ship` | Final-pass reviews + doc updates + commit + push + PR (no merge) | When the user says "ship it" |

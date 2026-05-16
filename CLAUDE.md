@@ -157,7 +157,7 @@ Default path handles plan-writing and doc-writing in the main thread; reach for 
 | `safety.md` | `src/store.tsx`, `src/data/**`, `src/lib/markdown.ts`, app entry | Don't silently downgrade error handling; flag `SAFETY` changes |
 | `documentation.md` | `core-docs/**` | Format rules for history.md / feedback.md / plan.md |
 | `dev-server.md` | UI files (`*.tsx`, `*.css`, etc.) | Surface the dev URL after UI work |
-| `exploration.md` | `src/**/*.{ts,tsx,css}` | Before finishing UI/code work, grep `roadmap.md § Exploration` for items whose "Surfaces when:" trigger names the file(s) touched |
+| `exploration.md` | `src/**/*.tsx`, `src/**/*.ts`, `src/**/*.css` | Before finishing UI/code work, grep `roadmap.md § Exploration` for items whose "Surfaces when:" trigger names the file(s) touched |
 
 ---
 

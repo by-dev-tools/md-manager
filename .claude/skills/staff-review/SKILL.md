@@ -93,12 +93,18 @@ For the diff in front of you, ask:
 - Is there sound / motion / materiality the surface could carry that it doesn't?
 - What can be **cut** to make this tighter? (Shaker test: as simple as it can be while being as good as it can be.)
 
+> **Empty is valid and often correct.** Before reading the bucket definitions, remember: if the surface is at its appropriate ceiling for its scope, your output is "Nothing to push — surface at ceiling for its scope." False-positive findings pollute the roadmap and train the next session to mistrust the lens. The bar is honesty, not productivity.
+
 Findings go in three buckets — name the bucket explicitly per finding:
 - **inline-cheap** — a concrete improvement small enough to apply in this PR (single file, single concern, ≤30 min). Treated like a NIT — fix in-tree.
 - **roadmap-concrete** — a deferred-but-scoped extension worth a roadmap entry. Specific shape, named cost. Routes to `roadmap.md` under the appropriate horizon (Now / Next / Later) or — if it's open-ended — Exploration.
 - **future-exploration** — an area inviting exploration without a clear shape yet. Routes to `roadmap.md` § Exploration with a "Surfaces when:" trigger naming the file paths / area that should re-surface it later.
 
-**Empty is valid and often correct.** When the surface is already at its appropriate ceiling for its scope, write "Nothing to push — surface at ceiling for its scope" and return zero findings. False-positive "we could add X" findings are worse than no findings; they pollute the roadmap and train the next session to mistrust the lens. Output max 2 items per bucket; if there's a third, the surface deserves a dedicated standalone `/uncommon-care` pass, not a /staff-review side-channel.
+**Tiebreakers when a finding straddles buckets:**
+- Between **inline-cheap** and **roadmap-concrete** — prefer **roadmap-concrete**. Under-applying preserves PR scope discipline; over-applying breaks the lens's restraint contract.
+- Between **roadmap-concrete** and **future-exploration** — prefer **future-exploration** when you can't write a concrete shape + cost. A vague roadmap entry is worse than an honest Exploration entry that names what we don't yet know.
+
+Output max 2 items per bucket; if there's a third, the surface deserves a dedicated standalone `/uncommon-care` pass, not a /staff-review side-channel.
 
 ## Workflow
 

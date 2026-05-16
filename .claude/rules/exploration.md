@@ -28,3 +28,11 @@ Exploration items decay if no one looks at them. The Exploration section is in `
 - **Don't auto-apply** an inline-cheap finding without proposing first. The exploration item is a suggestion, not a queued task.
 - **Don't expand scope** of the current PR to address every triggered item. One inline-cheap fix bundled into a related PR is fine; three is scope creep. The remaining items wait for their own pass.
 - **Don't add new exploration items here** — `/staff-review`'s push-further lens and `/uncommon-care` own that. This rule is read-only on the Exploration section.
+
+## Coexists with `safety.md`
+
+Both this rule and `safety.md` auto-load on `src/store.tsx` (and any future safety-critical persistence/markdown paths). They speak to different concerns:
+- `safety.md` is about *not silently downgrading* existing safety behavior (error handling, persistence, sanitization) — protective, defensive.
+- This rule is about *surfacing improvement opportunities* the push-further lens captured — generative, additive.
+
+When both fire on the same file, honor `safety.md` first (preserve existing safety guarantees), then surface relevant Exploration items separately. The Exploration items themselves should already respect the safety surface (the push-further lens reads `safety.md` while running), so collisions in practice are rare.

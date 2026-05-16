@@ -94,7 +94,7 @@ PR C is **iterative across sessions** — each component migration is its own sm
 
 ### Workflow PR a: Push-further lens + Exploration section (current — ~½ session)
 
-**Goal:** Wire a fourth "push-further" lens into `/staff-review`'s parallel-agent run and add a `roadmap.md` § Exploration subsection where its findings (plus future ones from a separate heavyweight `/uncommon-care` skill) land. Solves FB-0027 (the lens-skipping habit) by making one more lens part of the canonical loop, and adds the "where could this go further" dimension that currently has no home.
+**Goal:** Wire a fourth "push-further" lens into `/staff-review`'s parallel-agent run and add a `roadmap.md` § Exploration subsection where its findings (plus future ones from a separate heavyweight `/uncommon-care` skill) land. Addresses the lens-skipping habit (captured in the feedback ledger at `/ship`) by making one more lens part of the canonical loop and tightening the skip rule, and adds the "where could this go further" dimension that currently has no home.
 
 **Branch:** `push-further-lens` (off `main` at `a384560`).
 

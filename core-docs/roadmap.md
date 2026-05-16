@@ -32,7 +32,7 @@ Real intent, not yet ready to pick up.
 - **GitHub repo connections** — clone, read, write, commit via GitHub API or GitHub App
 - **Search** — across drafts + repo files; live filter in the sidebar
 - **Tags / frontmatter** — extract frontmatter; tag-based filtering
-- **Dark mode** — explicit design pass; currently light-only. May get pulled forward by Mini adoption (Mini requires light + dark parity).
+- **Dark mode** — explicit design pass; currently light-only. May get pulled forward by Mini adoption (Mini requires light + dark parity). **Concrete starting point now in place:** the color-rail presets are derived from the portfolio repo's `BG_BASE[<theme>].dark` values at the same `t=0.25` intensity, so a dark-mode rollout can mirror the portfolio's `data-theme="dark"` switch and produce dark-mode preset variants via the same formula. Per-tint text-color regeneration (today's `--sand-12` text would invert to a near-white) and a sensible default `--page-tint` for dark mode (probably the dark equivalent of Sand / table) are the open questions.
 - **Keyboard-shortcut help overlay** — `?` opens a cheat sheet
 - **Markdown rendering quality pass** — code blocks with syntax highlighting, task lists, tables
 - **Dev panel** (if surface tuning becomes ambiguous) — same pattern as Designer's SurfaceDevPanel

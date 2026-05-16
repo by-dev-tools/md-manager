@@ -93,6 +93,46 @@ A prior comparison session evaluating md-manager's outer workflow envelope (PR-o
 - **`spike` and `tiny` modes are likely under-used initially.** Bias toward full loop is appropriate; we'll learn over time which work genuinely benefits from the cheap path.
 - **Conductor workspaces break naive path-derivation.** Anything that needs to reach into harness-canonical paths (memory, settings, hook outputs) needs an override mechanism. Worth remembering for any future tool that bridges workspace and harness state.
 
+---
+
+### Color rail: portfolio-derived presets at 25% intensity
+**Date:** 2026-05-15
+**Branch:** color-rail-presets
+**Commit / PR:** `9295d93..[this ship commit]` (2 commits) → [PR pending push]
+
+**What was done:**
+- Replaced the 7 ad-hoc color-rail presets (Peach / Sun / Mint / Sky / Lavender / Blush / Sand) with 5 hues sourced from the portfolio repo's theme accents (`~/dev/portfolio`), each evaluated at the portfolio's intensity slider `t=0.25` in light mode using the portfolio's own `computeBg` formula: `satMult = 1 + 1.8 * t`, `lightShift = -10 * t` (light), so `t=0.25 → satMult 1.45, lightShift -2.5`.
+- New presets (top → bottom): **Sand** `hsl(30, 25%, 88.5%)`, **Bone** `hsl(39, 22%, 89.5%)`, **Blush** `hsl(10, 44%, 93.5%)`, **Sage** `hsl(86, 26%, 90.5%)`, **Mist** `hsl(200, 33%, 92.5%)`. Labels are descriptive English color names so the portfolio's internal theme names (table / portrait / pizza / vineyard / sky) don't leak into this codebase; a comment in `ColorRail.tsx` keeps the portfolio reference visible for future maintainers.
+- Default `--page-tint` shifted from `hsl(30, 60%, 88%)` to `hsl(30, 25%, 88.5%)` (Sand — top of rail and the portfolio's default accent equivalent). Updated in both `src/styles/globals.css` and `src/store.tsx` so the new-user default and the CSS fallback match.
+- Roadmap: dark-mode "Later" entry expanded to name the portfolio's dark-mode bases as the concrete starting point for a future dark-mode rollout (the formula already covers it; we just need to wire up `data-theme` switching and per-tint text-color regeneration).
+
+**Why:**
+- The user wanted the app to feel like part of their personal-brand family — same color sensibility as the portfolio site. Borrowing the portfolio's accent hues at a fixed low intensity gives the cohesion without coupling: this app doesn't import portfolio code, doesn't track its updates, and remains free to evolve its own register independently. The portfolio's `computeBg` formula is a one-time evaluation, not a runtime dependency.
+- Going from 7 ad-hoc presets to 5 brand-derived ones also tightens the rail visually — 7 swatches felt like a sampler, 5 feels like a curated palette.
+
+**Design decisions:**
+- **5 presets, not 7.** The portfolio has exactly 5 themes; padding to 7 with un-themed hues would defeat the brand-cohesion intent. The rail's continuous HSL gradient is still available for any hue not in the preset set.
+- **Light-mode bases only.** Portfolio's `BG_BASE` has both light and dark; we sampled light because the app is light-only today. Dark-mode bases captured in roadmap as the starting point for a future dark-mode pass.
+- **`t = 0.25` (not 0.2 or 0.33).** User specified 25% explicitly. Portfolio's own default intensity is `0.2` (line 74 of `ThemeContext.tsx`), but per the user's call we use 0.25. Subtle difference; documented in code comment so future updates know which slider position the values correspond to.
+- **Reorder (Sand → Bone → Blush → Sage → Mist) is not pure hue-sort.** A strict hue sort would put Blush (10°) before Sand (30°), but the user wanted Sand first because it's the default. Bone (39°) follows because it's the closest hue family to Sand; Blush sits between the warm neutrals and the cool-spectrum tail. The order reads warm → green → cool, with the two warm neutrals leading.
+- **Descriptive English labels, not portfolio names.** User explicitly asked the portfolio's internal theme names not appear in this codebase. Labels picked to describe what users see (Sand for warm neutral, Bone for paler warm neutral, Blush for pink-tinted, Sage for olive-green, Mist for soft blue). Sky was avoided as a label even though Mist's hue matches portfolio's "Sky" — to keep all labels distinct from portfolio names and avoid the "Sky" overload.
+
+**Technical decisions:**
+- **Inline HSL strings in `PRESETS`, not a runtime evaluation of the portfolio's formula.** The values are constants; computing them at render time would just add a dependency on a formula that lives in a different repo. The code comment preserves the trail back to the source formula for any future re-derivation.
+- **Default page tint duplicated in `globals.css` + `store.tsx` + first `PRESETS` entry.** Acknowledged as DRY-fail; not factored into a shared constant in this PR because doing so meant either creating a new module just for one value or exporting from `ColorRail.tsx` (component file, awkward import surface for `store.tsx`). PR C Step 3 (tokens migration) rewrites this region anyway — better landing spot for the deduplication.
+- **`--page-tint-edge` left alone.** Pre-existing latent issue: the store hardcodes a warm-orange `hsla(30, 30%, 50%, 0.10)` edge color that doesn't follow the user's hue choice. Out of scope for this PR; logged for a future hue-aware-edge pass.
+
+**Tradeoffs discussed:**
+- **Sample 25% on the slider vs use the portfolio's own default (`0.2`).** Picked 25% per user direction. The portfolio defaults to 20% (a hair more muted); 25% gives slightly more chromatic presence. User chose for the app feel; not strictly tied to portfolio parity.
+- **Run staff-review or skip.** Skipped. The change had been live-tested visually before commit; the engineer lens was covered by the inline /simplify pass (which caught the store.tsx drift); the UX-designer lens had no surface beyond the live test; the design-engineer lens was thin because the values came from a deterministic formula, not from designer judgment. Honest call: full three-lens parallel-agent run would have been overhead with no expected signal.
+- **Open a parallel PR vs queue behind the rename PR (#17).** Parallel. Diffs don't overlap on lines, merge queue handles serialization. CLAUDE.md principle #6 ("small, ship-shaped changes") argues for shipping the visible product win now rather than batching for a single later PR.
+
+**Lessons learned:**
+- **Defaults can drift across surfaces.** `globals.css`, `store.tsx`, and `ColorRail.tsx` all held a "default page tint" value, and changing one without the others left the store overriding the CSS at runtime with the old peach. /simplify's quality lens caught it; a `grep -r "hsl(30, 60%, 88%)"` would have caught it earlier. **Project rule worth keeping in mind:** when changing a default that lives in multiple surfaces (theme tokens, store initial state, component constants), grep the old literal across the whole repo before declaring the change done.
+- **Borrowing values from another repo via formula evaluation is a clean coupling pattern.** Reading `~/dev/portfolio/src/contexts/ThemeContext.tsx`, evaluating its formula at a fixed input, and pasting the results inline as constants gives brand cohesion without dependency. Portfolio can update its formula tomorrow and this app doesn't break. Worth remembering for any future "match the sibling project" need. → FB-0028.
+
+---
+
 ### PR C Step 3a — `--gray-a*` rename to `--tint-overlay-*`
 **Date:** 2026-05-15
 **Branch:** pr-c-gray-a-rename

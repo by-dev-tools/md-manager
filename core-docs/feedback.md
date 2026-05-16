@@ -33,6 +33,26 @@ Increment from the last entry. Use `FB-0001`, `FB-0002`, etc.
 
 ## Entries
 
+### FB-0028: Borrow values from a sibling repo via formula evaluation, not import
+**Date:** 2026-05-15
+**Source:** user direction
+
+**What was said:** User asked for the md-manager color rail presets to match the portfolio repo's theme colors "at 25% on the intensity slider." Implementation: read the portfolio's `computeBg` formula from `~/dev/portfolio/src/contexts/ThemeContext.tsx`, evaluate it at `t=0.25` against each accent's base HSL, paste the five resulting HSL strings inline as constants in `src/components/ColorRail.tsx`. The portfolio is not imported, not symlinked, not a dependency — only the formula and the inputs are borrowed, the outputs are baked in.
+
+**Synthesized rule:** When you want cohesion with a sibling repo (shared brand colors, shared spacing rhythm, shared typography choices) without coupling, **evaluate the sibling's formula at a fixed input and paste the result as a constant in the consuming repo**. This gives brand parity without making the consuming repo depend on the sibling's lifecycle — the sibling can update its formula tomorrow and the consumer doesn't break. Document the source trail in a code comment (file path + slider position + formula one-liner) so a future maintainer knows how to re-derive if the sibling's intent changes. Avoid the alternative anti-patterns: importing the sibling's TS (creates a runtime dependency), publishing the values to an npm package (creates versioning friction), or re-typing the values without a source comment (loses the trail).
+
+**Applies to:** sibling-app cohesion, design tokens, shared color/spacing/type values across the family.
+
+### FB-0027: Grep the old literal across the whole repo before declaring a default change done
+**Date:** 2026-05-15
+**Source:** review feedback
+
+**What was said:** During the color-rail preset change, the new default `--page-tint` was updated in `src/styles/globals.css` and `src/components/ColorRail.tsx`, but `src/store.tsx` line 41 still held the old hardcoded value as the store's initial state. Since the store overrides the CSS default at runtime via `document.documentElement.style.setProperty`, new users would have seen the old peach tint until they picked a preset — the visible default would not have matched the documented default. /simplify caught it; a pre-commit `grep -r 'hsl(30, 60%, 88%)'` would have caught it sooner.
+
+**Synthesized rule:** When changing a "default" value that conceptually has a single canonical answer but mechanically lives in multiple surfaces — CSS custom property, TypeScript store/state initializers, component-level constants, manifest entries — **grep the old literal across the entire repo before declaring the change done**. Specifically for md-manager's page-tint family: `globals.css` (`--page-tint` CSS var), `store.tsx` (runtime override on app init), `ColorRail.tsx` (preset list). For any token like this, the grep pass takes ~5 seconds and catches drift that a single-file edit would miss. Generalizes to any value that conceptually has one source of truth but is duplicated across persistence/state/UI layers.
+
+**Applies to:** any default-value change, refactor of token-shaped constants, anything where "the canonical value" is duplicated across the layers (CSS / TS state / component literals).
+
 ### FB-0026: Surface failure modes proactively when proposing a feedback-loop primitive
 **Date:** 2026-05-15
 **Source:** user direction

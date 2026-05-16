@@ -38,7 +38,7 @@ function defaultState(): PersistedState {
     repoFiles: seedRepoFiles,
     selectedDocId: seedDrafts[0]?.id ?? null,
     expanded: { unattached: true, 'mochi-emr': true, 'folder:mochi-emr:core-docs/': true },
-    pageTint: 'hsl(30, 60%, 88%)',
+    pageTint: 'hsl(30, 25%, 88.5%)',
     pageTintEdge: 'hsla(30, 30%, 50%, 0.10)',
   };
 }

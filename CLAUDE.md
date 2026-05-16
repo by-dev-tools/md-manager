@@ -20,8 +20,10 @@ A markdown notes app with a content-forward, warm-neutral interface. Drafts live
  4. Preflight        typecheck/build/test/invariants must be green
  5. Commit           explain "why", not what; co-author trailer; per-phase
  6. /simplify        reuse, clarity, efficiency; fix in-tree; re-preflight; commit
- 7. /staff-review    three lenses in parallel; BLOCKER + cheap NIT in-tree;
-                     FOLLOW-UPs → roadmap.md / plan.md (never PR-body-only)
+ 7. /staff-review    four lenses in parallel (engineer / UX designer /
+                     design engineer / push-further); BLOCKER + cheap NIT
+                     in-tree; FOLLOW-UPs → roadmap.md / plan.md; EXPLORATION
+                     items → roadmap.md § Exploration (never PR-body-only)
  8. Present          reviewer notes + dev URL + branch state; flag MEDIUM-confidence
  9. Iterate          apply user feedback
 10. /ship            security + a11y final pass → synthesize feedback.md → update
@@ -132,7 +134,7 @@ This file is a **router**. Decisions live in `core-docs/` and `.claude/`.
 | Skill | Trigger | What it does |
 |---|---|---|
 | `/link` | "start the dev server", "show me" | Starts Vite, handles port conflicts, returns the URL |
-| `/staff-review` | After implementation, before presenting | Three parallel review lenses (engineer / UX / design engineer); fixes small issues in-tree |
+| `/staff-review` | After implementation, before presenting | Four parallel review lenses (engineer / UX / design engineer / push-further); fixes small issues in-tree; routes follow-ups to roadmap/plan and exploration items to `roadmap.md § Exploration` |
 | `/security-review` | Markdown rendering, URL/file handling changes; auto by `/ship` | Diff-focused security audit for this stack |
 | `/accessibility-review` | Any UI change; auto by `/ship` | Diff-focused WCAG 2.1 AA audit |
 | `/ship` | "ship it" | Final security + a11y pass, doc updates, commit, push, open PR (no merge) |
@@ -155,6 +157,7 @@ Default path handles plan-writing and doc-writing in the main thread; reach for 
 | `safety.md` | `src/store.tsx`, `src/data/**`, `src/lib/markdown.ts`, app entry | Don't silently downgrade error handling; flag `SAFETY` changes |
 | `documentation.md` | `core-docs/**` | Format rules for history.md / feedback.md / plan.md |
 | `dev-server.md` | UI files (`*.tsx`, `*.css`, etc.) | Surface the dev URL after UI work |
+| `exploration.md` | `src/**/*.{ts,tsx,css}` | Before finishing UI/code work, grep `roadmap.md § Exploration` for items whose "Surfaces when:" trigger names the file(s) touched |
 
 ---
 

@@ -92,7 +92,59 @@ The living document for what's being worked on right now, what's queued, and wha
 
 PR C is **iterative across sessions** — each component migration is its own small PR with its own `/simplify` + `/staff-review` pass.
 
-### PR C / Step 2: `--accent-8` contrast matrix (next — investigation, ~1 session)
+### Workflow PR a: Push-further lens + Exploration section (current — ~½ session)
+
+**Goal:** Wire a fourth "push-further" lens into `/staff-review`'s parallel-agent run and add a `roadmap.md` § Exploration subsection where its findings (plus future ones from a separate heavyweight `/uncommon-care` skill) land. Solves FB-0027 (the lens-skipping habit) by making one more lens part of the canonical loop, and adds the "where could this go further" dimension that currently has no home.
+
+**Branch:** `push-further-lens` (off `main` at `a384560`).
+
+**Scope:** docs + workflow infra. No app code, no skill *implementation* code (just SKILL.md prompt extensions, rule files, and doc updates).
+
+**Steps:**
+
+1. **Add "push-further" as the fourth lens in `.claude/skills/staff-review/SKILL.md`.** Prompt scaffold:
+   > You are a senior interface designer applying Josh Puckett's uncommon-care lens to a shipped diff. Read the change in the context of `core-docs/design-language.md` and ask: where could this surface, interaction, or token push beyond on-system to memorable? Three buckets:
+   > - **inline-cheap** — a concrete improvement small enough to apply in this PR (single-file, single-concern, ≤30 min)
+   > - **roadmap-concrete** — a deferred-but-scoped extension worth a roadmap entry with clear cost
+   > - **future-exploration** — an area inviting exploration without a clear shape yet
+   >
+   > **Empty is valid and often correct.** When the surface is already at its appropriate ceiling, say so explicitly and return zero findings — false-positive "we could add X" findings are worse than no findings. Output max 2 items per bucket; if the lens produces nothing, write "Nothing to push — surface at ceiling for its scope" and move on.
+
+2. **Update `.claude/skills/staff-review/SKILL.md` workflow** so the four agents launch in one parallel message. Update the reviewer-notes template to add a `**Push-further.**` line alongside engineer/UX-designer/design-engineer.
+
+3. **Add `core-docs/roadmap.md` § Exploration** between "Later" and "Someday / maybe." Format:
+   ```
+   ## Exploration
+   Open-ended directions surfaced by review or curiosity. Not planned work —
+   become roadmap items when scoped, applied inline when working in the named
+   area. Each carries a "Surfaces when:" trigger so future sessions encounter
+   the right item at the right moment.
+
+   ### <Area>
+   - **<Headline>** — <one paragraph: what's there now, what could be pushed,
+     and a concrete shape if one exists.> Surfaces when: <file paths, path
+     patterns, or conceptual area>. Cost: <small | medium | large>.
+   ```
+
+4. **Add `.claude/rules/exploration.md`** — auto-loads on broad UI/code patterns (`src/**/*.tsx`, `src/**/*.ts`, `src/styles/**/*.css`). Instructs: "Before finishing UI/code work, scan `core-docs/roadmap.md` § Exploration for items whose 'Surfaces when:' trigger names the file(s) you touched. If any match, surface them to the user (inline-cheap → propose applying; roadmap-concrete → mention for awareness; future-exploration → mention if relevant)." Keep it short.
+
+5. **Update `core-docs/workflow.md` step 6** to describe the new lens. One paragraph + a row in the skills cheat sheet.
+
+6. **Seed 1-2 Exploration entries** to demonstrate the format. Candidates already known:
+   - **Per-tint edge color** — `--page-tint-edge` hardcoded warm-orange, doesn't follow user hue. Surfaces when: editing `src/components/ColorRail.tsx` or `src/store.tsx` page-tint code. Cost: small. (Identified during PR #18 as pre-existing latent issue.)
+   - Optionally: move "Document the subtle-feedback pattern" from Cleanup → Exploration if it fits better there. Decision at execute time.
+
+7. **Verify:** `npm run typecheck && npm run build` (no app code changed, no-op confirmation).
+
+**Out of scope (PR b later):**
+- Heavyweight `/uncommon-care` (or `/push-further-deep`) skill — separate PR, manual-invoke, md-manager-adapted (no vendoring per user direction).
+
+**Risks / open questions:**
+- **Lens naming.** Inside `/staff-review` the lens is one of four; "push-further" reads naturally. Reserve "uncommon-care" for the standalone PR-b skill. Confirm at approval.
+- **`.claude/rules/exploration.md` scope.** Path glob `src/**/*.{ts,tsx,css}` fires on most code work — appropriate. Could also fire on `**/*.tsx` more broadly but that catches `.claude/` and `packages/ui/` too, which isn't the target. Going with the narrow glob.
+- **Exploration entry overflow.** Restrained by lens guard + empty-is-valid permission. If the section grows past ~30 entries over time, revisit grouping/archiving — but that's a "future-exploration" problem itself; not now.
+
+### PR C / Step 2: `--accent-8` contrast matrix (queued — investigation, ~1 session)
 
 (See section below for the original scope. This is the remaining unblocker for PR C Step 3 alongside Step 3a, which just shipped.)
 

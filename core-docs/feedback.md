@@ -33,6 +33,26 @@ Increment from the last entry. Use `FB-0001`, `FB-0002`, etc.
 
 ## Entries
 
+### FB-0030: Adapt skills from sister repos, don't vendor them
+**Date:** 2026-05-15
+**Source:** user direction
+
+**What was said:** While planning the heavyweight `/uncommon-care` skill (PR b, deferred), the user said: "I don't want to vendor skills — let's rewrite them specifically for md-manager's product and context." Designer has a `uncommon-care` skill at `~/dev/designer/.claude/skills/uncommon-care/SKILL.md` that ships with a structured `feedback/<date>-<slug>.md` ledger and references Designer-specific docs (`tensions.md`, `mini-gaps.md`, `decisions.md`). Vendoring that into md-manager would drag in conventions that don't apply (md-manager has no `tensions.md`; its equivalent of the feedback ledger is the `roadmap.md § Exploration` section + the `pattern-log.md` Mini contract artifact).
+
+**Synthesized rule:** When importing a skill, agent, or rule pattern from a sister project (Designer, trio, ui-playground, etc.), **adapt it to this project's conventions rather than vendoring it verbatim**. The adaptation should: (a) re-read the source skill's intent and structure, (b) identify the project-specific surfaces it references that don't exist here, (c) map them to this project's equivalents (or remove the references if no equivalent exists), (d) re-test the prompt with this project's context in mind. Vendoring is appropriate only for tightly-versioned upstream infrastructure (e.g., Mini's `packages/ui/`, which uses an explicit re-vendor mechanism via `sync-mini.sh`). For *skills* — which encode workflow assumptions specific to a project's docs and review loops — adapt every time. Captures the brand-cohesion-without-coupling pattern (sister to FB-0028's value-borrowing rule, applied to skills as well as values).
+
+**Applies to:** skill imports, agent imports, workflow rule borrowing across the project family.
+
+### FB-0029: Don't skip a /staff-review lens because a human gave a visual opinion or another lens ran
+**Date:** 2026-05-15
+**Source:** user correction
+
+**What was said:** Across three consecutive PRs (PR B, PR #17, PR #18), the assistant skipped one or more `/staff-review` lenses with reasoning like "live-tested by the user during iteration," "engineer lens already covered by /simplify," or "the change is tightly scoped, no design surface." The user pushed back directly: "agentic UX designer review should not be replaced by human review — the human can make final craft decisions, but just because they gave their opinion doesn't mean there shouldn't be an AI review." The same logic applies to "another lens ran" — `/simplify` and `/staff-review`'s engineer lens overlap on some surface (code-quality concerns) but cover distinct framings.
+
+**Synthesized rule:** `/staff-review` runs all four lenses (engineer / UX designer / design engineer / push-further) on every PR with substantive diff. **Skip a lens only when it genuinely doesn't apply** — e.g., a backend-only change has no design-engineer or push-further surface; a pure CSS rename has no engineer surface. In those cases, say so explicitly ("lens N/A because X") rather than running an empty agent. **The following are NOT legitimate skip reasons:** "human live-tested" (AI catches what humans miss and vice versa), "scope is tight" (the lens decides what's worth pushing, not the scope), "/simplify already ran" (different framings — code-quality vs architecture vs UX vs craft vs uncommon-care), or "the diff is small" (small diffs still benefit from the four distinct lenses). The push-further lens's `Empty is valid and often correct` escape exists precisely so an honest empty pass beats a fake skip — use it.
+
+**Applies to:** /staff-review invocations, workflow discipline, the loop's non-negotiable steps.
+
 ### FB-0028: Borrow values from a sibling repo via formula evaluation, not import
 **Date:** 2026-05-15
 **Source:** user direction

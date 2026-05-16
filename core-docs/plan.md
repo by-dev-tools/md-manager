@@ -10,7 +10,8 @@ The living document for what's being worked on right now, what's queued, and wha
 
 ## Handoff Notes
 
-- **PR C Step 1 (token name-collision audit) shipped on `pr-c-token-audit`** — `a7c6a07` (initial audit) + `6f27e49` (/simplify fixes for `--gray-a*` miss) + this ship commit. Output: `core-docs/token-migration.md` with the 14-token collision table and work lists for Step 3a + Step 3. Repo: `by-dev-tools/md-manager` (migrated from `byamron/md-manager`). FB-0022, FB-0023, FB-0024 captured. No code changed.
+- **PR C Step 3a (`--gray-a*` rename) shipped on `pr-c-gray-a-rename`** — `0b2d016` (rename) + `c7438b6` (/simplify NIT) + `bbdc70a` (/staff-review follow-up routed) + this ship commit. CSS-only mechanical rename; values unchanged; bundle byte-equivalent for every selector. No new FBs (lessons captured under existing FB-0023/0024 scope).
+- **PR C Step 1 (token name-collision audit) merged as PR #15** on branch `pr-c-token-audit`. Output: `core-docs/token-migration.md` with the 14-token collision table.
 - **GitHub Org transfer complete** — `byamron/md-manager` is now `by-dev-tools/md-manager`. Branch protection + Rulesets preserved across transfer. Merge queue is **active** with required checks `typecheck` / `build` / `test`. Dependabot security updates enabled (two security PRs already opened: #12 esbuild+vite, #13 vite major). Secret Protection enabled. All git remotes (worktree config and Conductor workspaces) now use HTTPS.
 - **Next two PRs unblock PR C Step 3 (tokens migration):**
   - **PR C Step 3a** — rename `--gray-a5/6/7` → `--tint-overlay-{light,medium,strong}` (or similar; final name decided at PR time). Touches every reference in `globals.css` + 3 component-manifest entries. Mechanical. Should be next.
@@ -53,48 +54,9 @@ The living document for what's being worked on right now, what's queued, and wha
 
 PR C is **iterative across sessions** — each component migration is its own small PR with its own `/simplify` + `/staff-review` pass.
 
-### PR C / Step 3a: `--gray-a*` rename (current — ½ session)
+### PR C / Step 2: `--accent-8` contrast matrix (next — investigation, ~1 session)
 
-**Goal:** Rename our `--gray-a5/6/7` page-tint wash overlays to a name that doesn't clash with Mini's Radix-imported `--gray-a*` scale. Mechanical rename across `globals.css` + 2 references in `design-language.md`. Lands before PR C Step 3 (tokens migration) so Step 3's diff stays purely about duplicate-removal + radius rebinding.
-
-**Branch:** `pr-c-gray-a-rename` (off `main` at `6f25c0e`).
-
-**Scope:** CSS rename in `src/styles/globals.css` (3 declarations + 14 usages = 17 line edits) + 2 references in `core-docs/design-language.md`. No TSX changes. No component-manifest changes (the manifest's `tokens_referenced` arrays don't currently list these tokens — verified).
-
-**Token name proposal: `--tint-overlay-{light,medium,strong}`**
-
-| Old | New | Value (unchanged) |
-|---|---|---|
-| `--gray-a5` | `--tint-overlay-light` | `rgba(0, 0, 0, 0.05)` |
-| `--gray-a6` | `--tint-overlay-medium` | `rgba(0, 0, 0, 0.075)` |
-| `--gray-a7` | `--tint-overlay-strong` | `rgba(0, 0, 0, 0.11)` |
-
-**Rationale:** these tokens are alpha-black overlays applied *over* the page tint to create subtle washes (skeleton blocks per design-language § Loading states, code-block backgrounds, hairline borders, dividers). "Tint-overlay" names what they do; "light/medium/strong" describes the opacity progression. Preserves Mini's `--gray-a*` namespace for the full Radix alpha primitive (12-step scale; we don't use it today but could later without a re-rename).
-
-**Alternatives considered:**
-- `--page-overlay-*` — also accurate but congests the `--page-*` namespace (`--page-tint`, `--page-text`, `--page-overlay`).
-- `--wash-*` — short, but less self-explanatory.
-- `--overlay-*` — too generic; Mini may want a true overlay layer token (modal scrims etc.) later.
-
-**Implementation steps:**
-1. Rename 3 declarations in `src/styles/globals.css:13-15`.
-2. Replace 14 `var(--gray-a*)` usages in `globals.css` (verified locations: lines 440, 485, 531, 580, 640, 651, 662, 674, 725, 742, 788, 852, 1269, 1314). Mechanical search-and-replace.
-3. Update `core-docs/design-language.md`:
-   - § Color system table (line 123) — token name + the cell-label `--gray-a5 / a6 / a7`
-   - § Loading states (line 212) — prose reference to "skeleton blocks in `--gray-a5`"
-4. `npm run typecheck && npm run build` clean.
-5. Spot-check `dist/assets/*.css`: our 3 declarations now use new names; Mini's Radix-imported `--gray-a1..12` (12-step) still present and untouched.
-6. /simplify + /ship through the merge queue.
-
-**Out of scope (for this PR):**
-- Token consolidation, radius rebinding, deleting duplicate space/weight declarations — that's PR C Step 3, blocked by this PR + Step 2 (contrast matrix).
-- Component-manifest updates — manifest doesn't currently reference these tokens.
-- `design-language.md` change-log entry — `/ship` synthesizes that.
-
-**Risks / open questions:**
-- **Final token names.** Confirm `--tint-overlay-light/medium/strong` at approval. Other strong contenders: `--wash-{light,medium,strong}`, `--page-overlay-*`.
-- **Stale references in core-docs/** (`history.md`, `token-migration.md`) refer to `--gray-a*` as historical state. **Do not update those** — they describe the state at writing time; updating them rewrites history.
-- **Visual change risk: zero.** Values are unchanged. Bundle output is byte-identical for all selectors using these tokens, only with different token names in the declarations.
+(See section below for the original scope. This is the remaining unblocker for PR C Step 3 alongside Step 3a, which just shipped.)
 
 ### PR C / Step 2: `--accent-8` contrast matrix (parallel to Step 3a, blocks Step 4+)
 
@@ -141,7 +103,8 @@ PR C is **iterative across sessions** — each component migration is its own sm
 
 _(Last 3–5 items. Older items live in `history.md`.)_
 
-- **PR C Step 1 — Token name-collision audit (branch `pr-c-token-audit`)** — Output: `core-docs/token-migration.md` with the 14-token collision table (4 radius, 4 space, 3 weight, 3 gray-a) + work lists for Step 3a (rename) and Step 3 (migration). Ours wins via cascade for every collision as expected. FB-0022/0023/0024 captured. No code changed. 2026-05-15.
+- **PR C Step 3a — `--gray-a*` → `--tint-overlay-*` rename (branch `pr-c-gray-a-rename`)** — CSS-only mechanical rename in `src/styles/globals.css` + 2 doc refs + 1 rule ref. Values unchanged, bundle byte-equivalent. Unblocks PR C Step 3 from the rename side. /simplify NIT applied (comment compression); /staff-review surfaced one FOLLOW-UP routed to roadmap.md (subtle-feedback pattern doc gap). No new FBs. 2026-05-15.
+- **PR C Step 1 — Token name-collision audit (PR #15)** — Output: `core-docs/token-migration.md` with the 14-token collision table (4 radius, 4 space, 3 weight, 3 gray-a) + work lists for Step 3a (rename) and Step 3 (migration). Ours wins via cascade for every collision as expected. FB-0022/0023/0024 captured. No code changed. 2026-05-15.
 - **GitHub Org transfer + HTTPS remote flip** — `byamron/md-manager` → `by-dev-tools/md-manager` (unlocks merge queue for personal-account repos). Branch protection / Rulesets preserved. Merge queue active with required checks `typecheck` / `build` / `test`. Dependabot security updates + Secret Protection enabled. All worktree remotes on HTTPS so Conductor workspaces can clone/push without SSH keys. FB-0022 captured. 2026-05-14.
 - **Workflow: `/critique-plan` inserted into step 3** — Branch `pasted-text-import`. `.claude/rules/plan-discipline.md` reminds the planner to read `spec.md` / `feedback.md` / `design-language.md` before drafting. `core-docs/workflow.md` step 3 now runs `/critique-plan` (assumption-auditor plugin) between plan draft and user approval. Additive — human gate unchanged. 2026-05-14.
 - **CI gates + Dependabot (PR #10)** — Three parallel jobs (typecheck/build/test) on `pull_request` and `merge_group` events; workflow-level `permissions: { contents: read }`. Dependabot configured for npm with version-updates suppressed. FB-0020, FB-0021 captured. 2026-05-14.

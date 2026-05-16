@@ -120,7 +120,7 @@ The palette is Radix-sand-inspired, semantically tokenized. Use tokens; never ra
 | `--sand-9` | `#908e83` | Secondary text, icons in resting state, placeholders |
 | `--sand-11` | `#63615b` | Primary muted text, icons on hover |
 | `--sand-12` | `#21201c` | Primary text, primary button background |
-| `--gray-a5` / `a6` / `a7` | rgba(0,0,0, .05 / .075 / .11) | Subtle washes over the page tint |
+| `--tint-overlay-light` / `-medium` / `-strong` | rgba(0,0,0, .05 / .075 / .11) | Subtle washes applied over the page tint |
 | `--page-tint` | user-set hsl | Page background; the user controls this via the color rail |
 | `--page-tint-edge` | rgba(0,0,0,.06) | Borders that need to feel "of" the tint |
 | `--page-text` / `-muted` / `-quiet` | scaled tones | Text on tinted surfaces |
@@ -209,7 +209,7 @@ To be defined as patterns emerge. Default: short, warm copy in `--sand-11`; no i
 
 ### Loading states
 
-To be defined. Default: skeleton blocks in `--gray-a5`, not spinners. Inline "Saving…" indicator for the editor uses `.saved` style (12px, `--sand-9`).
+To be defined. Default: skeleton blocks in `--tint-overlay-light`, not spinners. Inline "Saving…" indicator for the editor uses `.saved` style (12px, `--sand-9`).
 
 ### Modals
 

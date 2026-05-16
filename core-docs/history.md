@@ -88,10 +88,93 @@ A prior comparison session evaluating md-manager's outer workflow envelope (PR-o
 - **Reviewer-flagged "BLOCKER" was a NIT after spot-check** — the security reviewer claimed `/etc/passwd.last-audit` write surface, but auditMarker is hardcoded to the script's own dir. Real risk was directory-listing information disclosure on misconfig. Applied the path-validation fix as defense-in-depth (cheap + correct) but flagged in the response that the reviewer's specific exploit was wrong. Carries the standing rule: "Reviewers can be confidently wrong; spot-check before fixing."
 
 **Lessons learned:**
-- **The user's audit-before-ship instinct is valuable.** Asking for a self-audit pass before /ship caught 4 BLOCKERs (numbering inconsistency, memory-path mismatch, missing preflight script, off-by-one) and 6 NITs that would have shipped otherwise. Captured as FB-0022 — workflow-infra changes warrant explicit self-audit before /ship.
-- **Anticipate feedback-loop failure modes proactively.** When proposing the agent self-feedback primitive, I missed the model-collapse / process-ossification risk; the user surfaced it. Captured as FB-0023 — for any new compounding mechanism, surface the failure mode before the user has to ask.
+- **The user's audit-before-ship instinct is valuable.** Asking for a self-audit pass before /ship caught 4 BLOCKERs (numbering inconsistency, memory-path mismatch, missing preflight script, off-by-one) and 6 NITs that would have shipped otherwise. Captured as FB-0025 — workflow-infra changes warrant explicit self-audit before /ship.
+- **Anticipate feedback-loop failure modes proactively.** When proposing the agent self-feedback primitive, I missed the model-collapse / process-ossification risk; the user surfaced it. Captured as FB-0026 — for any new compounding mechanism, surface the failure mode before the user has to ask.
 - **`spike` and `tiny` modes are likely under-used initially.** Bias toward full loop is appropriate; we'll learn over time which work genuinely benefits from the cheap path.
 - **Conductor workspaces break naive path-derivation.** Anything that needs to reach into harness-canonical paths (memory, settings, hook outputs) needs an override mechanism. Worth remembering for any future tool that bridges workspace and harness state.
+
+### PR C Step 3a — `--gray-a*` rename to `--tint-overlay-*`
+**Date:** 2026-05-15
+**Branch:** pr-c-gray-a-rename
+**Commit / PR:** `0b2d016..[this ship commit]` (4 commits) → [PR pending push]
+
+**What was done:**
+- Renamed `--gray-a5/6/7` (md-manager's three black-alpha page-tint overlays) to `--tint-overlay-{light,medium,strong}` in `src/styles/globals.css`. 3 declarations + 14 `var()` usages.
+- Updated the two doc references in `core-docs/design-language.md` (Color system table + Loading states pattern) and the one in `.claude/rules/ui.md` (code-block wash-background guideline).
+- Added a two-line comment in `globals.css` pointing at `core-docs/token-migration.md` for the rationale (clash with Mini's Radix-imported `--gray-a*` scale).
+- Routed one /staff-review follow-up to `roadmap.md` Cleanup: design-language.md should grow a § "Component guidelines → Subtle feedback" entry that codifies the *pattern* (hover washes, hairline dividers, code-block backgrounds all consume `--tint-overlay-*`) — currently the tokens are listed in the Color table but the pattern isn't named.
+- Values unchanged. Bundle output is byte-equivalent for every selector using these tokens; only the declaration names differ.
+- `npm run typecheck && npm run build` clean throughout.
+
+**Why:**
+- PR C Step 1 (token name-collision audit, `core-docs/token-migration.md`) surfaced that `--gray-a*` is a real value collision: Mini's `packages/ui/styles/tokens.css` `@import`s `@radix-ui/colors/gray-alpha.css`, which declares `--gray-a1..12` on `:root`. Same names, different values, different semantic intent (ours is 3 specific page-tint wash opacities; Mini's is the full 12-step Radix alpha primitive). Cascade resolves to ours because `globals.css` loads last, but the name-clash means the Radix scale is effectively shadowed and unusable downstream.
+- Renaming preserves both: our 3 overlays under a name that says what they are, Mini's full Radix scale available for future use without re-rename. The split into a dedicated Step 3a PR (separate from Step 3 tokens migration) follows FB-0023 — naming changes and value migrations are different reviewer-questions and deserve separate diffs.
+
+**Design decisions:**
+- **Name pattern `--tint-overlay-{light,medium,strong}`** picked over alternatives `--page-overlay-*` (congests the `--page-*` namespace already crowded by `--page-tint`, `--page-text*`), `--wash-*` (cuter but less self-explanatory), `--overlay-*` (too generic; Mini may want a true overlay-layer token for modal scrims). "Tint-overlay" names what the tokens do (alpha-black wash applied over the page tint); the light/medium/strong axis names the opacity progression.
+- **Kept all three opacities** even though `--tint-overlay-medium` is currently unused (was already dead before this rename — pre-existing condition). Removing it would expand scope beyond "mechanical rename." Defer cleanup to PR C Step 3 (consolidation), which will examine every token's actual call sites as part of moving them into Mini's `tokens.css`.
+- **No component-manifest updates needed.** The `tokens_referenced` arrays in `core-docs/component-manifest.json` don't currently list `gray-a*` (verified by grep). When PR C Step 3 / Step 4+ migrate components and re-derive the manifest, the new names will land naturally.
+
+**Technical decisions:**
+- **Two-line comment, not three.** The /simplify quality lens flagged the original 3-line comment as heavier than this file's other inline comments and pointed at the wrong rule (FB-0024 is the audit-method that found the collision, not the rename rationale). Compressed to one descriptive line + one pointer line to `token-migration.md`.
+- **Skipped staff-review's UX-designer lens** explicitly. Pure CSS rename with no rendered-surface change has no UX-designer questions to evaluate; the staff-review skill authorizes this. Engineer + design-engineer lenses ran and returned clean.
+
+**Tradeoffs discussed:**
+- **Bundle the rename into Step 3 (tokens migration) vs. ship as its own PR.** Split — Step 3 already conflates four concerns (delete identical-value duplicates, rebind 4 radius values, move 29 md-manager-only tokens into Mini's tokens.css as a project-additions section, verify bundle equivalence). Adding a rename across 14 call sites would make every line of Step 3's diff carry two questions for reviewers. Per FB-0023.
+- **Remove dead `--tint-overlay-medium` in this PR vs. defer.** Deferred. It was dead before the rename; removing it now would silently expand scope from "rename" to "rename + dead-code cleanup." Step 3's consolidation pass will catch it cleanly.
+- **Comment FB pointer accuracy.** Original draft cited FB-0024 (audits read end-to-end). The actual rationale chain is: FB-0024 → caught the collision miss; the value-different + same-name collision → reason for the rename. Direct rule attribution is fragile here; pointing at `token-migration.md` (which captures the full chain) is more durable.
+
+**Lessons learned:**
+- **Rename audits should sweep `.claude/rules/*.md` too**, not just `src/` and `core-docs/`. The grep found one rule (`ui.md`) that referenced the old token by name in a guideline about code-block backgrounds. Adding rules/skills to the grep-target list is a small refinement of FB-0024's "read end-to-end" principle — captured implicitly there rather than as a separate FB.
+- **One-agent /simplify on small mechanical diffs** turned out fine — the three-lens pattern is for substantive code changes. A 60-line rename PR got the same signal from one consolidated agent at less cost. Not codifying as a rule; just noting the calibration.
+- **The merge queue setup is paying off.** PR #15 (audit) was the first substantive PR through the queue; this Step 3a is the first **code** PR through. The serial-merge dance the queue eliminates was exactly the friction this kind of multi-PR PR-C work would have created in the old setup.
+
+---
+
+### PR C Step 1 — Token name-collision audit (unblocks Step 3 tokens migration)
+**Date:** 2026-05-15
+**Branch:** pr-c-token-audit
+**Commit / PR:** `a7c6a07..[this ship commit]` (3 commits) → [PR pending push]
+
+**What was done:**
+- Built `dist/assets/*.css` to capture the merged stylesheet that actually ships.
+- Extracted every `--<name>: <value>;` declaration from `src/styles/globals.css` (42 tokens) and `packages/ui/styles/tokens.css` (~150 declared + ~120 imported from Radix Colors via 14 `@import` directives).
+- Computed the name-intersection: **14 collision tokens** — `--radius-badge/button/card/modal`, `--space-3/4/5/6`, `--weight-regular/medium/semibold`, plus the audit's late catch `--gray-a5/6/7` (Mini imports `@radix-ui/colors/gray-alpha.css`, which declares `--gray-a*` on `:root`).
+- Verified cascade winner in the built CSS: for every collision token, the bundle contains both declarations in source order — Mini's first, ours second — so our value wins via cascade as expected.
+- Categorized:
+  - **Identical values (7):** `--space-*`, `--weight-*`. Same numeric value, different units (rem vs px).
+  - **Different values, ours intentional (7):** all `--radius-*` (ours 1-4px tighter than Mini's defaults, matching axiom #9 "soft with one pillowy signature"); all `--gray-a*` (ours 5-11% black alpha vs Mini's Radix 12-19%; same name, different intent — ours is page-tint wash, Mini's is the full Radix alpha primitive).
+  - **Accidental / Mini-wins / surprising:** none.
+- Output: `core-docs/token-migration.md` — the migration plan that PR C Step 3 will execute. Contains the collision table, categorized decisions with rationale, and work lists for two follow-up PRs (Step 3a rename + Step 3 migration).
+- Plan.md: added the audit step under "Active Work Items," handoff notes updated.
+- No app code changed. `npm run typecheck && npm run build` clean.
+
+**Why:**
+- The token name-collision audit was the highest-priority PR A staff-review follow-up captured in `roadmap.md`. PR C Step 3 (the actual tokens migration that consolidates `--space-*`, `--radius-*`, etc. into a single source of truth in `packages/ui/styles/tokens.css`) couldn't responsibly start without knowing which collisions are identical-value (safe delete), which are semantically different (need explicit re-binding), and which are surprises (warrant pausing the migration).
+- A secondary goal: exercise the new merge queue and CI gates from PR #10 with a small, focused, docs-only PR before doing anything that touches app code. The audit doubles as a queue dry-run.
+
+**Design decisions:**
+- **`--gray-a*` rename split into its own PR ("Step 3a"), not bundled into Step 3.** A semantic rename across globals.css usage is a different reviewer-question than mechanical duplicate-removal + radius rebinding. Bundled, each line of the migration diff carries two questions; split, each PR has one. Captured as FB-0023.
+- **Radius rebinding via fork-and-own of Mini's `tokens.css`, not by keeping `globals.css` declarations.** Mini's `tokens.css` is the contract surface for downstream Mini skills (`generate-ui`, `enforce-tokens`); the fork-and-own pattern is supported (per `packages/ui/MINI-VERSION.md`). Keeping our values in `globals.css` would mean two places to read for "what radius does this project use" — worse for future readers.
+- **Unit shift accepted (px → rem) for identical-value collisions.** Mini uses rem, we use px. Numerically equivalent at the default 16px font-size; rem additionally scales with user font-size preference (accessibility win). Accepting Mini's rem for the deleted duplicates is a no-op visually + a real a11y upgrade. Documented as a Step 3 sub-decision.
+- **`--gray-a*` semantic split surfaced as a third real collision class.** Initially framed as a "near-naming-clash"; the /simplify reviewer caught that Mini's Radix-imported `--gray-a*` is a full value collision (different values under identical names). The rename preserves both intents — Mini's `--gray-a*` becomes available as the Radix alpha-gray primitive (12-step), our specific page-tint overlay opacities live under a name that says what they are. → FB-0024 (audits read end-to-end, not just grep).
+
+**Technical decisions:**
+- **Audit doc lives at `core-docs/token-migration.md`, scoped to PR C.** Once PR C Step 3 ships, the durable parts fold into `design-language.md` (change-log entry, updated Color / Spacing / Corner-radius tables); the audit doc itself can be archived. Scoping to PR C avoids growing `design-language.md` with transient migration content.
+- **rem-to-px conversions assume default 16px font-size.** Documented in the audit doc. If the project ever changes the root font-size, the conversions in the doc would need re-validation.
+- **`dist/assets/*.css` is the ground truth for cascade resolution**, not source-file load order alone. The audit verifies in the bundle, not just in `src/main.tsx`. This is the right discipline because Vite's bundling order could theoretically differ from import order (it doesn't, but the discipline is the safety net).
+
+**Tradeoffs discussed:**
+- **Single tokens file (`tokens.css`) vs. continued split (`tokens.css` + `globals.css` `:root`).** Picked single tokens file. Pro: one grep finds every token. Con: Mini's tokens.css grows from ~150 to ~180 declarations. The clarity payoff outweighs the file-size growth. Documented in the audit doc as a Step 3 decision so the migration PR doesn't re-litigate.
+- **Keep px in `globals.css` vs. accept rem from `tokens.css`** for identical-value collisions. rem wins (a11y benefit, Mini contract alignment, no visual change). Documented as part of the Step 3 plan.
+- **Bundle Step 3a (rename) into Step 3 vs. split.** Split. The /simplify efficiency review was correct that bundling makes both PRs harder to review. Cost: two PR cycles instead of one. Benefit: each diff has one question.
+
+**Lessons learned:**
+- **Pure-grep audits miss transitive imports** (FB-0024). The initial 11-collision count missed `--gray-a*` because `grep` against `tokens.css` doesn't surface declarations from `@import "@radix-ui/colors/gray-alpha.css"`. For audits that claim completeness, open files end-to-end + verify against built artifacts.
+- **Naming changes are their own concern** (FB-0023). Bundling a rename pass into a migration PR conflates two reviewer questions. The principle generalizes to any refactor mixing mechanical rename with semantic change.
+- **The audit doubled as a merge-queue dry-run.** A docs-only PR with no app behavior change is a safe first exercise of CI gating + the queue, separate from substantive code changes. Useful pattern when introducing new infrastructure.
+
+---
 
 ### Workflow: insert `/critique-plan` between plan-draft and user approval
 **Date:** 2026-05-14

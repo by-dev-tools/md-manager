@@ -53,4 +53,4 @@ Bug fixes, spec compliance, reliability work, and polish can proceed autonomousl
 
 ## When this file goes stale
 
-If you notice this file contradicts `CLAUDE.md` or `core-docs/workflow.md`, **update it** as part of the workflow-infrastructure self-audit (FB-0022). A stale rule file actively misleads every future session. The cost of fixing it is one PR; the cost of leaving it is every PR after.
+If you notice this file contradicts `CLAUDE.md` or `core-docs/workflow.md`, **update it** as part of the workflow-infrastructure self-audit (FB-0025). A stale rule file actively misleads every future session. The cost of fixing it is one PR; the cost of leaving it is every PR after.

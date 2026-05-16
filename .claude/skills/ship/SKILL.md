@@ -30,7 +30,7 @@ If on `main`, create a descriptive kebab-case branch first.
 
 ## 1. Final-pass reviews
 
-`/simplify` and `/staff-review` should have already run during feature work — they're steps 5 and 6 of the standard loop (`core-docs/workflow.md`). `ship` is the **final safety net** with sharper focus on security and accessibility; it does not re-run the earlier two. If the diff has changed materially since they ran (e.g., several iteration cycles intervened), re-run them before continuing here.
+`/simplify` and `/staff-review` should have already run during feature work — they're steps 6 and 7 of the standard loop (`core-docs/workflow.md`). `ship` is the **final safety net** with sharper focus on security and accessibility; it does not re-run the earlier two. If the diff has changed materially since they ran (e.g., several iteration cycles intervened), re-run them before continuing here.
 
 Invoke the two specialized review skills via the Skill tool, in sequence:
 1. **`/security-review`** — diff-focused security audit for this stack. The skill saves its own diff, runs its own greps, spawns its own cold-read Agent, triages findings, and applies BLOCKER/NIT fixes itself. It returns the findings back to this pipeline.
@@ -51,7 +51,9 @@ Mention follow-ups in the PR body for reviewer awareness, but **never only in th
 
 If any new BLOCKER fix changed code, re-run `npm run typecheck` once before moving on.
 
-## 3. Synthesize session feedback
+## 3. Synthesize session feedback (two layers)
+
+### 3a. User feedback → `core-docs/feedback.md`
 
 Review this conversation (and any prior session since the last PR on this branch) for:
 - User corrections — places you got it wrong and the user fixed your direction.
@@ -60,6 +62,75 @@ Review this conversation (and any prior session since the last PR on this branch
 - Challenges solved — a non-obvious problem and how it was resolved.
 
 Add new entries to `core-docs/feedback.md` following the FB-XXXX format. Increment from the last ID. Skip anything already captured. The bar: would a future session benefit from this rule? If yes, write it down.
+
+### 3b. Agent self-feedback → failure-pattern memory
+
+This step has **five guardrails** designed to prevent compounding agent slop in the memory corpus. See `core-docs/workflow.md` § "Continuous improvement" for the full model.
+
+#### Step 3b.i — Check corpus health first
+
+```sh
+node tools/memory/check.mjs
+```
+
+If `OVER CAP`, you must archive or merge an existing entry before writing a new one.
+
+#### Step 3b.ii — Apply the source-diversity bar
+
+For each finding from `/simplify`, `/staff-review`, `/security-review`, `/accessibility-review`, `/critique-plan`, ask:
+
+1. **Recurrence-likely?** Could this same pattern resurface on a similar surface in a future session?
+2. **Not mechanically checkable yet?** If a preflight rule could catch it deterministically, write the preflight rule (or file as follow-up). Don't write a memory entry for something a script can check.
+3. **Source-diversity bar met?** Evidence must come from at least **two of three**:
+   - Recurrence in time (same pattern on a previous PR — check existing memory entries' fire logs and `git log`-able past findings).
+   - Two reviewers (e.g., `/staff-review` AND `/security-review` independently flagged it).
+   - One review + user correction (this PR's finding aligns with a `core-docs/feedback.md` rule).
+
+   **A single review pass on a single PR is not enough.** The first occurrence of a real pattern goes uncaptured intentionally — capture on the second occurrence when recurrence is evidence.
+
+If 1, 2, AND 3 all yes, proceed to write the entry.
+
+#### Step 3b.iii — Resolve contradictions with user feedback
+
+Before writing, scan `core-docs/feedback.md` for any rule the proposed memory entry would contradict. If a contradiction exists, **user feedback wins**. Either revise the entry to align, or skip writing it. Note the contradiction in the PR body so the user can confirm.
+
+#### Step 3b.iv — Write the entry
+
+File at `~/.claude/projects/<project-path>/memory/feedback_<short_snake_name>.md`:
+
+```markdown
+# <one-line title>
+
+**Source:** <which review surfaced it>
+**First seen:** YYYY-MM-DD on branch <name>
+**Source-diversity evidence:** <which 2-of-3 sources support this — be specific>
+**Pattern:** <the failure mode in 1-3 sentences>
+**Why I missed it:** <one line — what assumption or shortcut led to the bug>
+**How to catch it next time:** <concrete check — re-read X, run Y, verify Z>
+**Promotion target:** <if this becomes a preflight check, what would it look like>
+**Fire log:**
+- YYYY-MM-DD: first seen, branch <name>
+```
+
+#### Step 3b.v — Update fire log + flag promotion candidates
+
+For each existing memory entry whose pattern recurred on this PR (you spotted it again, possibly because the memory entry primed you to see it):
+- Append today's date to the entry's "Fire log".
+- If the fire log now has **2+ entries**, the pattern is recurring despite the memory — that's the promotion signal. **Do not auto-promote.** File a follow-up entry in `core-docs/roadmap.md` Cleanup section: "Promote memory entry `<name>` to preflight check (fired 2× on <branches>)." The user approves promotion explicitly; preflight rules are permanent and a bad one catches false positives forever.
+
+#### Step 3b.vi — Audit if due
+
+```sh
+node tools/memory/check.mjs --audit-due
+```
+
+If exit 1, the audit interval (every 5 ship runs) has elapsed or the cap was exceeded. Resolve the memory directory path by running `node tools/memory/check.mjs` (the default summary prints `Memory: N/30 entries at <path>`). Then spawn an `Explore` agent with this prompt:
+
+> Read every `feedback_*.md` file in `<path>` (the memory directory resolved above). Do not look at any PR diff or other context. Answer: (1) Which entries' fire logs show no entries newer than 60 days? Candidates for archival. (2) Which entries contradict each other? Surface for resolution. (3) Which entries look like over-fitting on a single past incident — vague, narrow, or only-applicable-once? Candidates for revision or deletion. Report findings only; do not modify files.
+
+Apply audit recommendations after user review. Audits are the cure for memory ossification; skipping them lets the corpus rot.
+
+The bar throughout step 3b is intentionally high. A typical PR produces 0 memory entries; many PRs produce 0 across multiple sessions. Noise dilutes memory's value; silence loses it. Write only when guardrails 1–4 all pass.
 
 ## 4. Update core docs
 

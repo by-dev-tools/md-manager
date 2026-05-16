@@ -51,6 +51,8 @@ Increment from the last entry. Use `FB-0001`, `FB-0002`, etc.
 
 **Synthesized rule:** Workflow-infrastructure changes (edits to `core-docs/workflow.md`, `CLAUDE.md`, `.claude/rules/*`, `.claude/skills/*`, `tools/preflight/*`, `tools/memory/*`) get an explicit self-audit pass before /ship — distinct from /staff-review. The audit looks specifically for: cross-file numbering / step-reference consistency, dead references to files that don't exist yet, internal contradictions across CLAUDE.md / workflow.md / rules / skills, brittle path assumptions, "aspirational" enforcement claims that no actual code enforces. The asymmetric cost justifies the explicit gate: a stale workflow rule taxes every future PR; a 10-minute audit prevents that. Add this as a step in /ship for workflow-infra PRs, OR codify it as an anti-pattern reminder ("don't ship workflow infra without a coherence pass").
 
+**Specific cross-file checks worth running explicitly:** When a workflow concept changes (a new mode, a new step number, a renamed primitive, a new required field), grep ALL of these files for references that may have gone stale: `CLAUDE.md`, `core-docs/workflow.md`, every `.claude/rules/*.md`, every `.claude/skills/*/SKILL.md`. A coherence audit on PR 1 caught that `.claude/rules/general.md` was still saying "3–5 line plan" after the new workflow required spec-walk + confidence verdict — a contradiction that would have actively misled every future session. The auto-loading rule files are the easiest to miss and the most damaging when stale.
+
 **Applies to:** workflow, scoping decisions, /ship pipeline for infra PRs.
 
 ### FB-0021: Try the automated/operational fix before restructuring the docs

@@ -124,9 +124,9 @@ For each existing memory entry whose pattern recurred on this PR (you spotted it
 node tools/memory/check.mjs --audit-due
 ```
 
-If exit 1, the audit interval (every 5 ship runs) has elapsed or the cap was exceeded. Run an audit by spawning an `Explore` agent with this prompt:
+If exit 1, the audit interval (every 5 ship runs) has elapsed or the cap was exceeded. Resolve the memory directory path by running `node tools/memory/check.mjs` (the default summary prints `Memory: N/30 entries at <path>`). Then spawn an `Explore` agent with this prompt:
 
-> Read every file in the memory directory (resolve via `node tools/memory/check.mjs --list` to get the path + filenames). Do not look at any PR diff or other context. Answer: (1) Which entries' fire logs show no entries newer than 60 days? Candidates for archival. (2) Which entries contradict each other? Surface for resolution. (3) Which entries look like over-fitting on a single past incident — vague, narrow, or only-applicable-once? Candidates for revision or deletion. Report findings only; do not modify files.
+> Read every `feedback_*.md` file in `<path>` (the memory directory resolved above). Do not look at any PR diff or other context. Answer: (1) Which entries' fire logs show no entries newer than 60 days? Candidates for archival. (2) Which entries contradict each other? Surface for resolution. (3) Which entries look like over-fitting on a single past incident — vague, narrow, or only-applicable-once? Candidates for revision or deletion. Report findings only; do not modify files.
 
 Apply audit recommendations after user review. Audits are the cure for memory ossification; skipping them lets the corpus rot.
 

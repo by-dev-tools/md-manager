@@ -4,6 +4,14 @@ How features get built and shipped. **Canonical across md-manager and Designer**
 
 This is the long-form narrative. `CLAUDE.md` carries the cheat-sheet. The two **must agree**; if you change one, change the other.
 
+## What this workflow is (and isn't)
+
+This is **hybrid managed autonomy**, not pure autonomous coding. The human stays in the loop at two load-bearing gates: (1) **Plan approval** before any code is written, and (2) **Merge** at the end. Between those, the agent operates with autonomy-friendly primitives — spec-walk checkboxes, confidence verdicts, preflight gates, /simplify, three-lens staff-review, agent self-feedback memory.
+
+Confidence gates explicitly add a third gate when an assumption is LOW — surfacing a question that must be resolved before the plan can proceed. The implicit gate at Execute time (new scope discovered → re-plan → re-approve) is currently judgment-based, not enforced; extending the confidence-gate primitive into Execute and into /staff-review BLOCKER triage is a roadmap item.
+
+The doctrine is: **more human gates than pure autonomous, fewer than fully manual.** The agent does the work it can do well; the human stays in the loop where the cost of being wrong is high.
+
 ---
 
 ## The unified loop

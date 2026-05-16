@@ -128,7 +128,7 @@ if (args.has('--audit-due')) {
     shipsSinceAudit = parseInt(readFileSync(auditMarker, 'utf-8').trim(), 10) || 0;
   }
   shipsSinceAudit += 1;
-  const due = shipsSinceAudit >= AUDIT_INTERVAL || count > HARD_CAP;
+  const due = shipsSinceAudit >= AUDIT_INTERVAL || count >= HARD_CAP;
   if (due) {
     writeFileSync(auditMarker, '0');
     console.log(`audit due (ships since last: ${shipsSinceAudit}, entries: ${count}/${HARD_CAP})`);
@@ -141,11 +141,11 @@ if (args.has('--audit-due')) {
 
 // Default summary
 console.log(`Memory: ${count}/${HARD_CAP} entries at ${memoryDir}`);
-if (count > HARD_CAP) {
-  console.log(`OVER CAP — curate before adding more entries.`);
+if (count >= HARD_CAP) {
+  console.log(`AT/OVER CAP — curate (archive or merge) before adding more entries.`);
   process.exit(1);
 }
-if (count >= HARD_CAP * 0.8) {
+if (count >= Math.floor(HARD_CAP * 0.8)) {
   console.log(`Approaching cap — start curating.`);
 }
 process.exit(0);

@@ -29,7 +29,11 @@ In parallel:
 - `git log --oneline origin/main..HEAD`
 - `gh pr list --head $(git branch --show-current) --json number,url 2>/dev/null`
 
-If clean tree at `origin/main`: stop, nothing to ship.
+Classify (same shape as `/ship`):
+- **PR-OPEN** — at least one PR returned. Note the number for body updates; we'll push new commits to the existing spike PR rather than open a new one.
+- **LOCAL-ONLY** — commits ahead and/or dirty tree, no PR yet. The normal spike-ship path.
+- **NOTHING-TO-SHIP** — clean tree at `origin/main`. Stop and tell the user.
+
 If on `main`: create a `spike/<short-name>` branch first.
 
 ## 1. Skip the heavy reviews
@@ -73,12 +77,17 @@ A spike's history entry is shorter than a feature's. Don't pad it with technical
 
 ## 3. Capture agent self-feedback (if applicable)
 
-Spikes often surface failure-pattern memory entries because the agent is operating with less guard-rail. Apply the same bar as `/ship` step 3b:
+Spikes often surface failure-pattern memory entries because the agent is operating with less guard-rail. **All 5 guardrails from `/ship` step 3b apply equally to spike mode** — don't relax them just because the surrounding pipeline is lighter. See `.claude/skills/ship/SKILL.md` § 3b for the full text (corpus health check, source-diversity bar, contradiction-with-feedback check, write format, fire-log update, audit-if-due).
 
-1. Recurrence likely?
-2. Not mechanically checkable yet?
+Run the same sub-steps in order:
+- 3b.i — `node tools/memory/check.mjs` (corpus health)
+- 3b.ii — Apply the source-diversity bar (recurrence-likely + not mechanically checkable + 2-of-3 evidence)
+- 3b.iii — Resolve contradictions with `core-docs/feedback.md` (user wins)
+- 3b.iv — Write the entry if guardrails pass
+- 3b.v — Update fire log on existing entries; flag promotion candidates to roadmap.md
+- 3b.vi — `node tools/memory/check.mjs --audit-due`; spawn audit Explore agent if exit 1
 
-If yes, write a memory entry to `~/.claude/projects/<project-path>/memory/feedback_<short_snake_name>.md`. See `core-docs/workflow.md` § "Continuous improvement" for the format.
+The bar is identical. Spike mode is **lighter on review** (skips /simplify + /staff-review) but **not lighter on learning capture** — if anything, spikes are higher-yield for memory entries because the exploration surfaces failure modes feature work doesn't.
 
 Do NOT synthesize user feedback to `core-docs/feedback.md` for spikes — the conversation density is different (less direction, more exploration). Spike-derived user preferences should wait until the follow-up feature PR confirms them.
 

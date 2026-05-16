@@ -72,9 +72,9 @@ None currently. If GitHub repo sync is implemented, OAuth + rate-limited API cal
 
 ## Current status
 
-- **Stage:** Prototype with safety bundle + editor performance + a11y (PR #2) + sidebar redesign (PR #6) + Mini design system installed (PR A, #7) + Mini design language amended with explicit axioms (PR B, #9) + CI gates and merge queue (PR #10) + GitHub org transfer to `by-dev-tools` + Mini PR C Step 1 token-collision audit (PR #15) + Mini PR C Step 3a `--gray-a*` rename (`pr-c-gray-a-rename`, pending push). PR C Step 2 (`--accent-8` contrast matrix) is the remaining unblocker for PR C Step 3 (tokens migration). Persistence and repo sync still ahead.
+- **Stage:** Prototype with safety bundle + editor performance + a11y (PR #2) + sidebar redesign (PR #6) + Mini design system installed (PR A, #7) + Mini design language amended with explicit axioms (PR B, #9) + CI gates and merge queue (PR #10) + GitHub org transfer to `by-dev-tools` + Mini PR C Step 1 token-collision audit (PR #15) + Mini PR C Step 3a `--gray-a*` rename (PR #17) + color-rail portfolio-derived presets (`color-rail-presets`, pending push). PR C Step 2 (`--accent-8` contrast matrix) is the remaining unblocker for PR C Step 3 (tokens migration). Persistence and repo sync still ahead.
 - **Last updated:** 2026-05-15
-- **Branch:** `pr-c-gray-a-rename` (pending push)
+- **Branch:** `color-rail-presets` (pending push)
 - **Open questions:**
   - How does persistence work? (localStorage for drafts? IndexedDB? File System Access API?)
   - How does repo sync actually function — local file watcher? GitHub API? GitHub App?

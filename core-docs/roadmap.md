@@ -59,6 +59,7 @@ Captured by `/staff-review` and `/ship` so they don't get lost.
 - **Workflow.md commit-boundary rule.** Formalize the per-phase commit pattern (Execute / /simplify / /staff-review / /ship) as an explicit step in `core-docs/workflow.md` rather than relying on agent judgment. See FB-0020. Cheap doc edit; deferred from `ci-setup` to keep that PR's scope tight.
 - **CLAUDE.md merge-strategy note.** Add a one-paragraph note to `CLAUDE.md` § "Where to look" or a new short § "Merge strategy" pointing out that the repo squash-merges PRs to keep `main` linear, and that intermediate branch commits live on the PR page. Cheap; deferred from `ci-setup`.
 - **Lint pattern: reject `github.event.pull_request.*.body` / `.title` interpolation in CI yaml.** Premature at one workflow file; revisit if the `.github/workflows/` set grows past 2-3 files. Captured by `/ship` security review on `ci-setup`.
+- **Document the subtle-feedback pattern in `design-language.md`.** Hover washes (8 sites), hairline dividers/borders, and code-block backgrounds all consume the `--tint-overlay-*` tokens. The design language mentions the tokens by name in the Color table but doesn't codify the *pattern* — a short § "Component guidelines → Subtle feedback" entry would teach future contributors when to reach for an overlay token vs `--sand-3` (which `Buttons` already calls out as the hover surface for the primary button). Captured by `/staff-review` on `pr-c-gray-a-rename`.
 
 ### From Slices A+B staff review (PR #2)
 

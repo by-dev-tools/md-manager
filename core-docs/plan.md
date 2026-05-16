@@ -10,7 +10,8 @@ The living document for what's being worked on right now, what's queued, and wha
 
 ## Handoff Notes
 
-- **PR C Step 1 (token name-collision audit) shipped on `pr-c-token-audit`** — `a7c6a07` (initial audit) + `6f27e49` (/simplify fixes for `--gray-a*` miss) + this ship commit. Output: `core-docs/token-migration.md` with the 14-token collision table and work lists for Step 3a + Step 3. Repo: `by-dev-tools/md-manager` (migrated from `byamron/md-manager`). FB-0022, FB-0023, FB-0024 captured. No code changed.
+- **PR C Step 3a (`--gray-a*` rename) shipped on `pr-c-gray-a-rename`** — `0b2d016` (rename) + `c7438b6` (/simplify NIT) + `bbdc70a` (/staff-review follow-up routed) + this ship commit. CSS-only mechanical rename; values unchanged; bundle byte-equivalent for every selector. No new FBs (lessons captured under existing FB-0023/0024 scope).
+- **PR C Step 1 (token name-collision audit) merged as PR #15** on branch `pr-c-token-audit`. Output: `core-docs/token-migration.md` with the 14-token collision table.
 - **GitHub Org transfer complete** — `byamron/md-manager` is now `by-dev-tools/md-manager`. Branch protection + Rulesets preserved across transfer. Merge queue is **active** with required checks `typecheck` / `build` / `test`. Dependabot security updates enabled (two security PRs already opened: #12 esbuild+vite, #13 vite major). Secret Protection enabled. All git remotes (worktree config and Conductor workspaces) now use HTTPS.
 - **Next two PRs unblock PR C Step 3 (tokens migration):**
   - **PR C Step 3a** — rename `--gray-a5/6/7` → `--tint-overlay-{light,medium,strong}` (or similar; final name decided at PR time). Touches every reference in `globals.css` + 3 component-manifest entries. Mechanical. Should be next.
@@ -53,26 +54,9 @@ The living document for what's being worked on right now, what's queued, and wha
 
 PR C is **iterative across sessions** — each component migration is its own small PR with its own `/simplify` + `/staff-review` pass.
 
-### PR C / Step 3a: `--gray-a*` rename (next — mechanical, ~½ session)
+### PR C / Step 2: `--accent-8` contrast matrix (next — investigation, ~1 session)
 
-**Goal:** Rename `--gray-a5/6/7` (our page-tint wash overlays) to `--tint-overlay-{light,medium,strong}` (final name decided at PR time) to remove the names-clash with Mini's Radix-imported `--gray-a*` scale. Mechanical rename across `globals.css` + 3 component-manifest entries. Lands before Step 3 so Step 3's diff stays purely about duplicate-removal + value-rebinding.
-
-**Branch:** `pr-c-gray-a-rename` (off `main`).
-
-**Scope: code change** (small) + manifest update.
-
-**Implementation steps:**
-- [ ] Decide final token names. Recommendation: `--tint-overlay-light`, `--tint-overlay-medium`, `--tint-overlay-strong`. Confirm with user at plan approval.
-- [ ] Rename `--gray-a5/6/7` declarations in `:root` of `src/styles/globals.css`.
-- [ ] Update every CSS selector in `globals.css` that references the old names.
-- [ ] Update `core-docs/component-manifest.json` `tokens_referenced` arrays for any component listing `gray-a*` (search and verify).
-- [ ] `npm run typecheck && npm run build` clean.
-- [ ] Verify in `dist/assets/*.css`: our 3 declarations now use new names; Mini's Radix-imported `--gray-a*` (12-step) still present and untouched.
-- [ ] /simplify + /ship.
-
-**Risks / open questions:**
-- **Token name bikeshed.** `--tint-overlay-*` is one option; `--page-overlay-*` is another. Decide at plan time.
-- **Component-manifest accuracy.** Some components may already be `legacy` and accurate; some may be stale. Verify by grepping `src/components/` for `gray-a` usage and reconciling with manifest entries.
+(See section below for the original scope. This is the remaining unblocker for PR C Step 3 alongside Step 3a, which just shipped.)
 
 ### PR C / Step 2: `--accent-8` contrast matrix (parallel to Step 3a, blocks Step 4+)
 
@@ -119,7 +103,8 @@ PR C is **iterative across sessions** — each component migration is its own sm
 
 _(Last 3–5 items. Older items live in `history.md`.)_
 
-- **PR C Step 1 — Token name-collision audit (branch `pr-c-token-audit`)** — Output: `core-docs/token-migration.md` with the 14-token collision table (4 radius, 4 space, 3 weight, 3 gray-a) + work lists for Step 3a (rename) and Step 3 (migration). Ours wins via cascade for every collision as expected. FB-0022/0023/0024 captured. No code changed. 2026-05-15.
+- **PR C Step 3a — `--gray-a*` → `--tint-overlay-*` rename (branch `pr-c-gray-a-rename`)** — CSS-only mechanical rename in `src/styles/globals.css` + 2 doc refs + 1 rule ref. Values unchanged, bundle byte-equivalent. Unblocks PR C Step 3 from the rename side. /simplify NIT applied (comment compression); /staff-review surfaced one FOLLOW-UP routed to roadmap.md (subtle-feedback pattern doc gap). No new FBs. 2026-05-15.
+- **PR C Step 1 — Token name-collision audit (PR #15)** — Output: `core-docs/token-migration.md` with the 14-token collision table (4 radius, 4 space, 3 weight, 3 gray-a) + work lists for Step 3a (rename) and Step 3 (migration). Ours wins via cascade for every collision as expected. FB-0022/0023/0024 captured. No code changed. 2026-05-15.
 - **GitHub Org transfer + HTTPS remote flip** — `byamron/md-manager` → `by-dev-tools/md-manager` (unlocks merge queue for personal-account repos). Branch protection / Rulesets preserved. Merge queue active with required checks `typecheck` / `build` / `test`. Dependabot security updates + Secret Protection enabled. All worktree remotes on HTTPS so Conductor workspaces can clone/push without SSH keys. FB-0022 captured. 2026-05-14.
 - **Workflow: `/critique-plan` inserted into step 3** — Branch `pasted-text-import`. `.claude/rules/plan-discipline.md` reminds the planner to read `spec.md` / `feedback.md` / `design-language.md` before drafting. `core-docs/workflow.md` step 3 now runs `/critique-plan` (assumption-auditor plugin) between plan draft and user approval. Additive — human gate unchanged. 2026-05-14.
 - **CI gates + Dependabot (PR #10)** — Three parallel jobs (typecheck/build/test) on `pull_request` and `merge_group` events; workflow-level `permissions: { contents: read }`. Dependabot configured for npm with version-updates suppressed. FB-0020, FB-0021 captured. 2026-05-14.

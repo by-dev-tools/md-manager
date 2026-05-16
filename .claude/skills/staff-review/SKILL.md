@@ -101,10 +101,10 @@ Findings go in three buckets — name the bucket explicitly per finding:
 - **future-exploration** — an area inviting exploration without a clear shape yet. Routes to `roadmap.md` § Exploration with a "Surfaces when:" trigger naming the file paths / area that should re-surface it later.
 
 **Tiebreakers when a finding straddles buckets:**
-- Between **inline-cheap** and **roadmap-concrete** — prefer **roadmap-concrete**. Under-applying preserves PR scope discipline; over-applying breaks the lens's restraint contract.
+- Between **inline-cheap** and **roadmap-concrete** — prefer **roadmap-concrete**. Bundling small generative fixes into the current PR breaks the lens's restraint contract (the lens is meant to identify pushes, not auto-apply them); deferring keeps the PR diff focused on its stated scope.
 - Between **roadmap-concrete** and **future-exploration** — prefer **future-exploration** when you can't write a concrete shape + cost. A vague roadmap entry is worse than an honest Exploration entry that names what we don't yet know.
 
-Output max 2 items per bucket; if there's a third, the surface deserves a dedicated standalone `/uncommon-care` pass, not a /staff-review side-channel.
+Output typically ≤2 items per bucket. If the lens turns up more than that, the surface deserves a dedicated standalone `/uncommon-care` pass, not a /staff-review side-channel — flag the overflow rather than cramming everything in.
 
 ## Workflow
 
@@ -123,7 +123,7 @@ Output max 2 items per bucket; if there's a third, the surface deserves a dedica
    ```
    Reviewers reference both so the prompt stays small.
 
-3. **Launch the four reviews in parallel.** A single tool message with four `Agent` calls, each `subagent_type: Explore`. Each prompt names its lens, the diff path, the untracked-files list, the changed files, the relevant docs to read (`core-docs/design-language.md`, `core-docs/spec.md`, `core-docs/feedback.md`, and the PR body or workstream prompt if relevant), and asks for findings classified **BLOCKER / NIT / FOLLOW-UP** (engineer / UX-designer / design-engineer lenses) or **inline-cheap / roadmap-concrete / future-exploration** (push-further lens). Cap each review at ~1200 words.
+3. **Launch the four reviews in parallel.** A single tool message with four `Agent` calls, each `subagent_type: Explore`. Each prompt names its lens, the diff path, the untracked-files list, the changed files, the relevant docs to read (`core-docs/design-language.md`, `core-docs/spec.md`, `core-docs/feedback.md`, and the PR body or workstream prompt if relevant), and asks for findings classified **BLOCKER / NIT / FOLLOW-UP** (engineer / UX designer / design engineer lenses) or **inline-cheap / roadmap-concrete / future-exploration** (push-further lens). Cap each review at ~1200 words.
 
 4. **Triage.** A finding is:
    - **BLOCKER** — user-visible regression, crash, data loss, accessibility violation, contract break, broken build. **Fix in this workspace.**
@@ -152,7 +152,7 @@ Output max 2 items per bucket; if there's a third, the surface deserves a dedica
 ```markdown
 ## Reviewer notes
 
-Four parallel reviews ran before this opened for human review.
+Four parallel reviews ran before this opened for human review. The first three (engineer / UX designer / design engineer) asked "is this good?"; the fourth (push-further) asked "could this go further?" and routes its findings to inline fixes, scoped roadmap items, or `roadmap.md § Exploration`.
 
 **Staff engineer.** _Findings:_ [one-line summary]. _Acted on:_ [what was fixed]. _Deferred:_ [follow-ups → roadmap.md/plan.md location].
 

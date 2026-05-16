@@ -134,7 +134,7 @@ This file is a **router**. Decisions live in `core-docs/` and `.claude/`.
 | Skill | Trigger | What it does |
 |---|---|---|
 | `/link` | "start the dev server", "show me" | Starts Vite, handles port conflicts, returns the URL |
-| `/staff-review` | After implementation, before presenting | Four parallel review lenses (engineer / UX / design engineer / push-further); fixes small issues in-tree; routes follow-ups to roadmap/plan and exploration items to `roadmap.md § Exploration` |
+| `/staff-review` | After implementation, before presenting | Four parallel review lenses (engineer / UX designer / design engineer / push-further); fixes small issues in-tree; routes follow-ups to roadmap/plan and exploration items to `roadmap.md § Exploration` |
 | `/security-review` | Markdown rendering, URL/file handling changes; auto by `/ship` | Diff-focused security audit for this stack |
 | `/accessibility-review` | Any UI change; auto by `/ship` | Diff-focused WCAG 2.1 AA audit |
 | `/ship` | "ship it" | Final security + a11y pass, doc updates, commit, push, open PR (no merge) |

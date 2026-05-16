@@ -45,3 +45,7 @@ This file loads automatically when you touch UI-related files in md-manager.
 - If you discovered a pattern that should be reusable (or one that failed), document it in `design-language.md`.
 - If a user correction during this work shifted your understanding of a UI rule, capture it in `core-docs/feedback.md`.
 - Surface the dev URL (via `/link` if not running) so the user can verify in-browser.
+
+## Coexists with `exploration.md`
+
+This rule (`ui.md`) and `.claude/rules/exploration.md` both auto-load on most UI/code work. They speak to different concerns: `ui.md` is about *adherence* (tokens, semantic HTML, contrast); `exploration.md` is about *surfacing improvement opportunities* the push-further lens captured. Honor `ui.md` first (don't drift from design-language.md while implementing), then check `roadmap.md § Exploration` for entries triggered by the file(s) you touched.

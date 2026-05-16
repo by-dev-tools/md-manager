@@ -234,9 +234,9 @@ The hairline reads as "below this line is loose, not in the repo," reinforcing F
 **Date:** 2026-05-13
 **Source:** user direction (staff-review demonstration on PR #2)
 
-**What was said:** The user asked for a multi-perspective review on the PR's full diff. The three independent reviews (engineer, UX, design engineer) running in parallel turned up bug classes none of the three would have caught alone — the engineer found the snapshot/race issues + lifecycle bugs, the UX designer caught the silent-URL-rejection false affordance + keyboard nav holes, the design engineer caught the missing type-scale token. After fixes the user then asked for the final ship-pass (security + a11y) on top.
+**What was said:** The user asked for a multi-perspective review on the PR's full diff. The independent reviews (engineer, UX, design engineer — and as of `push-further-lens`, a fourth push-further lens) running in parallel turned up bug classes none alone would have caught — the engineer found the snapshot/race issues + lifecycle bugs, the UX designer caught the silent-URL-rejection false affordance + keyboard nav holes, the design engineer caught the missing type-scale token. After fixes the user then asked for the final ship-pass (security + a11y) on top.
 
-**Synthesized rule:** Default to the three-lens parallel staff-review for any non-trivial workstream — single-lens reviews systematically miss issues outside the reviewer's primary frame. Run the three reviews concurrently (one tool message, three `Agent` calls) so each is independent and their findings triangulate. `/ship`'s final-pass security + a11y review is additive, not a replacement.
+**Synthesized rule:** Default to the **four-lens** parallel staff-review for any non-trivial workstream — single-lens reviews systematically miss issues outside the reviewer's primary frame. The first three (engineer / UX designer / design engineer) ask "is this good?"; the fourth (push-further) asks "could this go further?" and routes findings to inline-cheap fixes, scoped roadmap entries, or `roadmap.md § Exploration`. Run the four reviews concurrently (one tool message, four `Agent` calls) so each is independent and their findings triangulate. `/ship`'s final-pass security + a11y review is additive, not a replacement.
 
 **Applies to:** workflow, review discipline.
 

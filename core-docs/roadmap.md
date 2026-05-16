@@ -48,11 +48,18 @@ Open-ended directions surfaced by review (especially the `/staff-review` push-fu
 ```
 ### <Area>
 - **<Headline>** — <one paragraph: what's there now, what could be pushed,
-  a concrete shape if one exists.> Surfaces when: <file paths, path
-  patterns, or conceptual area>. Cost: <small | medium | large>.
+  a concrete shape if one exists.> Surfaces when: <triggers, comma-separated>.
+  Cost: <small | medium | large>.
 ```
 
-Group by area (Color rail, Sidebar, Markdown, Editor, etc.), not by date or priority. The area heading is the retrieval index.
+**Group by area** (Color rail, Sidebar, Markdown, Editor, etc.), not by date or priority. The area heading is the retrieval index.
+
+**`Surfaces when:` triggers** can mix three forms — combine them freely with commas; `.claude/rules/exploration.md` greps the section for matches:
+- **Exact file paths** — `src/components/ColorRail.tsx`, `src/store.tsx` — best for known surfaces; greppable verbatim.
+- **Path patterns** — `src/components/*.tsx`, `src/styles/**/*.css` — best for cross-cutting concerns.
+- **Conceptual areas or future surfaces** — `Settings page`, `onboarding flow`, `persistence layer` — best when the item should fire on work that hasn't been scaffolded yet. Use a noun phrase a future session would naturally name when starting the relevant work.
+
+Use the most specific form available. Conceptual triggers are looser — write them so a grep for the area name during related work will hit.
 
 ### Color rail
 

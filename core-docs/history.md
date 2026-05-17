@@ -37,7 +37,40 @@ Use the `SAFETY` marker on any entry that modifies error handling, persistence, 
 
 ## Entries
 
-### PR C Step 3a — `--gray-a*` rename to `--tint-overlay-*`
+### Vite 5.4 → 8.0.13 dep bump (PR #12)
+**Date:** 2026-05-17
+**Branch:** `dependabot/npm_and_yarn/multi-46822222ac`
+**Commit / PR:** `6b5239d..edf3496` (3 commits) → [PR #12](https://github.com/by-dev-tools/md-manager/pull/12)
+
+**What was done:**
+- Bumped `vite` from `^5.4.11` to `^8.0.13` (3-major-version jump) and `@vitejs/plugin-react` from `^4.3.4` to `^6.0.2` for Vite 8 compatibility. `esbuild` removed as a direct dep — it's transitively pulled at a fixed version by Vite 8.
+- Updated stack-doc references: `CLAUDE.md` "Tech stack" and `core-docs/spec.md` "Tech stack" both said "Vite 5". Two-line change.
+- Verified locally on the PR branch: `npm install` clean (0 vulns), `npm run typecheck` clean, `npm run build` clean (32 modules, 182 kB bundle, 317 ms), `npm run test` 21/21 pass, `npm run dev` boots in 100 ms with no deprecation warnings, key modules (`main.tsx`, `App.tsx`, `globals.css`) transform 200.
+- Authored by Dependabot (`6b5239d`). Human follow-ups on the same branch: plugin-react bump (`123d6c7`, byamron) and doc-drift fix (`edf3496`, ship pipeline).
+
+**Why:**
+- Dependabot security PR. Closes two open advisories on the repo:
+  - `GHSA-4w7w-66w2-5vf9` — Vite 5.x path traversal in optimized-deps `.map` handling.
+  - `GHSA-67mh-4wv8-2f99` — esbuild dev-server lets any website read responses.
+- Routine dep hygiene: keeping the build toolchain current avoids a cliff-jump later.
+
+**Design decisions:**
+- **Doc-drift fix bundled in the PR, not deferred.** "Vite 5" appeared in two narrative docs; both were updated in the same PR (commit `edf3496`) so the merge moment leaves no stale stack reference. Cheaper than a follow-up PR; reviewer reads everything in one place.
+
+**Technical decisions:**
+- **Accepted Dependabot's bundled `esbuild` removal.** The advisory is for the `esbuild` dev-server endpoint and the previously direct-pinned version. Vite 8 bundles a non-vulnerable `esbuild` transitively, so the direct dep is redundant — removing it shrinks the surface area for future Dependabot churn.
+- **`@vitejs/plugin-react` ^6.0.2 required.** Plugin-react 4 is not Vite-8 compatible; the fixup commit (`123d6c7`) was already in place before /ship.
+- **No `vite.config.ts` changes.** Config uses only `defineConfig`, `react()`, `resolve.alias`, `server.port`, and a `test` block — none of these surfaces changed across the 5 → 8 majors. If a future Vite minor breaks one of these, that's its own PR.
+
+**Tradeoffs discussed:**
+- **Merge as-is vs. wait for a full /staff-review pass.** Skipped /simplify and /staff-review because the PR-specific diff (vs merge base `a384560`) is `package.json` + `package-lock.json` + 2 doc lines — there is no app code for either skill to engage with. `/ship` ran security + a11y reviews; both no-op for a toolchain bump (a11y) or closed-CVE bump (security).
+- **Auto-merge via merge queue vs. hand off.** Followed the workflow's "never merge" rule — handed back to user. Merge queue will run `typecheck` / `build` / `test` once they approve.
+
+**Lessons learned:**
+- **Dependabot major-version PRs warrant a local smoke test even when CI is green.** CI proves the bundle builds; it doesn't prove the dev server boots, HMR works, or aliases resolve. The 100 ms `vite dev` boot + 200 responses on key modules is what gave confidence to ship.
+- **PR-specific diff ≠ `git diff origin/main..HEAD` when the PR was branched off an older main.** Always use `git merge-base origin/main HEAD` for the reviewer-relevant diff so review skills (and humans) reason about PR scope, not branch divergence.
+
+
 **Date:** 2026-05-15
 **Branch:** pr-c-gray-a-rename
 **Commit / PR:** `0b2d016..[this ship commit]` (4 commits) → [PR pending push]

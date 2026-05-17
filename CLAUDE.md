@@ -42,7 +42,7 @@ A markdown notes app with a content-forward, warm-neutral interface. Drafts live
 
 - **Platform:** Web (modern browsers)
 - **Language/UI:** TypeScript + React 18 + vanilla CSS (CSS custom properties for tokens — no Tailwind, no UI lib; Mini adoption pending)
-- **Build:** Vite 5
+- **Build:** Vite 8
 - **Backend:** None (local-only prototype; persistence story TBD — see `core-docs/spec.md`)
 - **Persistence:** Currently in-memory via `src/store.tsx`. localStorage / file-system / repo-sync are open questions.
 - **Notable deps:** `agentation` (dev-mode toolbar only)

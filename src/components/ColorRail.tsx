@@ -13,14 +13,18 @@ const HUE_STOPS = [
   { y: 1.0, h: 310 },
 ];
 
+// Hues sourced from the portfolio repo's theme accents, evaluated at the
+// portfolio intensity slider t=0.25 (light mode). Formula: satMult = 1 + 1.8*t,
+// lightShift = -10*t. See ~/dev/portfolio/src/contexts/ThemeContext.tsx.
+// Labels here are descriptive English color names; the portfolio's internal
+// theme names (Table/Portrait/Pizza/Vineyard/Sky) are intentionally not used
+// in this codebase.
 const PRESETS: { label: string; color: string }[] = [
-  { label: 'Peach', color: 'hsl(30, 60%, 88%)' },
-  { label: 'Sun', color: 'hsl(50, 50%, 88%)' },
-  { label: 'Mint', color: 'hsl(140, 40%, 88%)' },
-  { label: 'Sky', color: 'hsl(200, 45%, 89%)' },
-  { label: 'Lavender', color: 'hsl(255, 35%, 90%)' },
-  { label: 'Blush', color: 'hsl(340, 40%, 91%)' },
-  { label: 'Sand', color: 'hsl(40, 12%, 93%)' },
+  { label: 'Sand', color: 'hsl(30, 25%, 88.5%)' },
+  { label: 'Bone', color: 'hsl(39, 22%, 89.5%)' },
+  { label: 'Blush', color: 'hsl(10, 44%, 93.5%)' },
+  { label: 'Sage', color: 'hsl(86, 26%, 90.5%)' },
+  { label: 'Mist', color: 'hsl(200, 33%, 92.5%)' },
 ];
 
 function hueAt(y: number): number {

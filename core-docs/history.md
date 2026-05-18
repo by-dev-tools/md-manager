@@ -70,7 +70,146 @@ Use the `SAFETY` marker on any entry that modifies error handling, persistence, 
 - **Dependabot major-version PRs warrant a local smoke test even when CI is green.** CI proves the bundle builds; it doesn't prove the dev server boots, HMR works, or aliases resolve. The 100 ms `vite dev` boot + 200 responses on key modules is what gave confidence to ship.
 - **PR-specific diff ≠ `git diff origin/main..HEAD` when the PR was branched off an older main.** Always use `git merge-base origin/main HEAD` for the reviewer-relevant diff so review skills (and humans) reason about PR scope, not branch divergence.
 
+---
 
+### Workflow: add push-further lens to /staff-review + roadmap.md § Exploration
+**Date:** 2026-05-15
+**Branch:** push-further-lens
+**Commit / PR:** `45443ad..[this ship commit]` (4 commits) → [PR pending push]
+
+**What was done:**
+- Added a fourth lens ("push-further") to `/staff-review`'s parallel-agent run. The first three lenses (engineer / UX designer / design engineer) ask "is this good?"; the fourth asks "could this go further?" — grounded in `core-docs/design-language.md` and Josh Puckett's "uncommon care" (executing limited scope to an extraordinarily high bar). Three output buckets: **inline-cheap** (apply this PR; treated like a NIT), **roadmap-concrete** (deferred but scoped, named cost), **future-exploration** (open-ended direction, routes to `roadmap.md § Exploration`).
+- Added `core-docs/roadmap.md § Exploration` between "Later" and "Someday / maybe." Format spec includes the entry shape, the area-grouped organization, and the three-form `Surfaces when:` trigger spec (exact file paths, path patterns, conceptual areas — combinable, with guidance on when to use each).
+- Added `.claude/rules/exploration.md` — auto-loads on `src/**/*.{ts,tsx,css}`. Reminds the agent to grep `roadmap.md § Exploration` for items whose `Surfaces when:` trigger names the file(s) touched.
+- Updated `core-docs/workflow.md` step 7 to describe the four lenses, the bucket mapping (NIT ↔ inline-cheap, FOLLOW-UP ↔ roadmap-concrete, plus future-exploration), and the tightened skip-discipline rule.
+- Updated `CLAUDE.md` loop diagram, skills cheat sheet, and rules table to reference the four lenses + the new `exploration.md` rule.
+- Updated FB-0009 (the founding three-lens entry) to reflect four lenses with push-further named.
+- Seeded `roadmap.md § Exploration` with two entries: (1) **Color rail / per-tint edge color** — `--page-tint-edge` hardcoded warm-orange in `src/store.tsx`, doesn't follow user-selected hues; (2) **Color rail / strip → Settings + onboarding** — user's parking-lot direction to relocate the always-on color rail to a Settings surface.
+
+**Why:**
+Across three consecutive PRs (PR B, PR #17, PR #18), the assistant skipped one or more `/staff-review` lenses with rationalizations like "live-tested by the user" or "engineer lens already covered by /simplify." The user called this out directly: "agentic UX designer review should not be replaced by human review." AI review and human opinion catch different things; the three lenses cover distinct framings; skipping erodes the loop's value over time. Adding a fourth lens (push-further) addresses a separate gap simultaneously — the existing three ask adherence questions; there was no canonical home for "where could this surface go further." The Exploration section + `Surfaces when:` triggers gives those observations a durable home that re-surfaces them contextually.
+
+**Design decisions:**
+- **Lens lives inside `/staff-review`, not as a separate skill.** Runs every PR by default; shares /staff-review's parallel-agent infrastructure; one extra agent call's cost is bounded.
+- **"Empty is valid and often correct" guard.** False-positive "we could add X" findings pollute the roadmap and train the next session to mistrust the lens. The guard is repeated three times in SKILL.md (blockquote callout, "max 2 per bucket" budget, tiebreaker rules favoring restraint) and reinforced in workflow.md. Self-test on this very PR worked: push-further self-review returned empty, honored.
+- **Exploration section lives in `roadmap.md`, not a separate doc.** Co-locating exploration items keeps them adjacent to other forward-looking work. The longer-roadmap.md cost is mitigated by the `Surfaces when:` triggers + the `.claude/rules/exploration.md` auto-load.
+- **`Surfaces when:` triggers can mix file paths, path patterns, and conceptual areas.** Conceptual triggers handle items that name surfaces that don't exist yet (Settings page, onboarding flow).
+- **Heavyweight standalone `/uncommon-care` skill is a separate PR (PR b).** Per FB-0030 (this PR's other new entry), the standalone version will be adapted to md-manager's context, not vendored from Designer.
+
+**Technical decisions:**
+- **`.claude/rules/exploration.md` glob is `src/**/*.{ts,tsx,css}`** (split into three array entries to match other rules' format). Broad enough to catch substantive code work; narrow enough to skip `.claude/`, `packages/ui/`, and `core-docs/`.
+- **Role title standardization across docs.** Picked "engineer / UX designer / design engineer / push-further" as the canonical short reference everywhere a short ref is used.
+- **FB-0009 updated in-place rather than queued for /ship.** FB-0009 became factually wrong the moment this PR's diff hit — leaving it stale would mean shipping a known-wrong doc.
+
+**Tradeoffs discussed:**
+- **Run the full four-lens /staff-review on this very PR vs. skip per the skill's doc-only escape.** Ran it as a self-test of the new skip-discipline rule (FB-0029) being written *in* this PR. 2 of 4 lenses returned non-empty findings; 2 returned empty. Validated the model.
+- **Empty self-review on push-further lens vs. force a finding.** Honored the empty signal. The lens passed its own design test by refusing to fabricate.
+- **Update FB-0009 in-tree vs. capture in this PR's history.md only.** Updated in-tree to prevent shipping a doc that contradicts SKILL.md edits in the same PR.
+
+**Lessons learned:**
+- **Doc-only PRs benefit from the full /staff-review when the doc changes workflow.** The skill's "doc-only" skip is calibrated for prose tweaks; workflow-rule changes have real surface for the lenses.
+- **The push-further lens passed its own design test by returning empty.** First real exercise of the empty-is-valid guard.
+- **Forward-references to future FB IDs are stale references.** I originally hardcoded "FB-0027" in workflow.md and plan.md for this PR's eventual FB — but the merge-queue numbering race made even that wrong (PR #16 took FB-0025/26, PR #18 took FB-0027/28, this PR ended up at FB-0029/30). /simplify caught the initial hardcoded FB-0027; the queue-race surfaced the deeper lesson. Rule: when writing about a not-yet-numbered FB, point at the ledger generically ("see feedback.md") and let `/ship` synthesis pick the actual number.
+
+---
+
+### Workflow unification: canonical loop + spike mode + confidence gates + agent self-feedback
+**Date:** 2026-05-15
+**Branch:** unify-workflows
+**Commit / PR:** [this commit / PR pending push]
+
+**What was done:**
+- Rewrote `core-docs/workflow.md` as the **canonical workflow doc** intended to drop into both md-manager and Designer. 11-step loop: Clarify → Plan → Execute → Preflight → Commit → /simplify → /staff-review → Present → Iterate → /ship → STOP. Project-specific gates (preflight commands, design tokens) marked clearly.
+- Added **spike mode** (`mode: spike` in plan): a cheap escape hatch for exploratory PRs that answer a question rather than ship a feature. Skips /simplify + /staff-review; replaces /ship with a new lightweight `.claude/skills/ship-spike/SKILL.md` that writes the history entry as the deliverable and opens a `spike`-labeled PR. Abuse-prevention is documented (title prefix + label + research-question requirement) but the actual catch is the user at PR review time.
+- Added **tiny mode** (`mode: tiny`): 1–3 line user-requested fix; skips spec-walk + confidence verdict + /simplify + /staff-review + /ship synthesis. Documented as rare; bias toward the full loop.
+- Added **confidence gates** to the Plan step. Every load-bearing assumption gets HIGH/MEDIUM/LOW. Trigger: "would I plan a different feature if this assumption flipped?" LOW = automatic human gate (the assumption must be resolved by an explicit user answer before the plan can proceed). MEDIUM = proceeds but is surfaced at Present. The 5-PR revisit is baked in to revisit the trigger heuristics after real-world use.
+- Added **spec-walk-as-checkboxes** to required plan fields (designer's pattern): every numbered/bulleted requirement → a checkbox bound to a test or verification step.
+- Added **Preflight as its own step** between Execute and /simplify. Mechanical gates (typecheck/build/test + project invariants) must be green before /simplify runs. The bundled `tools/preflight/check.mjs` is referenced as "if present" since md-manager's preflight script is pending PR 2.
+- Added **three-layer continuous-improvement model**: user feedback (`feedback.md`) → agent self-feedback (failure-pattern memory at `~/.claude/projects/.../memory/feedback_*.md`) → preflight check. Each layer has its own bar and home; patterns promote across layers as they harden.
+- Added **five guardrails on agent memory** to prevent compounding agent slop (the prompt-level analog to model collapse from synthetic-data training):
+  1. **Source-diversity bar** — entry needs evidence from 2-of-3 sources (recurrence in time, two reviewers, or one review + user correction). Single-source findings don't qualify.
+  2. **Mechanical-check beats memory** — write a preflight rule when possible, not a memory entry.
+  3. **User feedback wins ties** — `feedback.md` rules trump memory entries on contradiction.
+  4. **Hard cap (~30 entries)** — enforced by `tools/memory/check.mjs`; over-cap blocks new writes until curation.
+  5. **Periodic audit (every 5 ship runs)** — fresh-context Explore agent reads only the memory entries and flags stale / contradictory / over-fit ones; counter implemented in `tools/memory/check.mjs --audit-due`.
+- Added **memory → preflight promotion is user-gated** (not automatic). When a memory entry's fire log reaches 2 entries, /ship files a `roadmap.md` follow-up; the user approves the permanent rule.
+- Updated `CLAUDE.md` cheat-sheet to match the canonical workflow numbering. Added hard rules: spec-walk + confidence verdict required in plans; agent self-feedback captured at /ship.
+- Updated `.claude/rules/plan-discipline.md` with required plan fields (mode, spec-walk, confidence verdict per assumption) and the LOW=human-gate behavior.
+- Updated `.claude/skills/ship/SKILL.md` step 3 — split into 3a (user feedback synthesis to feedback.md) and 3b (agent self-feedback to memory). 3b enforces all five guardrails as sub-steps i–vi.
+- New `tools/memory/check.mjs` — corpus health check + audit-due counter. Resolves the canonical harness memory directory by scoring candidate project dirs (downranks Conductor-workspace paths, prefers dev-style paths) so memory entries written from any workspace land where the harness will auto-load them. Path-validates `MEMORY_DIR` env var and `.memory-dir` file content (defense-in-depth) — must resolve under `~/.claude/projects/`.
+
+**Why:**
+A prior comparison session evaluating md-manager's outer workflow envelope (PR-opens-last, /ship-owns-docs, /simplify-before-staff-review) against Designer's inner rigor (preflight, spec-walk, failure-pattern memory) identified the **merge of both** as the next-highest-leverage workflow improvement. For autonomous coding specifically: fewer human checkpoints means the agent has to catch its own recurring patterns; without self-feedback memory the agent re-makes the same mistake every session and there's no compounding. With the five guardrails, compounding favors quality rather than degradation.
+
+**Design decisions:**
+- **Single canonical doc, manually copied to both repos** (no sync script). Drift risk is real but the cost of a sync mechanism isn't earned yet — defer until PR 3 (designer port) actually hits friction. (FB-0021 pattern: automation before structure.)
+- **Spike mode as a single boolean opt-out, not a tier system.** Two states (default heavy, explicit spike) maps to a real distinction; three tiers ("spike / quick-fix / feature") creates a path of least resistance that quietly degrades the codebase.
+- **LOW confidence is a hard gate, not advisory.** The whole point is to prevent silent assumption-flipping mid-execution; a soft gate would be ignored. The user must explicitly answer the question (which then upgrades the assumption to HIGH or MEDIUM).
+- **Confidence trigger ("would I plan a different feature if this flipped?") is fuzzy by design.** Pre-committed 5-PR revisit baked into the doc rather than over-engineering the rule now.
+- **Memory → preflight promotion is user-gated, not automatic.** Preflight rules are permanent and a bad one catches false positives forever. The user owns the one-way door.
+- **Agent self-feedback at /ship, not staff-review.** Synthesis happens once at the end, after all reviews. Avoids fragmentary memory entries written mid-pipeline.
+
+**Technical decisions:**
+- **Memory directory resolution heuristic** — Conductor workspaces produce a different cwd than the canonical project path, so `~/.claude/projects/` slugs differ. Script scores candidates: prefers `-dev-` / `-Desktop-coding-` paths, downranks `-conductor-workspaces-` paths, falls back to cwd-derived only as last resort. Override via `MEMORY_DIR` env var or gitignored `.memory-dir` file.
+- **Path validation on memory dir** — defense-in-depth even though writes go only to a hardcoded auditMarker (not to memoryDir). Reviewer's specific exploit (`/etc/passwd.last-audit`) was wrong but the underlying concern was valid.
+- **`tools/memory/.last-audit` lives in-repo (gitignored)** rather than in memoryDir. Counter is per-checkout, not per-corpus.
+- **/critique-plan softened to advisory.** It's an external plugin (assumption-auditor); we can't enforce its behavior. The workflow's actual enforcement is the human gate.
+
+**Tradeoffs discussed:**
+- **One canonical doc copied vs sync script** — copied wins for now; cost of drift < cost of sync infra at this stage.
+- **Bundled PR vs split** — kept as one PR (workflow.md + CLAUDE.md + plan-discipline + /ship + /ship-spike + memory tooling) because they're tightly coupled. Splitting would create awkward partial-state intermediate PRs.
+- **Spike-mode strict opt-in vs sensible default** — strict opt-in keeps default expensive, prevents quality drift via shortcut paths.
+- **Hard cap of 30** — arbitrary number; tunable. Picked low to force curation pressure early.
+- **Audit interval 5 ship runs** — also arbitrary. Counts ship invocations not PRs (multiple ships on one PR during iteration each count). Documented this distinction.
+- **Reviewer-flagged "BLOCKER" was a NIT after spot-check** — the security reviewer claimed `/etc/passwd.last-audit` write surface, but auditMarker is hardcoded to the script's own dir. Real risk was directory-listing information disclosure on misconfig. Applied the path-validation fix as defense-in-depth (cheap + correct) but flagged in the response that the reviewer's specific exploit was wrong. Carries the standing rule: "Reviewers can be confidently wrong; spot-check before fixing."
+
+**Lessons learned:**
+- **The user's audit-before-ship instinct is valuable.** Asking for a self-audit pass before /ship caught 4 BLOCKERs (numbering inconsistency, memory-path mismatch, missing preflight script, off-by-one) and 6 NITs that would have shipped otherwise. Captured as FB-0025 — workflow-infra changes warrant explicit self-audit before /ship.
+- **Anticipate feedback-loop failure modes proactively.** When proposing the agent self-feedback primitive, I missed the model-collapse / process-ossification risk; the user surfaced it. Captured as FB-0026 — for any new compounding mechanism, surface the failure mode before the user has to ask.
+- **`spike` and `tiny` modes are likely under-used initially.** Bias toward full loop is appropriate; we'll learn over time which work genuinely benefits from the cheap path.
+- **Conductor workspaces break naive path-derivation.** Anything that needs to reach into harness-canonical paths (memory, settings, hook outputs) needs an override mechanism. Worth remembering for any future tool that bridges workspace and harness state.
+
+---
+
+### Color rail: portfolio-derived presets at 25% intensity
+**Date:** 2026-05-15
+**Branch:** color-rail-presets
+**Commit / PR:** `9295d93..[this ship commit]` (2 commits) → [PR pending push]
+
+**What was done:**
+- Replaced the 7 ad-hoc color-rail presets (Peach / Sun / Mint / Sky / Lavender / Blush / Sand) with 5 hues sourced from the portfolio repo's theme accents (`~/dev/portfolio`), each evaluated at the portfolio's intensity slider `t=0.25` in light mode using the portfolio's own `computeBg` formula: `satMult = 1 + 1.8 * t`, `lightShift = -10 * t` (light), so `t=0.25 → satMult 1.45, lightShift -2.5`.
+- New presets (top → bottom): **Sand** `hsl(30, 25%, 88.5%)`, **Bone** `hsl(39, 22%, 89.5%)`, **Blush** `hsl(10, 44%, 93.5%)`, **Sage** `hsl(86, 26%, 90.5%)`, **Mist** `hsl(200, 33%, 92.5%)`. Labels are descriptive English color names so the portfolio's internal theme names (table / portrait / pizza / vineyard / sky) don't leak into this codebase; a comment in `ColorRail.tsx` keeps the portfolio reference visible for future maintainers.
+- Default `--page-tint` shifted from `hsl(30, 60%, 88%)` to `hsl(30, 25%, 88.5%)` (Sand — top of rail and the portfolio's default accent equivalent). Updated in both `src/styles/globals.css` and `src/store.tsx` so the new-user default and the CSS fallback match.
+- Roadmap: dark-mode "Later" entry expanded to name the portfolio's dark-mode bases as the concrete starting point for a future dark-mode rollout (the formula already covers it; we just need to wire up `data-theme` switching and per-tint text-color regeneration).
+
+**Why:**
+- The user wanted the app to feel like part of their personal-brand family — same color sensibility as the portfolio site. Borrowing the portfolio's accent hues at a fixed low intensity gives the cohesion without coupling: this app doesn't import portfolio code, doesn't track its updates, and remains free to evolve its own register independently. The portfolio's `computeBg` formula is a one-time evaluation, not a runtime dependency.
+- Going from 7 ad-hoc presets to 5 brand-derived ones also tightens the rail visually — 7 swatches felt like a sampler, 5 feels like a curated palette.
+
+**Design decisions:**
+- **5 presets, not 7.** The portfolio has exactly 5 themes; padding to 7 with un-themed hues would defeat the brand-cohesion intent. The rail's continuous HSL gradient is still available for any hue not in the preset set.
+- **Light-mode bases only.** Portfolio's `BG_BASE` has both light and dark; we sampled light because the app is light-only today. Dark-mode bases captured in roadmap as the starting point for a future dark-mode pass.
+- **`t = 0.25` (not 0.2 or 0.33).** User specified 25% explicitly. Portfolio's own default intensity is `0.2` (line 74 of `ThemeContext.tsx`), but per the user's call we use 0.25. Subtle difference; documented in code comment so future updates know which slider position the values correspond to.
+- **Reorder (Sand → Bone → Blush → Sage → Mist) is not pure hue-sort.** A strict hue sort would put Blush (10°) before Sand (30°), but the user wanted Sand first because it's the default. Bone (39°) follows because it's the closest hue family to Sand; Blush sits between the warm neutrals and the cool-spectrum tail. The order reads warm → green → cool, with the two warm neutrals leading.
+- **Descriptive English labels, not portfolio names.** User explicitly asked the portfolio's internal theme names not appear in this codebase. Labels picked to describe what users see (Sand for warm neutral, Bone for paler warm neutral, Blush for pink-tinted, Sage for olive-green, Mist for soft blue). Sky was avoided as a label even though Mist's hue matches portfolio's "Sky" — to keep all labels distinct from portfolio names and avoid the "Sky" overload.
+
+**Technical decisions:**
+- **Inline HSL strings in `PRESETS`, not a runtime evaluation of the portfolio's formula.** The values are constants; computing them at render time would just add a dependency on a formula that lives in a different repo. The code comment preserves the trail back to the source formula for any future re-derivation.
+- **Default page tint duplicated in `globals.css` + `store.tsx` + first `PRESETS` entry.** Acknowledged as DRY-fail; not factored into a shared constant in this PR because doing so meant either creating a new module just for one value or exporting from `ColorRail.tsx` (component file, awkward import surface for `store.tsx`). PR C Step 3 (tokens migration) rewrites this region anyway — better landing spot for the deduplication.
+- **`--page-tint-edge` left alone.** Pre-existing latent issue: the store hardcodes a warm-orange `hsla(30, 30%, 50%, 0.10)` edge color that doesn't follow the user's hue choice. Out of scope for this PR; logged for a future hue-aware-edge pass.
+
+**Tradeoffs discussed:**
+- **Sample 25% on the slider vs use the portfolio's own default (`0.2`).** Picked 25% per user direction. The portfolio defaults to 20% (a hair more muted); 25% gives slightly more chromatic presence. User chose for the app feel; not strictly tied to portfolio parity.
+- **Run staff-review or skip.** Skipped. The change had been live-tested visually before commit; the engineer lens was covered by the inline /simplify pass (which caught the store.tsx drift); the UX-designer lens had no surface beyond the live test; the design-engineer lens was thin because the values came from a deterministic formula, not from designer judgment. Honest call: full three-lens parallel-agent run would have been overhead with no expected signal.
+- **Open a parallel PR vs queue behind the rename PR (#17).** Parallel. Diffs don't overlap on lines, merge queue handles serialization. CLAUDE.md principle #6 ("small, ship-shaped changes") argues for shipping the visible product win now rather than batching for a single later PR.
+
+**Lessons learned:**
+- **Defaults can drift across surfaces.** `globals.css`, `store.tsx`, and `ColorRail.tsx` all held a "default page tint" value, and changing one without the others left the store overriding the CSS at runtime with the old peach. /simplify's quality lens caught it; a `grep -r "hsl(30, 60%, 88%)"` would have caught it earlier. **Project rule worth keeping in mind:** when changing a default that lives in multiple surfaces (theme tokens, store initial state, component constants), grep the old literal across the whole repo before declaring the change done.
+- **Borrowing values from another repo via formula evaluation is a clean coupling pattern.** Reading `~/dev/portfolio/src/contexts/ThemeContext.tsx`, evaluating its formula at a fixed input, and pasting the results inline as constants gives brand cohesion without dependency. Portfolio can update its formula tomorrow and this app doesn't break. Worth remembering for any future "match the sibling project" need. → FB-0028.
+
+---
+
+### PR C Step 3a — `--gray-a*` rename to `--tint-overlay-*`
 **Date:** 2026-05-15
 **Branch:** pr-c-gray-a-rename
 **Commit / PR:** `0b2d016..[this ship commit]` (4 commits) → [PR pending push]

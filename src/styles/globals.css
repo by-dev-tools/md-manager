@@ -61,7 +61,7 @@
   --nav-section-gap: 24px;
 
   /* User-set page color */
-  --page-tint: hsl(30, 60%, 88%);
+  --page-tint: hsl(30, 25%, 88.5%);
   --page-tint-edge: rgba(0, 0, 0, 0.06);
   --page-text: #21201c;
   --page-text-muted: #6e6c63;

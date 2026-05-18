@@ -33,6 +33,68 @@ Increment from the last entry. Use `FB-0001`, `FB-0002`, etc.
 
 ## Entries
 
+### FB-0030: Adapt skills from sister repos, don't vendor them
+**Date:** 2026-05-15
+**Source:** user direction
+
+**What was said:** While planning the heavyweight `/uncommon-care` skill (PR b, deferred), the user said: "I don't want to vendor skills — let's rewrite them specifically for md-manager's product and context." Designer has a `uncommon-care` skill at `~/dev/designer/.claude/skills/uncommon-care/SKILL.md` that ships with a structured `feedback/<date>-<slug>.md` ledger and references Designer-specific docs (`tensions.md`, `mini-gaps.md`, `decisions.md`). Vendoring that into md-manager would drag in conventions that don't apply (md-manager has no `tensions.md`; its equivalent of the feedback ledger is the `roadmap.md § Exploration` section + the `pattern-log.md` Mini contract artifact).
+
+**Synthesized rule:** When importing a skill, agent, or rule pattern from a sister project (Designer, trio, ui-playground, etc.), **adapt it to this project's conventions rather than vendoring it verbatim**. The adaptation should: (a) re-read the source skill's intent and structure, (b) identify the project-specific surfaces it references that don't exist here, (c) map them to this project's equivalents (or remove the references if no equivalent exists), (d) re-test the prompt with this project's context in mind. Vendoring is appropriate only for tightly-versioned upstream infrastructure (e.g., Mini's `packages/ui/`, which uses an explicit re-vendor mechanism via `sync-mini.sh`). For *skills* — which encode workflow assumptions specific to a project's docs and review loops — adapt every time. Captures the brand-cohesion-without-coupling pattern (sister to FB-0028's value-borrowing rule, applied to skills as well as values).
+
+**Applies to:** skill imports, agent imports, workflow rule borrowing across the project family.
+
+### FB-0029: Don't skip a /staff-review lens because a human gave a visual opinion or another lens ran
+**Date:** 2026-05-15
+**Source:** user correction
+
+**What was said:** Across three consecutive PRs (PR B, PR #17, PR #18), the assistant skipped one or more `/staff-review` lenses with reasoning like "live-tested by the user during iteration," "engineer lens already covered by /simplify," or "the change is tightly scoped, no design surface." The user pushed back directly: "agentic UX designer review should not be replaced by human review — the human can make final craft decisions, but just because they gave their opinion doesn't mean there shouldn't be an AI review." The same logic applies to "another lens ran" — `/simplify` and `/staff-review`'s engineer lens overlap on some surface (code-quality concerns) but cover distinct framings.
+
+**Synthesized rule:** `/staff-review` runs all four lenses (engineer / UX designer / design engineer / push-further) on every PR with substantive diff. **Skip a lens only when it genuinely doesn't apply** — e.g., a backend-only change has no design-engineer or push-further surface; a pure CSS rename has no engineer surface. In those cases, say so explicitly ("lens N/A because X") rather than running an empty agent. **The following are NOT legitimate skip reasons:** "human live-tested" (AI catches what humans miss and vice versa), "scope is tight" (the lens decides what's worth pushing, not the scope), "/simplify already ran" (different framings — code-quality vs architecture vs UX vs craft vs uncommon-care), or "the diff is small" (small diffs still benefit from the four distinct lenses). The push-further lens's `Empty is valid and often correct` escape exists precisely so an honest empty pass beats a fake skip — use it.
+
+**Applies to:** /staff-review invocations, workflow discipline, the loop's non-negotiable steps.
+
+### FB-0028: Borrow values from a sibling repo via formula evaluation, not import
+**Date:** 2026-05-15
+**Source:** user direction
+
+**What was said:** User asked for the md-manager color rail presets to match the portfolio repo's theme colors "at 25% on the intensity slider." Implementation: read the portfolio's `computeBg` formula from `~/dev/portfolio/src/contexts/ThemeContext.tsx`, evaluate it at `t=0.25` against each accent's base HSL, paste the five resulting HSL strings inline as constants in `src/components/ColorRail.tsx`. The portfolio is not imported, not symlinked, not a dependency — only the formula and the inputs are borrowed, the outputs are baked in.
+
+**Synthesized rule:** When you want cohesion with a sibling repo (shared brand colors, shared spacing rhythm, shared typography choices) without coupling, **evaluate the sibling's formula at a fixed input and paste the result as a constant in the consuming repo**. This gives brand parity without making the consuming repo depend on the sibling's lifecycle — the sibling can update its formula tomorrow and the consumer doesn't break. Document the source trail in a code comment (file path + slider position + formula one-liner) so a future maintainer knows how to re-derive if the sibling's intent changes. Avoid the alternative anti-patterns: importing the sibling's TS (creates a runtime dependency), publishing the values to an npm package (creates versioning friction), or re-typing the values without a source comment (loses the trail).
+
+**Applies to:** sibling-app cohesion, design tokens, shared color/spacing/type values across the family.
+
+### FB-0027: Grep the old literal across the whole repo before declaring a default change done
+**Date:** 2026-05-15
+**Source:** review feedback
+
+**What was said:** During the color-rail preset change, the new default `--page-tint` was updated in `src/styles/globals.css` and `src/components/ColorRail.tsx`, but `src/store.tsx` line 41 still held the old hardcoded value as the store's initial state. Since the store overrides the CSS default at runtime via `document.documentElement.style.setProperty`, new users would have seen the old peach tint until they picked a preset — the visible default would not have matched the documented default. /simplify caught it; a pre-commit `grep -r 'hsl(30, 60%, 88%)'` would have caught it sooner.
+
+**Synthesized rule:** When changing a "default" value that conceptually has a single canonical answer but mechanically lives in multiple surfaces — CSS custom property, TypeScript store/state initializers, component-level constants, manifest entries — **grep the old literal across the entire repo before declaring the change done**. Specifically for md-manager's page-tint family: `globals.css` (`--page-tint` CSS var), `store.tsx` (runtime override on app init), `ColorRail.tsx` (preset list). For any token like this, the grep pass takes ~5 seconds and catches drift that a single-file edit would miss. Generalizes to any value that conceptually has one source of truth but is duplicated across persistence/state/UI layers.
+
+**Applies to:** any default-value change, refactor of token-shaped constants, anything where "the canonical value" is duplicated across the layers (CSS / TS state / component literals).
+
+### FB-0026: Surface failure modes proactively when proposing a feedback-loop primitive
+**Date:** 2026-05-15
+**Source:** user direction
+
+**What was said:** While building agent self-feedback memory into the workflow, the user asked: "are there any checks that we should add with the self-feedback additions to prevent compounding ai slop? does this relate to the danger of the concept of ai training on its own data and getting further and further from reality over time?" The assistant had proposed the primitive without surfacing the model-collapse / process-ossification risk; the user had to ask. The right shape would have been to flag the risk and propose mitigations as part of the original proposal, not in response to a follow-up.
+
+**Synthesized rule:** When proposing a primitive that creates a feedback loop (memory entries, learned heuristics, auto-promoted rules, anything where today's output shapes tomorrow's input), surface the failure mode and propose guardrails as part of the original proposal — don't wait for the user to ask. The rule generalizes beyond memory: any compounding mechanism (auto-applied lint suggestions from past PRs, learned formatting preferences, accumulated codegen templates) carries the same risk shape. The questions to pre-answer: (1) how does this compound? (2) what's the failure direction if it compounds badly? (3) what bounds it? The answer doesn't need to be perfect mitigations on day one — just naming the failure mode earns the user's trust that the primitive isn't naive.
+
+**Applies to:** workflow design, memory/feedback systems, any auto-learning mechanism, scoping discussions.
+
+### FB-0025: Self-audit pass on workflow-infra changes before /ship
+**Date:** 2026-05-15
+**Source:** user direction
+
+**What was said:** Before shipping the workflow-unification PR, the user said: "review PR1 for any logical errors or oversights, then we will ship it and start PR 2." The audit caught 4 BLOCKERs (numbering inconsistency between workflow.md and CLAUDE.md, memory script defaulting to wrong harness path on Conductor workspaces, preflight script referenced but doesn't exist yet, off-by-one in plan-discipline.md) and 6 NITs that would have shipped if /ship had run directly. The audit took ~10 minutes; recovering from a stale or incoherent workflow rule across both repos would have taken much longer.
+
+**Synthesized rule:** Workflow-infrastructure changes (edits to `core-docs/workflow.md`, `CLAUDE.md`, `.claude/rules/*`, `.claude/skills/*`, `tools/preflight/*`, `tools/memory/*`) get an explicit self-audit pass before /ship — distinct from /staff-review. The audit looks specifically for: cross-file numbering / step-reference consistency, dead references to files that don't exist yet, internal contradictions across CLAUDE.md / workflow.md / rules / skills, brittle path assumptions, "aspirational" enforcement claims that no actual code enforces. The asymmetric cost justifies the explicit gate: a stale workflow rule taxes every future PR; a 10-minute audit prevents that. Add this as a step in /ship for workflow-infra PRs, OR codify it as an anti-pattern reminder ("don't ship workflow infra without a coherence pass").
+
+**Specific cross-file checks worth running explicitly:** When a workflow concept changes (a new mode, a new step number, a renamed primitive, a new required field), grep ALL of these files for references that may have gone stale: `CLAUDE.md`, `core-docs/workflow.md`, every `.claude/rules/*.md`, every `.claude/skills/*/SKILL.md`. A coherence audit on PR 1 caught that `.claude/rules/general.md` was still saying "3–5 line plan" after the new workflow required spec-walk + confidence verdict — a contradiction that would have actively misled every future session. The auto-loading rule files are the easiest to miss and the most damaging when stale.
+
+**Applies to:** workflow, scoping decisions, /ship pipeline for infra PRs.
+
 ### FB-0024: Audits read source files end-to-end, not just grep
 **Date:** 2026-05-15
 **Source:** review feedback
@@ -192,9 +254,9 @@ The hairline reads as "below this line is loose, not in the repo," reinforcing F
 **Date:** 2026-05-13
 **Source:** user direction (staff-review demonstration on PR #2)
 
-**What was said:** The user asked for a multi-perspective review on the PR's full diff. The three independent reviews (engineer, UX, design engineer) running in parallel turned up bug classes none of the three would have caught alone — the engineer found the snapshot/race issues + lifecycle bugs, the UX designer caught the silent-URL-rejection false affordance + keyboard nav holes, the design engineer caught the missing type-scale token. After fixes the user then asked for the final ship-pass (security + a11y) on top.
+**What was said:** The user asked for a multi-perspective review on the PR's full diff. The independent reviews (engineer, UX, design engineer — and as of `push-further-lens`, a fourth push-further lens) running in parallel turned up bug classes none alone would have caught — the engineer found the snapshot/race issues + lifecycle bugs, the UX designer caught the silent-URL-rejection false affordance + keyboard nav holes, the design engineer caught the missing type-scale token. After fixes the user then asked for the final ship-pass (security + a11y) on top.
 
-**Synthesized rule:** Default to the three-lens parallel staff-review for any non-trivial workstream — single-lens reviews systematically miss issues outside the reviewer's primary frame. Run the three reviews concurrently (one tool message, three `Agent` calls) so each is independent and their findings triangulate. `/ship`'s final-pass security + a11y review is additive, not a replacement.
+**Synthesized rule:** Default to the **four-lens** parallel staff-review for any non-trivial workstream — single-lens reviews systematically miss issues outside the reviewer's primary frame. The first three (engineer / UX designer / design engineer) ask "is this good?"; the fourth (push-further) asks "could this go further?" and routes findings to inline-cheap fixes, scoped roadmap entries, or `roadmap.md § Exploration`. Run the four reviews concurrently (one tool message, four `Agent` calls) so each is independent and their findings triangulate. `/ship`'s final-pass security + a11y review is additive, not a replacement.
 
 **Applies to:** workflow, review discipline.
 

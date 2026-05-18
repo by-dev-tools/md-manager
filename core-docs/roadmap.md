@@ -10,7 +10,8 @@ Deferred follow-ups from `/staff-review` and `/ship` land here when they're real
 
 Work that's actively being designed or about to start.
 
-- **Mini adoption — PR C: Token + component migration.** PR A (install) and PR B (axioms + manifest + logs + CLAUDE.md) shipped. PR C migrates tokens first, then Toast → Mini Toast archetype, then dialogs/popovers, then layout primitives. Each component is its own PR. Prerequisites captured under "From PR A staff review" below; constraints from PR B captured in `plan.md` "Active Work Items".
+- **Workflow unification — PR 2: Port preflight + failure-pattern memory.** PR 1 (canonical workflow + spike mode + confidence gates + memory tooling + 5 anti-slop guardrails) shipped on `unify-workflows`. PR 2 ports designer's preflight script (TS-only adaptation), implements `/ship-spike` runtime, and ports designer's memory entries through PR 1's source-diversity bar. See `plan.md` Active Work Items for the full scope.
+- **Mini adoption — PR C: Token + component migration (paused).** Resumes after PR 2 settles. PR A (install) and PR B (axioms + manifest + logs + CLAUDE.md) shipped. PR C migrates tokens first, then Toast → Mini Toast archetype, then dialogs/popovers, then layout primitives. Each component is its own PR. Prerequisites captured under "From PR A staff review" below; constraints from PR B captured in `plan.md` "Active Work Items".
 
 ## Next (the next 1–2 features after the current one)
 
@@ -18,6 +19,7 @@ Picked, scoped, ready to start once `Now` clears.
 
 | Workstream | Priority | Status | Notes |
 |---|---|---|---|
+| **Workflow unification — PR 3: designer-side port** | P0 | Scoped (separate workspace) | Copy the canonical `core-docs/workflow.md`, `/ship`, `/simplify`, `/ship-spike`, and `tools/memory/check.mjs` from md-manager into the designer repo. Preserve designer's Build/Harden cadence + ADR 0009 release-tag discipline as a layer ABOVE the per-PR loop, not inside it. Designer-specific adaptations: cargo gates in Preflight, Rust-aware invariants. Done in a designer Conductor workspace, not here. |
 | Persistence (drafts survive a reload) | P0 | Scoped | Pick localStorage vs IndexedDB vs FSA API. Open question in `spec.md`. First real feature after Mini settles. |
 | Repo-sync v0 (read-only) | P1 | Not scoped | Browse a local path's `.md` files. Decide between FS Access API (browser-only, no install) or a local helper. |
 | **Surface posture decision** | P2 (open axiom) | Dogfooded | Resolved into an explicit open axiom in PR B — both floating and flat continue to ship in the DevPanel. Resolution criteria are explicit: dogfooding signal, an archetype constraint surfaces during PR C, or an explicit user call. Promote out of "Next" only when one of those fires. |
@@ -30,10 +32,40 @@ Real intent, not yet ready to pick up.
 - **GitHub repo connections** — clone, read, write, commit via GitHub API or GitHub App
 - **Search** — across drafts + repo files; live filter in the sidebar
 - **Tags / frontmatter** — extract frontmatter; tag-based filtering
-- **Dark mode** — explicit design pass; currently light-only. May get pulled forward by Mini adoption (Mini requires light + dark parity).
+- **Dark mode** — explicit design pass; currently light-only. May get pulled forward by Mini adoption (Mini requires light + dark parity). **Concrete starting point now in place:** the color-rail presets are derived from the portfolio repo's `BG_BASE[<theme>].dark` values at the same `t=0.25` intensity, so a dark-mode rollout can mirror the portfolio's `data-theme="dark"` switch and produce dark-mode preset variants via the same formula. Per-tint text-color regeneration (today's `--sand-12` text would invert to a near-white) and a sensible default `--page-tint` for dark mode (probably the dark equivalent of Sand / table) are the open questions.
 - **Keyboard-shortcut help overlay** — `?` opens a cheat sheet
 - **Markdown rendering quality pass** — code blocks with syntax highlighting, task lists, tables
 - **Dev panel** (if surface tuning becomes ambiguous) — same pattern as Designer's SurfaceDevPanel
+
+## Exploration
+
+Open-ended directions surfaced by review (especially the `/staff-review` push-further lens) or curiosity. **Not planned work** — these become roadmap items when scoped, or get applied inline when working in the named area. Each carries a **Surfaces when:** trigger so future sessions encounter the right item at the right moment instead of having to scan the whole list.
+
+`.claude/rules/exploration.md` auto-loads on UI/code work and reminds the agent to grep this section for trigger matches before finishing.
+
+### Format
+
+```
+### <Area>
+- **<Headline>** — <one paragraph: what's there now, what could be pushed,
+  a concrete shape if one exists.> Surfaces when: <triggers, comma-separated>.
+  Cost: <small | medium | large>.
+```
+
+**Group by area** (Color rail, Sidebar, Markdown, Editor, etc.), not by date or priority. The area heading is the retrieval index.
+
+**`Surfaces when:` triggers** can mix three forms — combine them freely with commas; `.claude/rules/exploration.md` greps the section for matches:
+- **Exact file paths** — `src/components/ColorRail.tsx`, `src/store.tsx` — best for known surfaces; greppable verbatim.
+- **Path patterns** — `src/components/*.tsx`, `src/styles/**/*.css` — best for cross-cutting concerns.
+- **Conceptual areas or future surfaces** — `Settings page`, `onboarding flow`, `persistence layer` — best when the item should fire on work that hasn't been scaffolded yet. Use a noun phrase a future session would naturally name when starting the relevant work.
+
+Use the most specific form available. Conceptual triggers are looser — write them so a grep for the area name during related work will hit.
+
+### Color rail
+
+- **Per-tint edge color.** Today, `--page-tint-edge` is hardcoded to `hsla(30, 30%, 50%, 0.10)` in `src/store.tsx` — a warm-orange wash that doesn't follow the user's selected page tint. Visually subtle but real: when the user picks the Mist preset (hue 200), the page-edge wash still reads warm-orange, breaking the tint coherence. A function `edgeFor(hue)` already exists in `ColorRail.tsx` for the gradient marker; the same approach could derive the edge color from the active tint. Surfaces when: editing `src/components/ColorRail.tsx`, `src/store.tsx` page-tint handling, or `src/styles/globals.css` page-tint section. Cost: small.
+
+- **Color strip → Settings page; onboarding "pick your favorite color" step.** The color rail currently lives on the right edge of every page. Direction: relocate it to a Settings page (very visible when Settings is open, recedes everywhere else), and adapt it into an onboarding step ("Pick your favorite color") that sets the user's initial default preset. Reduces ambient chrome on the main writing surface; gives the personalization moment a deliberate location. Implies introducing a Settings surface and a first-run flow — substantive scope. Surfaces when: building a Settings page, building first-run / onboarding, redesigning the main-surface chrome, or anyone proposes "where should this control live." Cost: medium (new surface + relocation).
 
 ## Someday / maybe
 
@@ -60,6 +92,16 @@ Captured by `/staff-review` and `/ship` so they don't get lost.
 - **CLAUDE.md merge-strategy note.** Add a one-paragraph note to `CLAUDE.md` § "Where to look" or a new short § "Merge strategy" pointing out that the repo squash-merges PRs to keep `main` linear, and that intermediate branch commits live on the PR page. Cheap; deferred from `ci-setup`.
 - **Lint pattern: reject `github.event.pull_request.*.body` / `.title` interpolation in CI yaml.** Premature at one workflow file; revisit if the `.github/workflows/` set grows past 2-3 files. Captured by `/ship` security review on `ci-setup`.
 - **Document the subtle-feedback pattern in `design-language.md`.** Hover washes (8 sites), hairline dividers/borders, and code-block backgrounds all consume the `--tint-overlay-*` tokens. The design language mentions the tokens by name in the Color table but doesn't codify the *pattern* — a short § "Component guidelines → Subtle feedback" entry would teach future contributors when to reach for an overlay token vs `--sand-3` (which `Buttons` already calls out as the hover surface for the primary button). Captured by `/staff-review` on `pr-c-gray-a-rename`.
+
+### From PR 1 security review (workflow unification)
+
+- **Preflight rule: tool inputs that resolve to filesystem paths must be path-validated against an allow-list root.** Would have caught the unvalidated `MEMORY_DIR` / `.memory-dir` inputs in `tools/memory/check.mjs` before the security reviewer did (defense-in-depth fix already applied in PR 1; the rule is the mechanization). Belongs in `tools/preflight/check.mjs` once it lands in PR 2. Scope: any `tools/**/*.mjs` script that takes a path from env var or external file. Reject if `path.resolve(input)` doesn't startWith an allow-list prefix (cwd, `~/.claude/projects/`, `/tmp/`, etc.).
+
+### From PR 1 coherence audit (workflow unification)
+
+- **Extend confidence gates beyond Plan time.** PR 1 added HIGH/MEDIUM/LOW assumption confidence at the Plan step (workflow.md step 2). The user's original ask covered "plan/clarify and/or other stages" — only the first half landed. Future extensions: (a) **Execute-time scope gate** — when new scope is discovered mid-execution, currently judgment-based ("surface, don't silently absorb"). Could be enforced as a "new-scope assumption needs its own confidence verdict; LOW = stop and re-plan." (b) **Review-time BLOCKER triage gate** — /staff-review and /security-review BLOCKERs are currently fixed in-tree by the agent without explicit user signoff. Could add a "BLOCKER touches an architectural choice → human gate before fix" rule, parallel to LOW-confidence. Defer until we have enough real-PR data to know which gate would actually catch real issues vs add friction.
+- **`/ship` doc-synthesis audit after a Build phase that spans multiple PRs.** Currently each /ship synthesizes its own slice; over a multi-PR phase, history.md accumulates parallel entries that could be consolidated. Designer's Build/Harden cadence will surface this when we port to PR 3; revisit then.
+- **Memory-corpus health metrics.** Once memory entries accumulate (currently 0), add instrumentation: fire rate per entry, false-positive rate (entries fired but the prediction was wrong), promotion rate. Inform the 5-PR confidence-gate revisit and the hard-cap-of-30 calibration. Not needed at 0–3 entries; will matter at 20+.
 
 ### From Slices A+B staff review (PR #2)
 

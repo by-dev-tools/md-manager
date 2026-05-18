@@ -51,7 +51,7 @@ A two-pane app — sidebar + content surface — built on five constraints:
 ## Tech stack
 
 - **Platform:** Web app (modern browsers — Chrome / Safari / Firefox latest)
-- **Frontend:** React 18 + TypeScript + Vite 5
+- **Frontend:** React 18 + TypeScript + Vite 8
 - **Styling:** Vanilla CSS with CSS custom properties (no Tailwind, no UI lib)
 - **State:** `src/store.tsx` — local React state via custom hook (`useStore`)
 - **Data types:** `Draft`, `RepoFile`, `Repo` (see `src/types.ts`)

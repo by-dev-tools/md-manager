@@ -10,6 +10,7 @@ The living document for what's being worked on right now, what's queued, and wha
 
 ## Handoff Notes
 
+- **Flow plugin PR 1 + PR 2 shipped 2026-05-24 at `by-dev-tools/flow`.** PR 1 (v1.0.0, `f8610a1`, [flow#5](https://github.com/by-dev-tools/flow/pull/5)) restructured the repo into `plugins/flow/*`, renamed `llm-auditor`/`assumption-auditor` → `flow`, added `/flow:ship` + `plugins/flow/docs/workflow.md`. PR 2 (v1.1.0, `3409103`, [flow#7](https://github.com/by-dev-tools/flow/pull/7)) backfilled PR 1's `[PR 1 LIMITATION]` placeholders and ported the full workflow surface: `/flow:security-review`, `/flow:accessibility-review`, `/flow:staff-review` (4-lens parallel), `/flow:ship-spike`, `/flow:workflow-help`; planner + docs + 4 lens agents; 4 portable rules; memory tool; `flow.config.schema.json` (13 slots); default hooks. PR-1 FOLLOW-UPs addressed. Bootstrap exception fully lifted for downstream PRs. **Next at flow: PR 3 (template directory — `template/base/*` Tier-1+2 + `template/stacks/{web,swift,tauri-rust-ts}/*`).** **Next at md-manager: PR 4 (install flow alongside existing local skills, non-breaking Stage 1 of consumer migration) — starts only after flow PR 3 merges**, per `gh api repos/by-dev-tools/flow/contents/dev-docs/handoffs/md-manager-pr4-6-spec.md`. See flow's `dev-docs/history.md` for canonical PR 1 + PR 2 narrative; md-manager's `core-docs/history.md` has one-line breadcrumbs only.
 - **PR 0 (operational rename + cleanup) shipped 2026-05-23.** Actions executed: `by-dev-tools/llm-auditor` → `by-dev-tools/flow` (GitHub rename, redirect maintained), local `~/dev/llm-auditor` → `~/dev/flow`, `~/.claude/settings.json` URL updated (marketplace key stays "llm-auditor" until PR 1 lands the internal marketplace.json + plugin.json renames), plugin cache cleared, two stale conductor worktrees removed (`guangzhou-v3`, `warsaw-v1`), `byamron/project-template#1` CLOSED without merge with explanatory comment. Settings.json backup at `~/.claude/settings.json.bak.20260523-144832`. Flow checkout synced (was 5 commits behind origin/main).
 - **Flow plugin architecture decisions (2026-05-23, consolidating two parallel planning streams).** Plugin host: `by-dev-tools/flow` (the renamed llm-auditor). Plugin name: `flow`. Bundled scope: `flow` absorbs the audit/critique skills (`critique-plan`, `audit-plan`, `audit-completion`) + agents (`auditor`, `plan-critic`) that already existed in llm-auditor, plus adds workflow skills (`ship`, `staff-review`, `security-review`, `accessibility-review`, `ship-spike`, `workflow-help`). `/simplify` is a Claude Code bundled native skill — flow references it in `workflow.md` (annotated as "(bundled with Claude Code)") and does NOT duplicate it. Slash command convention: `/flow:ship`, `/flow:critique-plan`, etc. (Claude Code namespaces plugin skills automatically). Migration of md-manager is staged across PRs 4-6 to never break working state. See `core-docs/handoffs/flow-plugin-consolidation-2026-05-23.md` for the full decision rationale (with 2026-05-24 superseded headers for the two architecture revisions: rename-host + bundling).
 - **Pattaya-v1 conductor workspace closed.** Its planning content (`project-template.md`, `pr1-flow-plugin-init.md`, `flow-plugin-consolidation-2026-05-23.md`) was consolidated into this worktree on 2026-05-24 with superseded headers noting the architectural revisions. The branch `extract-project-structure-doc` can be abandoned.
@@ -35,6 +36,54 @@ The living document for what's being worked on right now, what's queued, and wha
 - Persistence, repo sync, and search remain unresolved; see "Open questions" in `spec.md`. These come after Mini adoption settles.
 
 ## Active Work Items
+
+### Flow plugin extraction — umbrella close-out through PR 2 (docs-only, current)
+
+**Mode:** feature
+**Goal:** Close out md-manager's umbrella tracking of the Flow plugin extraction through PR 2. PR 1 (flow v1.0.0, `f8610a1`, [flow#5](https://github.com/by-dev-tools/flow/pull/5)) and PR 2 (flow v1.1.0, `3409103`, [flow#7](https://github.com/by-dev-tools/flow/pull/7)) both shipped 2026-05-24 in the flow repo. md-manager's umbrella plan was authored before those merges and still tracks them as pending. This is a docs-only update to reflect what shipped, route the next-step pointer at flow PR 3, and add breadcrumbs so future sessions can find the canonical narrative in flow's `dev-docs/history.md` without re-deriving it.
+
+**Scope (in):**
+- Check off every PR 1 + PR 2 spec-walk checkbox in the umbrella tracker. Add the SHA + PR-link headers under PR 1 and PR 2.
+- Update "Handoff Notes": PR 1 + PR 2 shipped at flow; flow PR 3 (template directory) is next; md-manager PR 4 starts only after flow PR 3 merges.
+- Add two breadcrumb entries to `core-docs/history.md` pointing at flow's canonical narrative (PR 1 entry + PR 2 entry).
+- Add one synthesized `core-docs/feedback.md` entry (FB-0031) capturing the portable half of flow's FB-0001 (dogfood the workflow even when the named skills don't exist yet).
+
+**Scope (out):**
+- Any code changes to `src/`, `.claude/skills/`, `.claude/agents/`, `.claude/rules/`, `tools/`, or any non-docs file. md-manager's actual consumer migration is PRs 4–6 in separate sessions.
+- Re-writing the umbrella PR 1 / PR 2 sections from scratch. The spec-walk and confidence verdicts authored pre-merge stand as historical record; we just flip checkboxes and add headers.
+- Writing the PR-2 brief the original plan said was owed. PR 2 shipped without the brief; the brief is no longer needed.
+- Touching the Post-extraction roadmap section — unchanged by the PR 1 + PR 2 ships.
+
+**Spec-walk checkboxes:**
+- [ ] PR 1 spec-walk checkboxes all checked, with `f8610a1` + [flow#5](https://github.com/by-dev-tools/flow/pull/5) at the section header.
+- [ ] PR 2 spec-walk checkboxes all checked, with `3409103` + [flow#7](https://github.com/by-dev-tools/flow/pull/7) at the section header.
+- [ ] "Handoff Notes" has a new bullet recording PR 1 + PR 2 shipped status, next pointer = flow PR 3, md-manager PR 4 sequencing dependency.
+- [ ] `core-docs/history.md` has two new breadcrumb entries (PR 1 + PR 2). Each cross-links flow's `dev-docs/history.md` as source-of-truth.
+- [ ] `core-docs/feedback.md` has a new FB-0031 entry synthesizing the portable principle from flow's FB-0001.
+- [ ] Manual cold-read of full diff: no code-shaped files touched.
+- [ ] Preflight green: `npm run typecheck && npm run build && npm run test`.
+
+**Confidence verdicts:**
+
+**Assumption:** PR 1 + PR 2 spec-walks as authored pre-merge match what actually shipped, modulo small in-session deviations that are documented in flow's `dev-docs/history.md` and don't change the umbrella's checkbox state.
+**Confidence:** HIGH
+**Why:** Flow's history entries for both PRs explicitly enumerate what shipped; spot-checking the spec-walk items (PR 2's schema, memory tool, placeholder backfill) all appear in flow's history as done.
+**If it flips:** A specific checkbox doesn't have a real deliverable in flow. Strike it through with a one-line note pointing at flow's history for why it was skipped or absorbed.
+
+**Assumption:** Flow's FB-0001 generalizes to md-manager beyond just the plugin-extraction context — i.e. it's a portable feedback entry, not a flow-only one.
+**Confidence:** MEDIUM
+**Why:** The underlying principle is project-agnostic. But md-manager's `feedback.md` historically captures md-manager-specific corrections; importing a flow-discovered principle is novel.
+**If it flips:** Skip the FB entry. PR 1 + PR 2 close-out doesn't depend on it.
+
+**Risks / open questions:**
+- The umbrella's `**Workflow unification — PR 2** (SUPERSEDED)` section is unchanged by this work — it remains superseded.
+
+**Files touched (anticipated):**
+- `core-docs/plan.md` (Active Work Items: checkbox flips + Handoff Notes update + this work item)
+- `core-docs/history.md` (two new breadcrumb entries at top)
+- `core-docs/feedback.md` (one FB-0031 entry)
+
+---
 
 ### Flow plugin extraction (current — multi-PR umbrella)
 
@@ -71,37 +120,37 @@ The living document for what's being worked on right now, what's queued, and wha
 - [x] Two stale conductor worktrees removed (`guangzhou-v3`, `warsaw-v1`)
 - [x] Local flow checkout synced (was 5 commits behind; now at 8857ebd)
 
-**PR 1 — `by-dev-tools/flow`: restructure + initial workflow surface**
-- [ ] Pre-restructure tag (`pre-flow-plugin` already exists from prior work) verified
-- [ ] Restructure: move existing root content (`skills/`, `agents/`, `scripts/`, `evals/`, `DISAGREE.md`) into `plugins/flow/*`
-- [ ] Update `.claude-plugin/marketplace.json`: name "llm-auditor" → "flow", plugin name "assumption-auditor" → "flow", homepage/repository URLs to by-dev-tools/flow
-- [ ] Update `.claude-plugin/plugin.json`: name → "flow", version → "1.0.0", description updated to reflect expanded scope
-- [ ] Add `plugins/flow/skills/ship/SKILL.md` — port from md-manager's `.claude/skills/ship` per the /ship port table (Step 3a/3b split; placeholders for security+a11y reviews until PR 2; loud warning for unset typecheckCmd; default-branch discovery; config-slot doc paths)
-- [ ] Add `plugins/flow/docs/workflow.md` — port from md-manager's `core-docs/workflow.md`, de-projected; annotate `/simplify` as "(bundled with Claude Code)"; document `flow.config.json` slot table
-- [ ] Restructure existing `core-docs/` (flow's own dev-tracking) → `dev-docs/` per the convention; ensure consumer-vs-plugin distinction is clear
-- [ ] Update README.md for flow plugin identity; include History section pointing at `pre-flow-plugin` tag for archeology
-- [ ] Second `~/.claude/settings.json` update: `enabledPlugins.assumption-auditor@llm-auditor` → `flow@flow`; marketplace key `llm-auditor` → `flow`
-- [ ] Workflow.md annotations: `/critique-plan`, `/audit-plan`, `/audit-completion` are now flow-internal (not external assumption-auditor plugin)
-- [ ] Manual cold-read of full diff (the plugin's own `/simplify` and `/staff-review` don't exist yet — bootstrap exception)
-- [ ] Verification: `claude plugin validate .` passes; marketplace.json + plugin.json parse with jq; install in `/tmp/flow-smoke` and confirm `/help` lists `flow:ship`, `flow:critique-plan`, etc.
+**PR 1 — `by-dev-tools/flow`: restructure + initial workflow surface (SHIPPED 2026-05-24, `f8610a1`, [flow#5](https://github.com/by-dev-tools/flow/pull/5))**
+- [x] Pre-restructure tag (`pre-flow-plugin` already exists from prior work) verified
+- [x] Restructure: move existing root content (`skills/`, `agents/`, `scripts/`, `evals/`, `DISAGREE.md`) into `plugins/flow/*`
+- [x] Update `.claude-plugin/marketplace.json`: name "llm-auditor" → "flow", plugin name "assumption-auditor" → "flow", homepage/repository URLs to by-dev-tools/flow
+- [x] Update `.claude-plugin/plugin.json`: name → "flow", version → "1.0.0", description updated to reflect expanded scope
+- [x] Add `plugins/flow/skills/ship/SKILL.md` — port from md-manager's `.claude/skills/ship` per the /ship port table (Step 3a/3b split; placeholders for security+a11y reviews until PR 2; loud warning for unset typecheckCmd; default-branch discovery; config-slot doc paths)
+- [x] Add `plugins/flow/docs/workflow.md` — port from md-manager's `core-docs/workflow.md`, de-projected; annotate `/simplify` as "(bundled with Claude Code)"; document `flow.config.json` slot table
+- [x] Restructure existing `core-docs/` (flow's own dev-tracking) → `dev-docs/` per the convention; ensure consumer-vs-plugin distinction is clear
+- [x] Update README.md for flow plugin identity; include History section pointing at `pre-flow-plugin` tag for archeology
+- [x] Second `~/.claude/settings.json` update: `enabledPlugins.assumption-auditor@llm-auditor` → `flow@flow`; marketplace key `llm-auditor` → `flow`
+- [x] Workflow.md annotations: `/critique-plan`, `/audit-plan`, `/audit-completion` are now flow-internal (not external assumption-auditor plugin)
+- [x] Manual cold-read of full diff (the plugin's own `/simplify` and `/staff-review` don't exist yet — bootstrap exception)
+- [x] Verification: `claude plugin validate .` passes; marketplace.json + plugin.json parse with jq; install in `/tmp/flow-smoke` and confirm `/help` lists `flow:ship`, `flow:critique-plan`, etc.
 
-**PR 2 — `by-dev-tools/flow`: rest of plugin + config schema**
-- [ ] Port remaining workflow skills: `/flow:staff-review` (with four-lens orchestration intact), `/flow:security-review`, `/flow:accessibility-review`, `/flow:ship-spike`
-- [ ] Add `/flow:workflow-help` skill that prints the loop on demand
-- [ ] Port agents: `planner`, `docs`. Refactor to read paths from `flow.config.json` rather than hardcoding `core-docs/`
-- [ ] Add the 4 staff-review lens agents: `staff-engineer.md`, `ux-designer.md`, `design-engineer.md`, `push-further.md` (`uncommon-care.md` lens optional, gated by flow.config.json `review_lenses`)
-- [ ] Port portable rules: `general.md`, `plan-discipline.md`, `documentation.md`, `exploration.md`. Strip md-manager-specific references; use config-slot syntax
-- [ ] Port `tools/memory/check.mjs` (cap + audit-due — already generic)
-- [ ] Define `plugins/flow/schema/flow.config.schema.json` — JSON Schema for the project config. Document every slot. Omit `$schema` URL reference per Anthropic's convention
-- [ ] Default-fallback table documented in `docs/workflow.md`: which slots have defaults, what they default to, what happens if missing
-- [ ] Optional `plugins/flow/hooks/` with a UserPromptSubmit reminder hook (tier-3 deterministic enforcement, opt-in via template's settings example in PR 3)
-- [ ] Backfill PR 1's `/flow:ship` placeholders: wire up `/flow:security-review` + `/flow:accessibility-review` invocations and the memory machinery
-- [ ] Add path-validation hook in `hooks/default-hooks.json` (the rule that would have caught the prior `tools/memory/check.mjs` finding)
-- [ ] Archive `by-dev-tools/llm-auditor` URL — repo's already renamed; just close it as a separate entity in any internal docs. (The rename redirect remains in place forever.)
-- [ ] Verification: install updated plugin; smoke-test `/flow:staff-review` against a sample diff in an empty project (no `core-docs/`) — confirm graceful degradation
-- [ ] Watch list during port: don't re-port other Claude-bundled skills (`/batch`, `/debug`, `/loop`, `/claude-api`)
-- [ ] Verify `/flow:staff-review` parallel agent spawning works inside plugin context (vs md-manager's local Task-based spawning)
-- [ ] Verify `tools/memory/check.mjs` canonical-path derivation handles plugin-at-user-scope vs consumer-at-project-scope correctly
+**PR 2 — `by-dev-tools/flow`: rest of plugin + config schema (SHIPPED 2026-05-24, `3409103`, [flow#7](https://github.com/by-dev-tools/flow/pull/7))**
+- [x] Port remaining workflow skills: `/flow:staff-review` (with four-lens orchestration intact), `/flow:security-review`, `/flow:accessibility-review`, `/flow:ship-spike`
+- [x] Add `/flow:workflow-help` skill that prints the loop on demand
+- [x] Port agents: `planner`, `docs`. Refactor to read paths from `flow.config.json` rather than hardcoding `core-docs/`
+- [x] Add the 4 staff-review lens agents: `staff-engineer.md`, `ux-designer.md`, `design-engineer.md`, `push-further.md` (`uncommon-care.md` lens optional, gated by flow.config.json `review_lenses`)
+- [x] Port portable rules: `general.md`, `plan-discipline.md`, `documentation.md`, `exploration.md`. Strip md-manager-specific references; use config-slot syntax
+- [x] Port `tools/memory/check.mjs` (cap + audit-due — already generic)
+- [x] Define `plugins/flow/schema/flow.config.schema.json` — JSON Schema for the project config. Document every slot. Omit `$schema` URL reference per Anthropic's convention
+- [x] Default-fallback table documented in `docs/workflow.md`: which slots have defaults, what they default to, what happens if missing
+- [x] Optional `plugins/flow/hooks/` with a UserPromptSubmit reminder hook (tier-3 deterministic enforcement, opt-in via template's settings example in PR 3)
+- [x] Backfill PR 1's `/flow:ship` placeholders: wire up `/flow:security-review` + `/flow:accessibility-review` invocations and the memory machinery
+- [x] Add path-validation hook in `hooks/default-hooks.json` (the rule that would have caught the prior `tools/memory/check.mjs` finding)
+- [x] Archive `by-dev-tools/llm-auditor` URL — repo's already renamed; just close it as a separate entity in any internal docs. (The rename redirect remains in place forever.)
+- [x] Verification: install updated plugin; smoke-test `/flow:staff-review` against a sample diff in an empty project (no `core-docs/`) — confirm graceful degradation
+- [x] Watch list during port: don't re-port other Claude-bundled skills (`/batch`, `/debug`, `/loop`, `/claude-api`)
+- [x] Verify `/flow:staff-review` parallel agent spawning works inside plugin context (vs md-manager's local Task-based spawning)
+- [x] Verify `tools/memory/check.mjs` canonical-path derivation handles plugin-at-user-scope vs consumer-at-project-scope correctly
 
 **PR 3 — `by-dev-tools/flow`: template directory + bootstrap docs**
 - [ ] `template/base/CLAUDE.md.template` — minimal 5-10 line stub with `{{PROJECT_NAME}}`, `{{STACK}}`, `{{SAFETY_PATHS}}` placeholders

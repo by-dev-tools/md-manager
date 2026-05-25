@@ -12,5 +12,5 @@
   "reviewLenses": ["staff-engineer", "ux-designer", "design-engineer", "push-further"],
   "memoryHardCap": 30,
   "branchPrefix": "claude/",
-  "$comment-rustWorkspaceDir-omitted": "md-manager is a web stack; rustWorkspaceDir is Tauri/Rust-only per schema. Omission is intentional, not oversight."
+  "$comment-rustWorkspaceDir-omitted": "Web stack — Tauri/Rust-only per schema. Intentional."
 }

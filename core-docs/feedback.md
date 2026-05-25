@@ -33,6 +33,23 @@ Increment from the last entry. Use `FB-0001`, `FB-0002`, etc.
 
 ## Entries
 
+### FB-0033: Don't skip /critique-plan or /simplify, even on docs-only diffs
+**Date:** 2026-05-25
+**Source:** user correction (user asked "did PR 23 go through the review process from workflow.md?" — surfacing that both steps had been skipped during PR 4 of the flow plugin migration)
+
+**What was said:** PR #23 shipped via `/flow:ship` without `/critique-plan` (step 2 sub-step) or `/simplify` (step 6) running. The skip was implicit — neither this session nor the sibling explicitly justified it; the plausible defense ("docs+config diff has nothing for these to surface") never appeared in writing. Retro-running both after the PR opened produced a REDIRECT verdict on the plan (missing "base is current with main" load-bearing assumption — root cause of the stale-base BLOCKER that `/flow:staff-review` burned 4 lens spawns to discover) and a NIT-ONLY verdict on the diff (4 small polish items, 3 landed as a follow-up commit). Both findings were real, not theater.
+
+**Synthesized rule:** Run `/critique-plan` and `/simplify` (or their `/flow:*` equivalents) per the canonical 11-step loop on every PR, including docs-only. The minute cost of running them is lower than the hours cost of catching what they would have caught downstream. Specifically:
+
+- **`/critique-plan` between Plan and User Approval (step 2).** Even for a plan the agent feels confident about. The critic catches missing load-bearing assumptions the planner is too close to see — in PR 4's case, the base-currency assumption that staff-review later spent 4 lens spawns to surface.
+- **`/simplify` between Commit and `/staff-review` (step 6).** Even for docs-only diffs. The pass surfaces cross-doc duplications, terminology drift, and verbose-but-legal artifacts (`$comment-` values, paraphrased rules) before staff-review has to.
+
+Two anti-patterns to watch for: (a) "this diff is too thin for `/simplify` to find anything" — the bar isn't whether the pass *finds* something, it's whether running it is cheaper than skipping it; (b) "I'll just have staff-review catch it" — staff-review is for architecture and craft, not for code-quality cleanup that `/simplify` is purpose-built for.
+
+If a step is genuinely being skipped for a defensible reason (e.g., `spike` mode for `/simplify` per `general.md`), declare the skip explicitly in the plan's Mode / Scope section. Implicit skips create precedent that grows into "small enough to skip" over time.
+
+**Applies to:** workflow discipline; every PR going forward, including docs-only and config-only PRs.
+
 ### FB-0032: Security regression tests must assert on what would actually leak, not on a proxy for it
 **Date:** 2026-05-25
 **Source:** review feedback (synthesized from flow's `dev-docs/feedback.md` FB-0004, surfaced during PR-3 umbrella close-out)

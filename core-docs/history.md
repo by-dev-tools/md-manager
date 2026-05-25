@@ -37,6 +37,24 @@ Use the `SAFETY` marker on any entry that modifies error handling, persistence, 
 
 ## Entries
 
+### Flow plugin v1.1.0 — workflow surface backfill at by-dev-tools/flow (breadcrumb)
+**Date:** 2026-05-24
+**Branch:** (flow repo) `pr2/workflow-backfill`
+**Commit / PR:** `3409103` → [flow#7](https://github.com/by-dev-tools/flow/pull/7)
+
+Flow plugin v1.1.0 shipped at `by-dev-tools/flow@3409103` ([flow#7](https://github.com/by-dev-tools/flow/pull/7)). Backfills PR 1's `[PR 1 LIMITATION]` placeholders and lands the full workflow surface: `/flow:staff-review` with 4 parallel lens agents (staff-engineer, ux-designer, design-engineer, push-further), `/flow:security-review`, `/flow:accessibility-review`, `/flow:ship-spike`, `/flow:workflow-help`, planner + docs agents, 4 portable rules (general, plan-discipline, documentation, exploration), `tools/memory/check.mjs`, `flow.config.schema.json` (13 slots), default hooks. Bootstrap exception fully lifted for downstream PRs. See flow's `dev-docs/history.md` for full decision detail, tradeoffs, and lessons (including the PR-2 dogfood findings that produced flow's FB-0002 and FB-0003 — schema-without-implementation and validator-pass-vs-runtime-safe).
+
+---
+
+### Flow plugin v1.0.0 — restructure + initial workflow surface at by-dev-tools/flow (breadcrumb)
+**Date:** 2026-05-24
+**Branch:** (flow repo) `pr1/restructure-flow-plugin`
+**Commit / PR:** `f8610a1` → [flow#5](https://github.com/by-dev-tools/flow/pull/5)
+
+Flow plugin v1.0.0 shipped at `by-dev-tools/flow@f8610a1` ([flow#5](https://github.com/by-dev-tools/flow/pull/5)). Restructured the renamed-from-llm-auditor repo into Anthropic's marketplace pattern (`plugins/flow/*`), renamed internal identifiers `llm-auditor`/`assumption-auditor` → `flow`, added `/flow:ship` skill + `plugins/flow/docs/workflow.md` (the canonical loop ported from md-manager and de-projected). Existing audit/critique skills (`critique-plan`, `audit-plan`, `audit-completion`) and agents (`auditor`, `plan-critic`) moved under the same plugin. Restructured flow's own dev-tracking docs from `core-docs/` to `dev-docs/` so the consumer-vs-plugin distinction is unambiguous. See that repo's `dev-docs/history.md` for full decision detail.
+
+---
+
 ### Vite 5.4 → 8.0.13 dep bump (PR #12)
 **Date:** 2026-05-17
 **Branch:** `dependabot/npm_and_yarn/multi-46822222ac`

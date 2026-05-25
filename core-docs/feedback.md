@@ -33,6 +33,18 @@ Increment from the last entry. Use `FB-0001`, `FB-0002`, etc.
 
 ## Entries
 
+### FB-0031: When building workflow infrastructure, dogfood every loop step that *can* be run — don't skip because the named skill isn't built yet
+**Date:** 2026-05-24
+**Source:** review feedback (synthesized from flow plugin extraction; flow's `dev-docs/feedback.md` FB-0001)
+
+**What was said:** While shipping flow plugin PR 1 (which built the workflow infrastructure itself), the assistant initially treated "the plugin's own `/simplify` and `/staff-review` don't exist yet" as a license to skip those loop steps and rely solely on a manual cold-read (the bootstrap exception). The flow user pushed back: "even though all the skills may not be officially built out yet, follow the prompts from the skills in workflow.md to review the PR, taking it through all the stages of the intended workflow that we are implementing." Spawning 3-4 parallel review-lens Agents with the equivalent of the planned SKILL.md prompts caught 3 BLOCKERs the pre-merge cold-read missed (manifest redundancy, two stale `agents/auditor.md` references in shipped prompts, `eval` vs `sh -c`). All three would have been consumer-visible bugs if shipped.
+
+**Synthesized rule:** When a PR builds workflow infrastructure itself (a new skill, a new lens, a new review pipeline, a new preflight gate — any change to the loop's *machinery* rather than to product surface), **dogfood every loop step that *can* be run by emulating the planned skill's prompt via Agent subagents**, even if the named skill doesn't exist yet. The loop's value is the *steps* (independent review framings, BLOCKER/NIT/FOLLOW-UP triage, source-diversity bar on feedback), not the skill packaging. Concrete pattern: spawn 3-4 parallel review-lens Agents (engineer, push-further, security, plan-critic emulation) with the equivalent of the planned SKILL.md prompts; triage via the same scheme; apply BLOCKER + cheap NIT inline; route FOLLOW-UPs to `plan.md` / `roadmap.md`. **The bootstrap exception (manual cold-read only) is the *fallback* when even manual emulation isn't feasible, not the *default* when emulation is cheap.** Don't pre-empt this rule with "no skill, no review" — that defeats the point of building workflow infrastructure at all.
+
+This generalizes flow's FB-0001 (which was about the flow plugin specifically). It applies to md-manager any time a future PR adds or modifies a `.claude/skills/`, `.claude/agents/`, `.claude/rules/`, `tools/preflight/`, or `tools/memory/` file — including the eventual PR-4-through-PR-6 consumer migration of the flow plugin into md-manager itself.
+
+**Applies to:** workflow-infrastructure PRs (any PR that touches `.claude/skills/`, `.claude/agents/`, `.claude/rules/`, `tools/preflight/`, `tools/memory/`, or `core-docs/workflow.md`); the bootstrap-exception escape clause in `core-docs/workflow.md`; agent self-feedback discipline.
+
 ### FB-0030: Adapt skills from sister repos, don't vendor them
 **Date:** 2026-05-15
 **Source:** user direction

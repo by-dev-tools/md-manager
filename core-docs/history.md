@@ -37,6 +37,15 @@ Use the `SAFETY` marker on any entry that modifies error handling, persistence, 
 
 ## Entries
 
+### Flow plugin v1.2.0 — template directory + bootstrap docs at by-dev-tools/flow (breadcrumb)
+**Date:** 2026-05-25
+**Branch:** (flow repo) `pr3/template-directory`
+**Commit / PR:** `3abc236` → [flow#8](https://github.com/by-dev-tools/flow/pull/8)
+
+Flow plugin v1.2.0 shipped at `by-dev-tools/flow@3abc236` ([flow#8](https://github.com/by-dev-tools/flow/pull/8)). Ships consumer-side scaffolding: `template/base/*` (Tier 1+2) + `template/stacks/{web,swift,tauri-rust-ts}/*` + `docs/bootstrap.md` + `docs/migration.md`. Absorbs 2 PR-2 FOLLOW-UPs as security regression fixtures under `plugins/flow/tests/` and adds the 14th schema slot `rustWorkspaceDir`. Bootstrap exception fully lifted; md-manager PR 4 is unblocked. See flow's `dev-docs/history.md` for full narrative and the Phase-7 engineer-lens finding that produced flow's FB-0004 + md-manager's FB-0032.
+
+---
+
 ### Flow plugin v1.1.0 — workflow surface backfill at by-dev-tools/flow (breadcrumb)
 **Date:** 2026-05-24
 **Branch:** (flow repo) `pr2/workflow-backfill`

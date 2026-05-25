@@ -67,6 +67,14 @@ Use the most specific form available. Conceptual triggers are looser — write t
 
 - **Color strip → Settings page; onboarding "pick your favorite color" step.** The color rail currently lives on the right edge of every page. Direction: relocate it to a Settings page (very visible when Settings is open, recedes everywhere else), and adapt it into an onboarding step ("Pick your favorite color") that sets the user's initial default preset. Reduces ambient chrome on the main writing surface; gives the personalization moment a deliberate location. Implies introducing a Settings surface and a first-run flow — substantive scope. Surfaces when: building a Settings page, building first-run / onboarding, redesigning the main-surface chrome, or anyone proposes "where should this control live." Cost: medium (new surface + relocation).
 
+### Security testing
+
+- **Test-design pattern: content-sentinels vs proxy assertions.** FB-0032 captures the specific anti-pattern (asserting on path/URL strings instead of on what a real breach would output) and three current/future md-manager surfaces it applies to. The underlying skill — "how to write tests that catch the failure they're named for" — has applicability beyond the named surfaces. If md-manager's security/sanitization test footprint grows (especially when repo-sync lands and adds path-validation tests), there's a case for codifying the broader pattern in `design-language.md` § "Testing posture" or as a dedicated skill. Today the rule lives one layer down in FB-0032; promotion happens when the pattern fires a second time. Surfaces when: editing `src/lib/markdown.test.ts`, writing repo-sync path-validation tests, building any test that asserts on a threat model rather than implementation details. Cost: small (doc-only codification) once the second firing happens. Source: PR #22 push-further lens.
+
+### Cross-repo provenance
+
+- **Optional `Source repo:` field in feedback.md template.** FB-0032 establishes the precedent of citing cross-repo provenance ("synthesized from flow's `dev-docs/feedback.md` FB-0004, surfaced during PR-3 umbrella close-out"). One-off prose works today. If/when this pattern fires again (next flow→md-manager or designer→md-manager synthesis), update `.claude/rules/documentation.md` to add an optional `Source repo:` field in the feedback.md entry-format template so cross-repo learnings become machine-scannable. Single-repo entries omit the field. Surfaces when: writing a feedback.md entry whose insight came from a sibling repo, editing `.claude/rules/documentation.md`, or noticing the cross-repo citation pattern repeating. Cost: small (≤5 min, one file). Source: PR #22 push-further lens.
+
 ## Someday / maybe
 
 Nice-to-haves and explorations.

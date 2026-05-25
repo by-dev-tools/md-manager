@@ -33,6 +33,23 @@ Increment from the last entry. Use `FB-0001`, `FB-0002`, etc.
 
 ## Entries
 
+### FB-0032: Security regression tests must assert on what would actually leak, not on a proxy for it
+**Date:** 2026-05-25
+**Source:** review feedback (synthesized from flow's `dev-docs/feedback.md` FB-0004, surfaced during PR-3 umbrella close-out)
+
+**What was said:** Flow's PR 3 Phase-7 engineer-lens caught that its cwd-constraint security regression test asserted `"/etc/hosts" not in result.stdout` — an assertion that passes trivially because a real path-traversal leak prints the *contents* of `/etc/hosts` (loopback addresses like `127.0.0.1` / `::1`), not the path string. A regression that drops the cwd check but doesn't print the path would pass the test silently. The sibling dotdot-traversal test in the same fixture got it right by asserting `"127.0.0.1" not in stdout and "::1" not in stdout` — content sentinels, not path proxies. Both tests were strengthened in flow's Phase-7 fix commit to use content sentinels uniformly.
+
+**Synthesized rule:** When writing any security test in md-manager, **identify what a real leak/breach would actually output, then assert on THAT**. The path/URL string is a proxy: if the implementation silently stops blocking the breach but doesn't echo the original input verbatim (because it encodes / normalizes / wraps it), the proxy-based assertion still passes. Current-surface traps:
+
+- **URL sanitization** (`src/lib/markdown.test.ts`, `isSafeUrl`): `"javascript:" not in result` passes vacuously against html-encoded `javascript&#58;...`, case-normalized `JAVASCRIPT:`, or `data:` wrappers. Assert on what a real XSS would *execute* (JSDOM render + marker-flag check) or on a normalized-payload fingerprint, not the raw input.
+- **Dangerous HTML escapes**: don't assert `"<script>" not in output` — parse output as DOM, assert no `tagName === "SCRIPT"` in the subtree, or that an injected `window.__pwned` marker doesn't survive render.
+
+Future scope (when surfaces materialize): repo-sync path validation should mirror flow's pattern — assert on loopback addresses, private-key fingerprints (`-----BEGIN`), or `.env` content sentinels, not on the path string itself.
+
+**The verification ritual:** write a deliberately-broken implementation, run the test, verify it FAILS. If a known-broken implementation passes the test, the assert is vacuous. This is the only reliable check on assert-on-proxy bugs — they pass every code review (the assertion *looks* correct) and every CI run (the implementation isn't broken yet).
+
+**Applies to:** `src/lib/markdown.test.ts`, any future security/sanitization tests, any test where the boundary being defended is between trusted and untrusted content.
+
 ### FB-0031: When building workflow infrastructure, dogfood every loop step that *can* be run — don't skip because the named skill isn't built yet
 **Date:** 2026-05-24
 **Source:** review feedback (synthesized from flow plugin extraction; flow's `dev-docs/feedback.md` FB-0001)

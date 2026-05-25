@@ -14,7 +14,7 @@ The living document for what's being worked on right now, what's queued, and wha
   - **PR 1** (v1.0.0, `f8610a1`, [flow#5](https://github.com/by-dev-tools/flow/pull/5), 2026-05-24) — restructured repo into `plugins/flow/*`; renamed `llm-auditor`/`assumption-auditor` → `flow`; added `/flow:ship` + `plugins/flow/docs/workflow.md`.
   - **PR 2** (v1.1.0, `3409103`, [flow#7](https://github.com/by-dev-tools/flow/pull/7), 2026-05-25) — backfilled PR 1 placeholders; ported full workflow surface (5 skills, planner + docs + 4 lens agents, 4 portable rules, memory tool, 13-slot schema, default hooks).
   - **PR 3** (v1.2.0, `3abc236`, [flow#8](https://github.com/by-dev-tools/flow/pull/8), 2026-05-25) — consumer-side scaffolding (`template/base/*` + 3 stack overlays + bootstrap/migration docs); 2 PR-2 FOLLOW-UPs absorbed as security regression fixtures; 14th schema slot `rustWorkspaceDir`. Bootstrap exception fully lifted.
-  - **Next: md-manager PR 4** (install flow alongside existing local skills, non-breaking Stage 1 of consumer migration) — now unblocked. Canonical PR 4–6 spec at `dev-docs/handoffs/md-manager-pr4-6-spec.md` in flow (fetch via `gh api`).
+  - Next: md-manager PR 4 (install flow alongside existing local skills, non-breaking Stage 1 of consumer migration) — now unblocked. Canonical PR 4–6 spec lives in flow's repo; fetch with: `gh api repos/by-dev-tools/flow/contents/dev-docs/handoffs/md-manager-pr4-6-spec.md --jq '.content' | base64 -d`
 - **PR 0 (operational rename + cleanup) shipped 2026-05-23.** Actions executed: `by-dev-tools/llm-auditor` → `by-dev-tools/flow` (GitHub rename, redirect maintained), local `~/dev/llm-auditor` → `~/dev/flow`, `~/.claude/settings.json` URL updated (marketplace key stays "llm-auditor" until PR 1 lands the internal marketplace.json + plugin.json renames), plugin cache cleared, two stale conductor worktrees removed (`guangzhou-v3`, `warsaw-v1`), `byamron/project-template#1` CLOSED without merge with explanatory comment. Settings.json backup at `~/.claude/settings.json.bak.20260523-144832`. Flow checkout synced (was 5 commits behind origin/main).
 - **Flow plugin architecture decisions (2026-05-23, consolidating two parallel planning streams).** Plugin host: `by-dev-tools/flow` (the renamed llm-auditor). Plugin name: `flow`. Bundled scope: `flow` absorbs the audit/critique skills (`critique-plan`, `audit-plan`, `audit-completion`) + agents (`auditor`, `plan-critic`) that already existed in llm-auditor, plus adds workflow skills (`ship`, `staff-review`, `security-review`, `accessibility-review`, `ship-spike`, `workflow-help`). `/simplify` is a Claude Code bundled native skill — flow references it in `workflow.md` (annotated as "(bundled with Claude Code)") and does NOT duplicate it. Slash command convention: `/flow:ship`, `/flow:critique-plan`, etc. (Claude Code namespaces plugin skills automatically). Migration of md-manager is staged across PRs 4-6 to never break working state. See `core-docs/handoffs/flow-plugin-consolidation-2026-05-23.md` for the full decision rationale (with 2026-05-24 superseded headers for the two architecture revisions: rename-host + bundling).
 - **Pattaya-v1 conductor workspace closed.** Its planning content (`project-template.md`, `pr1-flow-plugin-init.md`, `flow-plugin-consolidation-2026-05-23.md`) was consolidated into this worktree on 2026-05-24 with superseded headers noting the architectural revisions. The branch `extract-project-structure-doc` can be abandoned.
@@ -41,7 +41,7 @@ The living document for what's being worked on right now, what's queued, and wha
 
 ## Active Work Items
 
-### Flow plugin extraction — umbrella close-out through PR 3 (docs-only, current)
+### Flow plugin extraction — umbrella close-out through PR 3
 
 **Mode:** feature
 **Goal:** Close out md-manager's umbrella tracking of the Flow plugin extraction through PR 3. PR 3 (flow v1.2.0, `3abc236`, [flow#8](https://github.com/by-dev-tools/flow/pull/8)) shipped 2026-05-25 with the consumer-side scaffolding (template/base + 3 stack overlays + bootstrap/migration docs), absorbed two PR-2 FOLLOW-UPs as security regression fixtures (cwd-constraint + malicious-config), and added the 14th schema slot (`rustWorkspaceDir`). With PR 3 merged, md-manager PR 4 (install non-breaking, Stage 1 of consumer migration) is unblocked.
@@ -60,14 +60,14 @@ The living document for what's being worked on right now, what's queued, and wha
 - Re-writing the umbrella PR 3 spec-walk from scratch.
 
 **Spec-walk checkboxes:**
-- [ ] PR 3 spec-walk (12 boxes) checked off with `3abc236` + [flow#8](https://github.com/by-dev-tools/flow/pull/8) header.
-- [ ] "Current Focus" + "Handoff Notes" top bullet reflect PRs 1+2+3 shipped, PR 4 next.
-- [ ] Prior close-out Active Work Item replaced with this one.
-- [ ] `Recently Completed` entry added for md-manager#21.
-- [ ] `core-docs/history.md` has the PR 3 breadcrumb (dedup against md-manager#21 confirmed).
-- [ ] `core-docs/feedback.md` FB-0032 entry present with flow-FB-0004 provenance citation.
-- [ ] Manual cold-read: no code-shaped files touched.
-- [ ] Preflight green: `npm run typecheck && npm run build && npm run test` (docs-only — expected trivially green; the check confirms no accidental code edit slipped in).
+- [x] PR 3 spec-walk (12 boxes) checked off with `3abc236` + [flow#8](https://github.com/by-dev-tools/flow/pull/8) header.
+- [x] "Current Focus" + "Handoff Notes" top bullet reflect PRs 1+2+3 shipped, PR 4 next.
+- [x] Prior close-out Active Work Item replaced with this one.
+- [x] `Recently Completed` entry added for md-manager#21.
+- [x] `core-docs/history.md` has the PR 3 breadcrumb (dedup against md-manager#21 confirmed via `grep -n "^### Flow plugin v" core-docs/history.md` → 3 entries).
+- [x] `core-docs/feedback.md` FB-0032 entry present with flow-FB-0004 provenance citation.
+- [x] Manual cold-read: no code-shaped files touched (`git diff --stat origin/main..HEAD` → 3 docs files only).
+- [x] Preflight green: `npm run typecheck && npm run build && npm run test` (docs-only — expected trivially green; the check confirms no accidental code edit slipped in).
 
 **Confidence verdicts:**
 
@@ -89,7 +89,7 @@ The living document for what's being worked on right now, what's queued, and wha
 **Risks / open questions:**
 - The umbrella's `Workflow unification — PR 2 (SUPERSEDED)` section remains superseded.
 - The umbrella's "Files touched (anticipated)" PR 3 section is pre-merge; left as historical record.
-- **Deviation from original prompt:** prompt asked for three history.md breadcrumbs (PR 1 + PR 2 + PR 3); only the PR 3 entry was added because PR 1 + PR 2 already exist in history.md from md-manager#21. User confirmed dedup is correct.
+- **Dedup against md-manager#21:** PR 1 + PR 2 breadcrumbs are already present in `core-docs/history.md` from the prior close-out (verified via `grep -n "^### Flow plugin v" core-docs/history.md`); only the PR 3 breadcrumb was added this PR. The original session prompt asked for three breadcrumbs but predated knowledge of md-manager#21's merge; user confirmed dedup is the right call.
 
 **Files touched (anticipated):**
 - `core-docs/plan.md` (Current Focus, Handoff Notes, PR 3 spec-walk, Active Work Item replacement, Recently Completed)

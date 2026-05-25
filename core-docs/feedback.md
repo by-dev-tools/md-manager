@@ -33,6 +33,22 @@ Increment from the last entry. Use `FB-0001`, `FB-0002`, etc.
 
 ## Entries
 
+### FB-0032: Security regression tests must assert on what would actually leak, not on a proxy for it
+**Date:** 2026-05-25
+**Source:** review feedback (synthesized from flow's `dev-docs/feedback.md` FB-0004, surfaced during PR-3 umbrella close-out)
+
+**What was said:** Flow's PR 3 Phase-7 engineer-lens caught that its cwd-constraint security regression test asserted `"/etc/hosts" not in result.stdout` — an assertion that passes trivially because a real path-traversal leak prints the *contents* of `/etc/hosts` (loopback addresses like `127.0.0.1` / `::1`), not the path string. A regression that drops the cwd check but doesn't print the path would pass the test silently. The sibling dotdot-traversal test in the same fixture got it right by asserting `"127.0.0.1" not in stdout and "::1" not in stdout` — content sentinels, not path proxies. Both tests were strengthened in flow's Phase-7 fix commit to use content sentinels uniformly.
+
+**Synthesized rule:** When writing any security test in md-manager — XSS sanitization, URL allow-listing, file-path validation, dangerouslySetInnerHTML escapes, repo-sync path constraints — **identify what a real leak/breach would actually output, then assert on THAT**. The path/URL string is a proxy and proxies have escape hatches. Canonical traps for md-manager:
+
+- **URL sanitization** (`src/lib/markdown.test.ts`, `isSafeUrl`): the naive assert `"javascript:" not in result` passes vacuously if the implementation html-encodes the colon and leaks `javascript&#58;...` instead, or normalizes to `JAVASCRIPT:` (case), or routes through a `data:` wrapper. Assert on what a real XSS would *execute* — e.g. spin up a JSDOM, render the link, click it, assert no script ran (marker file / window flag); or assert on a fingerprint of the dangerous payload after normalization (lowercase + decoded), not the raw input string.
+- **Dangerous HTML escapes**: don't assert `"<script>" not in output` — assert `output` parses as DOM nodes with `tagName !== "SCRIPT"` for the relevant subtree, or that a deliberately-injected marker (`window.__pwned`) doesn't appear after render.
+- **File-path validation** (future, if md-manager grows repo-sync): mirror flow's pattern — assert that loopback addresses, private key fingerprints (`-----BEGIN`), or `.env` content sentinels don't appear in output, not that the *path* `/etc/hosts` or `~/.ssh/id_rsa` doesn't appear.
+
+**The verification ritual:** when in doubt, write a deliberately-broken implementation locally, run the test, verify it FAILS. If the test passes with a known-broken implementation, the assert is vacuous and the test is theater. This is the only reliable check on assert-on-proxy bugs because they pass every code review (the assertion *looks* correct) and pass every CI run (the implementation isn't broken yet).
+
+**Applies to:** `src/lib/markdown.test.ts`, any future security/sanitization tests, any test where the boundary being defended is between trusted and untrusted content.
+
 ### FB-0031: When building workflow infrastructure, dogfood every loop step that *can* be run — don't skip because the named skill isn't built yet
 **Date:** 2026-05-24
 **Source:** review feedback (synthesized from flow plugin extraction; flow's `dev-docs/feedback.md` FB-0001)

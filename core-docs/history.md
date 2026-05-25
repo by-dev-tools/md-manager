@@ -37,6 +37,15 @@ Use the `SAFETY` marker on any entry that modifies error handling, persistence, 
 
 ## Entries
 
+### Flow plugin v1.2.0 — template directory + bootstrap docs at by-dev-tools/flow (breadcrumb)
+**Date:** 2026-05-25
+**Branch:** (flow repo) `pr3/template-directory`
+**Commit / PR:** `3abc236` → [flow#8](https://github.com/by-dev-tools/flow/pull/8)
+
+Flow plugin v1.2.0 shipped at `by-dev-tools/flow@3abc236` ([flow#8](https://github.com/by-dev-tools/flow/pull/8)). Ships the consumer-side scaffolding (`template/base/*` Tier-1+2 + `template/stacks/{web,swift,tauri-rust-ts}/*` + `docs/bootstrap.md` + `docs/migration.md`) so a new project can adopt the workflow with ~10 minutes of setup instead of duplicating the entire `.claude/` tree. Absorbs 2 PR-2 FOLLOW-UPs as security regression fixtures under `plugins/flow/tests/` (cwd-constraint test + malicious-config test). Adds the 14th schema slot `rustWorkspaceDir` for monorepo Cargo workspace location. Phase-7 engineer-lens dogfood caught a vacuous assertion in the cwd-constraint fixture (asserting on the path string instead of on what a real leak would output — `127.0.0.1` from `/etc/hosts`); the fix produced flow's FB-0004 and md-manager's FB-0032. With PR 3 merged the bootstrap exception is fully lifted; md-manager PR 4 (install non-breaking, Stage 1 of consumer migration) is unblocked. See flow's `dev-docs/history.md` for full decision detail.
+
+---
+
 ### Flow plugin v1.1.0 — workflow surface backfill at by-dev-tools/flow (breadcrumb)
 **Date:** 2026-05-24
 **Branch:** (flow repo) `pr2/workflow-backfill`

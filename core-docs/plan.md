@@ -6,11 +6,11 @@ The living document for what's being worked on right now, what's queued, and wha
 
 ## Current Focus
 
-**Flow plugin extraction — make the workflow exportable across repos.** Multi-PR umbrella spanning two repos: `by-dev-tools/flow` (renamed from `by-dev-tools/llm-auditor` on 2026-05-23 — becomes a Claude Code plugin marketplace + plugin + template) and `by-dev-tools/md-manager` (becomes the first plugin consumer, validating the abstraction). PR 0 (operational rename + cleanup) shipped 2026-05-23. PR 1 begins next: restructure llm-auditor's flat layout into `plugins/flow/*`, rename internal identifiers to `flow`, bump to v1.0.0, add the new workflow surface (`/flow:ship` + `workflow.md` + `dev-docs/`). PR 2 ports remaining workflow skills + agents + rules + memory tool + schema. PR 3 ships template directory (web/swift/tauri-rust-ts stacks). PRs 4-6 stage md-manager as the consumer. **Post-extraction v1.x+** layers in JTBD/spec substrate, plan visuals + HTML reports, JTBD-grounded design review lenses, autonomous routines (Dispatch + Remote Control daily cadence). PR C (Mini token+component migration) remains paused until plugin work settles. Prior "Workflow unification PR 2" item below is SUPERSEDED — its scope absorbs into flow.
+**Flow plugin extraction — make the workflow exportable across repos.** Multi-PR umbrella spanning two repos: `by-dev-tools/flow` (renamed from `by-dev-tools/llm-auditor` on 2026-05-23) and `by-dev-tools/md-manager` (becomes the first plugin consumer, validating the abstraction). **Flow-side PRs 0–3 all shipped** (PR 0 cleanup 2026-05-23; PR 1 v1.0.0 restructure + `/flow:ship` 2026-05-24; PR 2 v1.1.0 workflow surface backfill 2026-05-25; PR 3 v1.2.0 template directory + bootstrap docs + 2 security regression fixtures + 14th schema slot 2026-05-25). **Md-manager PR 4 (install non-breaking, Stage 1 of consumer migration) is the active next step** — canonical spec at `dev-docs/handoffs/md-manager-pr4-6-spec.md` in flow, fetched via `gh api`. PRs 5–6 follow (dogfood + duplicate removal). **Post-extraction v1.x+** layers in JTBD/spec substrate, plan visuals + HTML reports, JTBD-grounded design review lenses, autonomous routines (Dispatch + Remote Control daily cadence). PR C (Mini token+component migration) remains paused until plugin work settles. Prior "Workflow unification PR 2" item below is SUPERSEDED — its scope absorbs into flow.
 
 ## Handoff Notes
 
-- **Flow plugin PR 1 + PR 2 shipped 2026-05-24 at `by-dev-tools/flow`.** PR 1 (v1.0.0, `f8610a1`, [flow#5](https://github.com/by-dev-tools/flow/pull/5)) restructured the repo into `plugins/flow/*`, renamed `llm-auditor`/`assumption-auditor` → `flow`, added `/flow:ship` + `plugins/flow/docs/workflow.md`. PR 2 (v1.1.0, `3409103`, [flow#7](https://github.com/by-dev-tools/flow/pull/7)) backfilled PR 1's `[PR 1 LIMITATION]` placeholders and ported the full workflow surface: `/flow:security-review`, `/flow:accessibility-review`, `/flow:staff-review` (4-lens parallel), `/flow:ship-spike`, `/flow:workflow-help`; planner + docs + 4 lens agents; 4 portable rules; memory tool; `flow.config.schema.json` (13 slots); default hooks. PR-1 FOLLOW-UPs addressed. Bootstrap exception fully lifted for downstream PRs. **Next at flow: PR 3 (template directory — `template/base/*` Tier-1+2 + `template/stacks/{web,swift,tauri-rust-ts}/*`).** **Next at md-manager: PR 4 (install flow alongside existing local skills, non-breaking Stage 1 of consumer migration) — starts only after flow PR 3 merges**, per `gh api repos/by-dev-tools/flow/contents/dev-docs/handoffs/md-manager-pr4-6-spec.md`. See flow's `dev-docs/history.md` for canonical PR 1 + PR 2 narrative; md-manager's `core-docs/history.md` has one-line breadcrumbs only.
+- **Flow plugin PRs 1 + 2 + 3 all shipped at `by-dev-tools/flow`.** PR 1 (v1.0.0, `f8610a1`, [flow#5](https://github.com/by-dev-tools/flow/pull/5), 2026-05-24) restructured the repo into `plugins/flow/*`, renamed `llm-auditor`/`assumption-auditor` → `flow`, added `/flow:ship` + `plugins/flow/docs/workflow.md`. PR 2 (v1.1.0, `3409103`, [flow#7](https://github.com/by-dev-tools/flow/pull/7), 2026-05-25) backfilled PR 1's `[PR 1 LIMITATION]` placeholders and ported the full workflow surface: `/flow:security-review`, `/flow:accessibility-review`, `/flow:staff-review` (4-lens parallel), `/flow:ship-spike`, `/flow:workflow-help`; planner + docs + 4 lens agents; 4 portable rules; memory tool; `flow.config.schema.json` (13 slots); default hooks. PR 3 (v1.2.0, `3abc236`, [flow#8](https://github.com/by-dev-tools/flow/pull/8), 2026-05-25) ships the consumer-side scaffolding: `template/base/*` (Tier 1+2) + `template/stacks/{web,swift,tauri-rust-ts}/*` + `docs/bootstrap.md` + `docs/migration.md`. Absorbs 2 PR-2 FOLLOW-UPs as security regression fixtures (cwd-constraint test, malicious-config test); adds the 14th schema slot (`rustWorkspaceDir`). Bootstrap exception fully lifted; the plugin can now bootstrap a new project from scratch per `docs/bootstrap.md`. **Next at md-manager: PR 4 (install flow alongside existing local skills, non-breaking Stage 1 of consumer migration) — now unblocked**, per `gh api repos/by-dev-tools/flow/contents/dev-docs/handoffs/md-manager-pr4-6-spec.md`. See flow's `dev-docs/history.md` for canonical PR 1–3 narratives; md-manager's `core-docs/history.md` has one-line breadcrumbs only.
 - **PR 0 (operational rename + cleanup) shipped 2026-05-23.** Actions executed: `by-dev-tools/llm-auditor` → `by-dev-tools/flow` (GitHub rename, redirect maintained), local `~/dev/llm-auditor` → `~/dev/flow`, `~/.claude/settings.json` URL updated (marketplace key stays "llm-auditor" until PR 1 lands the internal marketplace.json + plugin.json renames), plugin cache cleared, two stale conductor worktrees removed (`guangzhou-v3`, `warsaw-v1`), `byamron/project-template#1` CLOSED without merge with explanatory comment. Settings.json backup at `~/.claude/settings.json.bak.20260523-144832`. Flow checkout synced (was 5 commits behind origin/main).
 - **Flow plugin architecture decisions (2026-05-23, consolidating two parallel planning streams).** Plugin host: `by-dev-tools/flow` (the renamed llm-auditor). Plugin name: `flow`. Bundled scope: `flow` absorbs the audit/critique skills (`critique-plan`, `audit-plan`, `audit-completion`) + agents (`auditor`, `plan-critic`) that already existed in llm-auditor, plus adds workflow skills (`ship`, `staff-review`, `security-review`, `accessibility-review`, `ship-spike`, `workflow-help`). `/simplify` is a Claude Code bundled native skill — flow references it in `workflow.md` (annotated as "(bundled with Claude Code)") and does NOT duplicate it. Slash command convention: `/flow:ship`, `/flow:critique-plan`, etc. (Claude Code namespaces plugin skills automatically). Migration of md-manager is staged across PRs 4-6 to never break working state. See `core-docs/handoffs/flow-plugin-consolidation-2026-05-23.md` for the full decision rationale (with 2026-05-24 superseded headers for the two architecture revisions: rename-host + bundling).
 - **Pattaya-v1 conductor workspace closed.** Its planning content (`project-template.md`, `pr1-flow-plugin-init.md`, `flow-plugin-consolidation-2026-05-23.md`) was consolidated into this worktree on 2026-05-24 with superseded headers noting the architectural revisions. The branch `extract-project-structure-doc` can be abandoned.
@@ -37,51 +37,60 @@ The living document for what's being worked on right now, what's queued, and wha
 
 ## Active Work Items
 
-### Flow plugin extraction — umbrella close-out through PR 2 (docs-only, current)
+### Flow plugin extraction — umbrella close-out through PR 3 (docs-only, current)
 
 **Mode:** feature
-**Goal:** Close out md-manager's umbrella tracking of the Flow plugin extraction through PR 2. PR 1 (flow v1.0.0, `f8610a1`, [flow#5](https://github.com/by-dev-tools/flow/pull/5)) and PR 2 (flow v1.1.0, `3409103`, [flow#7](https://github.com/by-dev-tools/flow/pull/7)) both shipped 2026-05-24 in the flow repo. md-manager's umbrella plan was authored before those merges and still tracks them as pending. This is a docs-only update to reflect what shipped, route the next-step pointer at flow PR 3, and add breadcrumbs so future sessions can find the canonical narrative in flow's `dev-docs/history.md` without re-deriving it.
+**Goal:** Close out md-manager's umbrella tracking of the Flow plugin extraction through PR 3. PR 3 (flow v1.2.0, `3abc236`, [flow#8](https://github.com/by-dev-tools/flow/pull/8)) shipped 2026-05-25 with the consumer-side scaffolding (template/base + 3 stack overlays + bootstrap/migration docs), absorbed two PR-2 FOLLOW-UPs as security regression fixtures (cwd-constraint + malicious-config), and added the 14th schema slot (`rustWorkspaceDir`). With PR 3 merged, md-manager PR 4 (install non-breaking, Stage 1 of consumer migration) is unblocked.
 
 **Scope (in):**
-- Check off every PR 1 + PR 2 spec-walk checkbox in the umbrella tracker. Add the SHA + PR-link headers under PR 1 and PR 2.
-- Update "Handoff Notes": PR 1 + PR 2 shipped at flow; flow PR 3 (template directory) is next; md-manager PR 4 starts only after flow PR 3 merges.
-- Add two breadcrumb entries to `core-docs/history.md` pointing at flow's canonical narrative (PR 1 entry + PR 2 entry).
-- Add one synthesized `core-docs/feedback.md` entry (FB-0031) capturing the portable half of flow's FB-0001 (dogfood the workflow even when the named skills don't exist yet).
+- Check off every PR 3 spec-walk checkbox (12 boxes). Add SHIPPED + SHA + PR-link header.
+- Update the "Current Focus" paragraph: PR 3 done; next umbrella step is md-manager PR 4 (consumer-side install).
+- Update "Handoff Notes" bullet: PR 1 + PR 2 + PR 3 all shipped at flow; md-manager PR 4 is now the active next step.
+- Replace the prior "Flow plugin extraction — umbrella close-out through PR 2" Active Work Item (already shipped via [md-manager#21](https://github.com/by-dev-tools/md-manager/pull/21), `b8b0e0b`) with this PR-3 close-out item. Add a `Recently Completed` entry for md-manager#21 so the prior close-out isn't lost.
+- Add one PR 3 breadcrumb to `core-docs/history.md`. **Deviation from prompt:** the prompt asked for three breadcrumbs (PR 1 + PR 2 + PR 3), but PR 1 + PR 2 breadcrumbs already exist in history.md from md-manager#21 — re-adding would duplicate. Adding only the PR 3 entry.
+- Add one synthesized `core-docs/feedback.md` entry (FB-0032) capturing flow's FB-0004 (security regression tests must assert on what would actually leak, not on a proxy). Portable to md-manager's existing `src/lib/markdown.test.ts` URL-sanitization tests and any future security tests.
 
 **Scope (out):**
-- Any code changes to `src/`, `.claude/skills/`, `.claude/agents/`, `.claude/rules/`, `tools/`, or any non-docs file. md-manager's actual consumer migration is PRs 4–6 in separate sessions.
-- Re-writing the umbrella PR 1 / PR 2 sections from scratch. The spec-walk and confidence verdicts authored pre-merge stand as historical record; we just flip checkboxes and add headers.
-- Writing the PR-2 brief the original plan said was owed. PR 2 shipped without the brief; the brief is no longer needed.
-- Touching the Post-extraction roadmap section — unchanged by the PR 1 + PR 2 ships.
+- Any code changes to `src/`, `.claude/skills/`, `.claude/agents/`, `.claude/rules/`, `tools/`, or any non-docs file.
+- Writing the PR 4 plan — separate worktree, separate session.
+- Touching the Post-extraction roadmap section.
+- Re-writing the umbrella PR 3 spec-walk from scratch.
 
 **Spec-walk checkboxes:**
-- [ ] PR 1 spec-walk checkboxes all checked, with `f8610a1` + [flow#5](https://github.com/by-dev-tools/flow/pull/5) at the section header.
-- [ ] PR 2 spec-walk checkboxes all checked, with `3409103` + [flow#7](https://github.com/by-dev-tools/flow/pull/7) at the section header.
-- [ ] "Handoff Notes" has a new bullet recording PR 1 + PR 2 shipped status, next pointer = flow PR 3, md-manager PR 4 sequencing dependency.
-- [ ] `core-docs/history.md` has two new breadcrumb entries (PR 1 + PR 2). Each cross-links flow's `dev-docs/history.md` as source-of-truth.
-- [ ] `core-docs/feedback.md` has a new FB-0031 entry synthesizing the portable principle from flow's FB-0001.
-- [ ] Manual cold-read of full diff: no code-shaped files touched.
+- [ ] PR 3 spec-walk checkboxes (12 boxes) all checked, with `3abc236` + [flow#8](https://github.com/by-dev-tools/flow/pull/8) at the section header.
+- [ ] "Current Focus" paragraph updated: PR 3 shipped; PR 4 next.
+- [ ] "Handoff Notes" top bullet updated to reflect PR 1+2+3 shipped, PR 4 next.
+- [ ] Prior close-out Active Work Item replaced with this one; one-line `Recently Completed` entry added for md-manager#21.
+- [ ] `core-docs/history.md` has one new breadcrumb entry (PR 3 only — PR 1 + PR 2 already present from md-manager#21).
+- [ ] `core-docs/feedback.md` has a new FB-0032 entry synthesizing flow's FB-0004 with explicit cross-repo provenance citation.
+- [ ] Manual cold-read: no code-shaped files touched.
 - [ ] Preflight green: `npm run typecheck && npm run build && npm run test`.
 
 **Confidence verdicts:**
 
-**Assumption:** PR 1 + PR 2 spec-walks as authored pre-merge match what actually shipped, modulo small in-session deviations that are documented in flow's `dev-docs/history.md` and don't change the umbrella's checkbox state.
+**Assumption:** PR 3 spec-walk as authored pre-merge matches what shipped, modulo small in-session deviations documented in flow's `dev-docs/history.md`.
 **Confidence:** HIGH
-**Why:** Flow's history entries for both PRs explicitly enumerate what shipped; spot-checking the spec-walk items (PR 2's schema, memory tool, placeholder backfill) all appear in flow's history as done.
-**If it flips:** A specific checkbox doesn't have a real deliverable in flow. Strike it through with a one-line note pointing at flow's history for why it was skipped or absorbed.
+**Why:** Flow's history for PR 3 explicitly enumerates the shipped deliverables; the 12 spec-walk items map 1:1 to the new `template/base/*`, `template/stacks/*`, `docs/bootstrap.md`, `docs/migration.md` files. The security-fixture absorption is additive (a PR-3-only enhancement beyond the spec-walk); it gets credit in the breadcrumb but doesn't change checkbox state.
+**If it flips:** A specific checkbox doesn't have a deliverable. Strike-through with a one-line note pointing at flow's history.
 
-**Assumption:** Flow's FB-0001 generalizes to md-manager beyond just the plugin-extraction context — i.e. it's a portable feedback entry, not a flow-only one.
+**Assumption:** Re-adding PR 1 + PR 2 breadcrumbs to history.md is wrong (they already exist from md-manager#21 — duplication would clutter and falsely suggest two ship events).
+**Confidence:** HIGH
+**Why:** `grep -n "^### Flow plugin v" core-docs/history.md` returns the two existing entries from md-manager#21.
+**If it flips:** User explicitly asked for three. If they insist on re-adding, it's a one-edit revert. — User confirmed dedup is correct; verdict stands as HIGH.
+
+**Assumption:** Flow's FB-0004 generalizes to md-manager — md-manager has or will have security-relevant tests where this principle matters.
 **Confidence:** MEDIUM
-**Why:** The underlying principle is project-agnostic. But md-manager's `feedback.md` historically captures md-manager-specific corrections; importing a flow-discovered principle is novel.
-**If it flips:** Skip the FB entry. PR 1 + PR 2 close-out doesn't depend on it.
+**Why:** md-manager has `src/lib/markdown.ts` sanitization tests (`isSafeUrl`) that could be subject to the same trap (asserting on path strings instead of on what a real XSS leak would inject). User confirmed the canonical example: the naive assert `"javascript:" not in result` passes vacuously if the implementation html-encodes the colon and leaks `javascript&#58;...` instead.
+**If it flips:** Skip FB-0032. PR 3 close-out doesn't depend on it.
 
 **Risks / open questions:**
-- The umbrella's `**Workflow unification — PR 2** (SUPERSEDED)` section is unchanged by this work — it remains superseded.
+- The umbrella's `Workflow unification — PR 2 (SUPERSEDED)` section is unchanged — remains superseded.
+- The umbrella's "Files touched (anticipated)" PR 3 section is pre-merge; leave as historical record rather than rewriting.
 
 **Files touched (anticipated):**
-- `core-docs/plan.md` (Active Work Items: checkbox flips + Handoff Notes update + this work item)
-- `core-docs/history.md` (two new breadcrumb entries at top)
-- `core-docs/feedback.md` (one FB-0031 entry)
+- `core-docs/plan.md` (Current Focus + Handoff Notes + PR 3 checkboxes + Active Work Item replacement + Recently Completed entry)
+- `core-docs/history.md` (one new PR 3 breadcrumb)
+- `core-docs/feedback.md` (one FB-0032 entry)
 
 ---
 
@@ -152,20 +161,20 @@ The living document for what's being worked on right now, what's queued, and wha
 - [x] Verify `/flow:staff-review` parallel agent spawning works inside plugin context (vs md-manager's local Task-based spawning)
 - [x] Verify `tools/memory/check.mjs` canonical-path derivation handles plugin-at-user-scope vs consumer-at-project-scope correctly
 
-**PR 3 — `by-dev-tools/flow`: template directory + bootstrap docs**
-- [ ] `template/base/CLAUDE.md.template` — minimal 5-10 line stub with `{{PROJECT_NAME}}`, `{{STACK}}`, `{{SAFETY_PATHS}}` placeholders
-- [ ] `template/base/core-docs/{spec,plan,roadmap,history,feedback}.md` — blank scaffolds with format headers
-- [ ] `template/base/flow.config.json.example` — sensible defaults + inline comments or sibling README
-- [ ] `template/base/.claude/rules/safety.md.template` — stub with `{{SAFETY_PATHS}}` placeholder
-- [ ] `template/base/.claude/settings.json.example` — explicit minimal allow/deny baseline (read-only commands allowed, destructive commands denied); UserPromptSubmit hook ON by default with comments
-- [ ] `template/base/README.md` — placeholder skeleton with `{{PROJECT_NAME}}`, `{{ONE_LINE_DESCRIPTION}}`, `{{LIFECYCLE_STATUS}}`, `{{INSTALLATION_STEPS}}` placeholders
-- [ ] `template/base/.gitignore` — universal entries (`.DS_Store`, `.env*`, `*.log`, `.claude/local-*`, etc.)
-- [ ] `template/stacks/web/` — web overlay: `tools/preflight/check.mjs` (typecheck + build + test), `.claude/skills/link/SKILL.md`, `.claude/rules/ui.md`, `.github/workflows/ci.yml`, stack-specific `.gitignore` append
-- [ ] `template/stacks/swift/` — swift overlay: `tools/preflight/check.sh` (xcodebuild + test + swift-format), `.claude/rules/safety.md.append`, `.github/workflows/ci.yml` (Xcode action)
-- [ ] `template/stacks/tauri-rust-ts/` — tauri overlay: `tools/preflight/check.mjs` (typecheck + build + test + cargo fmt/clippy/test), `.claude/skills/link/SKILL.md` (tauri dev), `.claude/rules/ui.md`, `.github/workflows/ci.yml` (Node + Cargo)
-- [ ] `docs/bootstrap.md` — step-by-step manual copy + edit instructions; include "what to do first after install" guidance
-- [ ] `docs/migration.md` — instructions for migrating an existing project that already has `.claude/` content (the md-manager case for PRs 4-6)
-- [ ] Verification: follow `bootstrap.md` from scratch in an empty dir for each stack; confirm working setup
+**PR 3 — `by-dev-tools/flow`: template directory + bootstrap docs (SHIPPED 2026-05-25, `3abc236`, [flow#8](https://github.com/by-dev-tools/flow/pull/8))**
+- [x] `template/base/CLAUDE.md.template` — minimal 5-10 line stub with `{{PROJECT_NAME}}`, `{{STACK}}`, `{{SAFETY_PATHS}}` placeholders
+- [x] `template/base/core-docs/{spec,plan,roadmap,history,feedback}.md` — blank scaffolds with format headers
+- [x] `template/base/flow.config.json.example` — sensible defaults + inline comments or sibling README
+- [x] `template/base/.claude/rules/safety.md.template` — stub with `{{SAFETY_PATHS}}` placeholder
+- [x] `template/base/.claude/settings.json.example` — explicit minimal allow/deny baseline (read-only commands allowed, destructive commands denied); UserPromptSubmit hook ON by default with comments
+- [x] `template/base/README.md` — placeholder skeleton with `{{PROJECT_NAME}}`, `{{ONE_LINE_DESCRIPTION}}`, `{{LIFECYCLE_STATUS}}`, `{{INSTALLATION_STEPS}}` placeholders
+- [x] `template/base/.gitignore` — universal entries (`.DS_Store`, `.env*`, `*.log`, `.claude/local-*`, etc.)
+- [x] `template/stacks/web/` — web overlay: `tools/preflight/check.mjs` (typecheck + build + test), `.claude/skills/link/SKILL.md`, `.claude/rules/ui.md`, `.github/workflows/ci.yml`, stack-specific `.gitignore` append
+- [x] `template/stacks/swift/` — swift overlay: `tools/preflight/check.sh` (xcodebuild + test + swift-format), `.claude/rules/safety.md.append`, `.github/workflows/ci.yml` (Xcode action)
+- [x] `template/stacks/tauri-rust-ts/` — tauri overlay: `tools/preflight/check.mjs` (typecheck + build + test + cargo fmt/clippy/test), `.claude/skills/link/SKILL.md` (tauri dev), `.claude/rules/ui.md`, `.github/workflows/ci.yml` (Node + Cargo). Adds 14th schema slot `rustWorkspaceDir` for monorepo Cargo workspace location.
+- [x] `docs/bootstrap.md` — step-by-step manual copy + edit instructions; include "what to do first after install" guidance
+- [x] `docs/migration.md` — instructions for migrating an existing project that already has `.claude/` content (the md-manager case for PRs 4-6)
+- [x] Verification: follow `bootstrap.md` from scratch in an empty dir for each stack; confirm working setup. **Additive:** PR 3 also absorbed 2 PR-2 FOLLOW-UPs as security regression fixtures (cwd-constraint test + malicious-config test) under `plugins/flow/tests/`. See flow's `dev-docs/history.md` PR 3 entry for the fixture design rationale and the Phase-7 engineer-lens finding that strengthened the assert-on-content (not assert-on-path) pattern → captured as md-manager FB-0032.
 
 **PR 4 — md-manager: add config layer (Stage 1 of migration, non-breaking)**
 - [ ] Install flow plugin: `/plugin marketplace add by-dev-tools/flow && /plugin install flow` (in this case marketplace is already known via settings.json; just enable)
@@ -465,6 +474,7 @@ Impl routine produces `reports/<feature-id>/index.html` committed alongside code
 
 _(Last 3–5 items. Older items live in `history.md`.)_
 
+- **Flow plugin extraction — umbrella close-out through PR 2 (PR #21, branch `claude/laughing-cohen-e7a99a`, merged `b8b0e0b`)** — Docs-only close-out: checked off PR 1 (12 boxes) + PR 2 (16 boxes) umbrella spec-walks with SHA + PR-link headers; prepended Handoff Notes bullet routing the next-step pointer at flow PR 3; added two history breadcrumbs (PR 1 + PR 2) cross-linking flow's `dev-docs/history.md` as canonical narrative source; added FB-0031 synthesizing the portable half of flow's FB-0001 (dogfood workflow-infrastructure PRs even when the named skills don't exist yet). Zero code-shaped files touched. 2026-05-25.
 - **Vite 5.4 → 8.0.13 dep bump (PR #12, branch `dependabot/npm_and_yarn/multi-46822222ac`)** — Dependabot security PR. Bumps `vite` 3 majors and `@vitejs/plugin-react` to ^6.0.2; removes direct `esbuild` (now transitive at a fixed version). Closes two open Dependabot advisories. Doc-drift fix bundled in same PR (CLAUDE.md + spec.md "Vite 5" → "Vite 8"). Locally smoke-tested: typecheck/build/test clean, `vite dev` boots in 100 ms with no warnings. No app code changed. 2026-05-17.
 - **Color-rail portfolio-derived presets (PR #18, merged)** — Visible product change: 5 brand-aligned presets (Sand/Bone/Blush/Sage/Mist) at portfolio-formula t=0.25; default page tint = Sand. /simplify caught the store.tsx default drift (MUST FIX); /staff-review skipped (live-tested + tight scope — captured retroactively as FB-0029 — see push-further-lens PR #19). Dark-mode roadmap entry expanded with the portfolio formula as the concrete starting point. FB-0027 + FB-0028 captured. 2026-05-15.
 - **Workflow unification: canonical loop + spike mode + confidence gates + agent self-feedback** — Branch `unify-workflows`, PR #16 (merged). New canonical `core-docs/workflow.md` (11 steps), spike/tiny mode escape hatches, confidence gates with LOW=human-gate, three-layer continuous-improvement model with 5 guardrails on agent memory. FB-0025 (self-audit before /ship for workflow infra) + FB-0026 (surface feedback-loop failure modes proactively) captured. 2026-05-15.

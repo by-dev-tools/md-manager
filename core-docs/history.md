@@ -37,6 +37,38 @@ Use the `SAFETY` marker on any entry that modifies error handling, persistence, 
 
 ## Entries
 
+### Flow plugin — Stage 1 install in md-manager (PR 4, alongside-mode)
+**Date:** 2026-05-25
+**Branch:** `pr4-validate`
+**Commit / PR:** range `f425636..[ship commit]` (3 commits); PR link pending push.
+
+**What was done:**
+Installed `by-dev-tools/flow@1.2.0` plugin alongside md-manager's existing local skills via project-scope `.claude/settings.json` (`enabledPlugins.flow@flow: true`). Added `flow.config.json` at repo root with 13 of 14 schema slots populated (web stack — `rustWorkspaceDir` deliberately omitted, annotated via `$comment-rustWorkspaceDir-omitted` per the schema's `additionalProperties: true` rule). Added a "Flow plugin (in-migration)" section to CLAUDE.md covering the marketplace-registration prerequisite, the silent-failure mode, install verification, the 3-PR migration framing, and the "plugin rough edges go to flow" rule with a fallback for contributors without flow commit rights. Smoke-tested `/flow:staff-review` (4 lenses ran in parallel), `/flow:security-review`, and `/flow:accessibility-review` on PR 4's own diff. Shipped end-to-end via `/flow:ship` to double-validate the plugin's ship pipeline.
+
+**Why:**
+Stage 1 of the 3-PR consumer migration (PR 4 install non-breaking → PR 5 dogfood on a real product change → PR 6 delete now-redundant local copies). The deliberately tight scope is "install + verify coexistence + smoke the lens against a real consumer" — expanding scope here is explicitly the failure mode. md-manager is the canonical first consumer of the extracted flow plugin; this PR validates that the plugin's slot reads, lens orchestration, and ship pipeline work against a real project rather than only against flow's own dev-tracking surface.
+
+**Design decisions:**
+- **Project-scope `enabledPlugins` over user-scope.** Project-scope keeps the install reproducible across machines and out of cross-project pollution. The marketplace registration itself (`/plugin marketplace add by-dev-tools/flow`) is one-time-per-machine and documented in CLAUDE.md.
+- **13 of 14 slots set, `rustWorkspaceDir` annotated as intentional omission.** Schema documents `rustWorkspaceDir` as Tauri/Rust-only; web stack omission is correct. The one-off `$comment-rustWorkspaceDir-omitted` key converts an absence (reads as oversight) into an annotated decision (reads as intent) without blocking on a schema-side `$intentionallyOmitted` convention.
+- **Both local and `/flow:*` namespaced skills coexist** until PR 6. Local versions remain canonical reference during migration; `/flow:*` is dogfooded explicitly during PR 5 only. CLAUDE.md spells out "Until PR 6 ships, prefer local skills."
+
+**Technical decisions:**
+- **Shipped via plugin `/flow:ship`, not local `/ship`.** Double-validation goal — exercise the plugin pipeline end-to-end against a real consumer, not only against flow's own repo. Fallback path to local `/ship` was reserved but not needed.
+- **Rebase resolution mid-pipeline.** Branch forked at `b8b0e0b` (md-manager#21); `origin/main` had advanced to `eb8e7b9` (md-manager#22 close-out through PR 3) by the time PR 4 reached staff-review. 3 of 4 lenses converged on "stale base producing phantom-deletion diff" as the headline BLOCKER. Resolved by rebase; only `core-docs/plan.md` conflicted; PR 4 Active Work Item placed above the (already-shipped, [x]-checked) "umbrella close-out through PR 3" item, leaving `/flow:ship` to sweep both to Recently Completed at the right end.
+
+**Tradeoffs discussed:**
+- **Annotate `rustWorkspaceDir` omission inline vs. wait for a flow-side schema convention.** Inline `$comment-` is a one-off; a first-class `$intentionallyOmitted: [...]` schema convention would be cleaner. Chose inline now (5-second fix, schema-legal) over blocking on flow-side change. Captured as a flow-side follow-up if the pattern fires at a second consumer.
+- **Re-spawn final-pass review lenses during `/flow:ship` vs. trust the Phase 4.3 results.** Diff shape unchanged between Phase 4.3 and `/flow:ship` (still docs + config only); both `/flow:security-review` and `/flow:accessibility-review` have built-in early-exit gates that fire deterministically on this shape. Chose to apply the gates inline rather than re-spawn agents that would produce the same clean result.
+
+**Lessons learned:**
+- **Four lenses converged on one finding (stale base) = high-signal validation of the multi-lens architecture.** Staff-engineer, UX-designer, and push-further all surfaced the same headline BLOCKER from different angles. Single-lens missed it (design-engineer correctly reported "nothing of consequence — no design surface in this diff"); the convergence of the other three is what made it loud. The lens parallelism produced redundant-but-distinct surfacings, which is the design goal.
+- **Plugin slot reads work from a non-plugin worktree.** Confirmed during Phase 4.3: `/flow:staff-review` resolved `core-docs/*.md` paths from md-manager's `flow.config.json`, not flow's default `dev-docs/*.md`. First real-consumer validation of the slot-reading code.
+- **`/flow:security-review` and `/flow:accessibility-review` early-exit gates have asymmetric specificity.** Accessibility-review has a structured `uiSurface=false` gate plus a prose "skip if non-UI" note; security-review only has prose. For doc-only PRs in a UI-surface project, the burden of skip-detection falls on the orchestrator (the calling skill or human). Captured as a flow-side follow-up suggesting per-diff non-UI detection in both skills.
+- **Plugin rough edges stay in plugin-side feedback, not consumer-side.** Caught a handful during Phases 4.3 + 4.4 — none landed in md-manager's `core-docs/feedback.md`; all queued for a separate `by-dev-tools/flow` PR adding entries to flow's `dev-docs/feedback.md`. The discipline is load-bearing: mixing them would muddy md-manager's feedback signal with tooling-shaped noise.
+
+---
+
 ### Flow plugin v1.2.0 — template directory + bootstrap docs at by-dev-tools/flow (breadcrumb)
 **Date:** 2026-05-25
 **Branch:** (flow repo) `pr3/template-directory`

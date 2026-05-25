@@ -57,6 +57,14 @@ md-manager is mid-migration to the [flow plugin](https://github.com/by-dev-tools
 - Local `/staff-review`, `/security-review`, `/accessibility-review`, `/ship`, `/ship-spike` continue to work from `.claude/skills/`.
 - Plugin-namespaced `/flow:staff-review`, `/flow:security-review`, `/flow:accessibility-review`, `/flow:ship`, `/flow:ship-spike`, `/flow:critique-plan`, `/flow:workflow-help` are available from the installed plugin.
 
+**Prerequisite (one-time per machine):** `enabledPlugins.flow@flow: true` in `.claude/settings.json` is inert unless the flow marketplace has been registered with Claude Code under the name `flow`. Run once per machine, from any claude session or a shell:
+
+```
+/plugin marketplace add by-dev-tools/flow
+```
+
+(For a local flow checkout: `/plugin marketplace add /path/to/your/flow/checkout`.) The flow `marketplace.json` self-declares the marketplace name as `flow`; `enabledPlugins.flow@flow` resolves by matching that name. A stale-keyed marketplace entry pointing at flow.git under a different key (e.g. pre-rename `llm-auditor`) does not resolve and the failure is silent — `/help` simply omits the `/flow:*` skills. Surfaced as a load-bearing install-ergonomics friction during PR 4's Phase 4.3 by md-manager as the first real consumer.
+
 The migration runs in 3 PRs: **PR 4 (this PR) installs the plugin alongside, non-breaking.** PR 5 dogfoods a real product change using only `/flow:*` skills to validate parity. PR 6 deletes the now-redundant local copies once parity is proven. Until PR 6 ships, prefer local skills for everything except explicit dogfood validation — both work, but the local versions are still the canonical reference during migration.
 
 **Project config:** `flow.config.json` at repo root declares md-manager's slot values (paths, default branch, typecheck command, review lenses, etc.). 13 of the schema's 14 slots are set — `rustWorkspaceDir` is deliberately omitted because md-manager is a web stack, not Tauri/Rust. The schema documents `rustWorkspaceDir` as "Tauri / Rust stacks only — omit on pure web / swift / non-Rust projects."

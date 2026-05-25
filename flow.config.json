@@ -1,0 +1,16 @@
+{
+  "defaultBranch": "main",
+  "typecheckCmd": "npm run typecheck",
+  "historyPath": "core-docs/history.md",
+  "planPath": "core-docs/plan.md",
+  "roadmapPath": "core-docs/roadmap.md",
+  "specPath": "core-docs/spec.md",
+  "feedbackPath": "core-docs/feedback.md",
+  "designLanguagePath": "core-docs/design-language.md",
+  "referenceGlob": "core-docs/*.md",
+  "uiSurface": true,
+  "reviewLenses": ["staff-engineer", "ux-designer", "design-engineer", "push-further"],
+  "memoryHardCap": 30,
+  "branchPrefix": "claude/",
+  "$comment-rustWorkspaceDir-omitted": "Web stack — Tauri/Rust-only per schema. Intentional."
+}

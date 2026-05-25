@@ -42,6 +42,56 @@ The living document for what's being worked on right now, what's queued, and wha
 
 ## Active Work Items
 
+### Flow plugin extraction — umbrella close-out through PR 4 (md-manager#23, docs-only, current)
+
+**Mode:** feature
+**Goal:** Close out md-manager's umbrella tracking of the Flow plugin extraction through PR 4 — flip the 6 PR-4 spec-walk checkboxes in the umbrella with shipping metadata (SHA + PR link), let `/ship` sweep this Active Work Item to Recently Completed. PR 4's full narrative already lives in `history.md`; this work item is forward-looking only. Next step after this docs-only PR lands: PR 5 (real-product-change dogfood using only `/flow:*` skills).
+
+**Scope (in):**
+- Flip the 6 PR 4 spec-walk checkboxes in the umbrella section from `[ ]` to `[x]`, with a SHIPPED + SHA + PR-link header (mirroring the #21 + #22 close-out pattern).
+- (Current Focus + Handoff Notes top bullet already reflect PR 4 shipped — `/flow:ship` in PR #23 swept them. Verify and leave alone.)
+
+**Scope (out):**
+- Any code changes to `src/`, `.claude/skills/`, `.claude/agents/`, `.claude/rules/`, `tools/`, or any non-docs file.
+- Touching the PR 5 / PR 6 spec-walks (still future).
+- Drafting PR 5's Active Work Item (separate session per umbrella convention; spec at flow's `dev-docs/handoffs/md-manager-pr4-6-spec.md` § PR 5).
+- The flow follow-up PR capturing plugin rough edges (different repo; see `core-docs/history.md` PR 4 entry).
+- User-scope `~/.claude/settings.json` cleanup (user action; documented in CLAUDE.md "Flow plugin (in-migration)" prerequisite section).
+- Stale-branch deletion on origin (`claude/compassionate-volhard-416f68`, `pr4-validate`) — side actions, not in this PR.
+- Local worktree cleanup (`~/dev/md-manager-pr4-validate`) — side action.
+
+**Spec-walk checkboxes:**
+- [ ] PR 4 spec-walk (6 boxes) flipped to [x] with `SHIPPED 2026-05-25, c01ddc9, [md-manager#23](https://github.com/by-dev-tools/md-manager/pull/23)` header.
+- [ ] Manual cold-read of full diff: no code-shaped files touched.
+- [ ] Preflight green: `npm run typecheck && npm run build && npm run test`.
+- [ ] `/critique-plan` (or `assumption-auditor:plan-critic` subagent) ran against this plan before Execute; verdict captured. Satisfies the FB-0033 step-2 gate — no second pass after edits unless the plan itself materially changed.
+- [ ] `/simplify` (or general-purpose code-review subagent) ran on the staged diff with explicit scan targets: cross-doc duplication between `core-docs/plan.md` ↔ `core-docs/history.md` ↔ Recently Completed; terminology drift against CLAUDE.md "Flow plugin (in-migration)" canonical phrasing. Findings applied inline or declared as deferred.
+- [ ] `/staff-review` per FB-0029: 4 lenses invoked with explicit briefing on diff shape. Lenses with no substantive surface return `N/A — <reason>` (legitimate per FB-0029's "skip a lens only when it genuinely doesn't apply" clause); others apply BLOCKER + cheap NIT inline.
+
+**Confidence verdicts:**
+
+**Assumption:** Branch base is current with `origin/main` at plan time (per FB-0033's new rule).
+**Confidence:** HIGH
+**Why:** Worktree created off `origin/main` at `c01ddc9` just now; `git merge-base --is-ancestor origin/main HEAD` returns clean.
+**If it flips:** Rebase before applying edits; otherwise the close-out diff is poisoned.
+
+**Assumption:** The applied diff stays scoped to `core-docs/plan.md` only (no `src/`, `.claude/`, `tools/`, `flow.config.json`, or `CLAUDE.md` edits leak in).
+**Confidence:** HIGH
+**Why:** Mechanical checkbox flips + one new Active Work Item; no executable surface to touch. The scope-creep failure mode is what bit FB-0033's missing-assumption pattern, so naming it explicitly is the durable lesson.
+**If it flips:** Split the non-plan edit into its own PR before `/ship` — don't bundle.
+
+**Assumption:** PR 4 actually delivered against all 6 umbrella-spec-walk items, so each checkbox can be flipped to [x] without strikethroughs.
+**Confidence:** HIGH
+**Why:** PR #23 commits + `core-docs/history.md` PR 4 entry both confirm each item delivered (install via project-scope settings, `flow.config.json`, CLAUDE.md "Flow plugin (in-migration)" section, no `.claude/` deletions, coexistence verified in sibling session via `/help`, smoke `/flow:staff-review` ran with 4 lenses).
+**If it flips:** A specific item wasn't actually delivered; strike that checkbox with a one-line note pointing at the gap instead of flipping.
+
+**Risks / open questions:**
+- None substantive — mechanical close-out mirroring the #21 + #22 pattern.
+
+**Files touched (anticipated):**
+- `core-docs/plan.md` only (this Active Work Item + the umbrella section's PR 4 sub-section header + 6 checkbox flips; sweep this work item to Recently Completed at `/ship` time).
+
+---
 
 ### Flow plugin extraction (current — multi-PR umbrella)
 
@@ -125,13 +175,13 @@ The living document for what's being worked on right now, what's queued, and wha
 - [x] `docs/migration.md` — instructions for migrating an existing project that already has `.claude/` content (the md-manager case for PRs 4-6)
 - [x] Verification: follow `bootstrap.md` from scratch in an empty dir for each stack; confirm working setup. **Additive:** PR 3 also absorbed 2 PR-2 FOLLOW-UPs as security regression fixtures (cwd-constraint test + malicious-config test) under `plugins/flow/tests/`. See flow's `dev-docs/history.md` PR 3 entry for the fixture design rationale and the Phase-7 engineer-lens finding that strengthened the assert-on-content (not assert-on-path) pattern → captured as md-manager FB-0032.
 
-**PR 4 — md-manager: add config layer (Stage 1 of migration, non-breaking)**
-- [ ] Install flow plugin: `/plugin marketplace add by-dev-tools/flow && /plugin install flow` (in this case marketplace is already known via settings.json; just enable)
-- [ ] Add `md-manager/flow.config.json` declaring md-manager's specific slots (stack: web, target_branch: main, branch_prefix: claude, paths, preflight command, safety paths, modes)
-- [ ] Add a note to md-manager's `CLAUDE.md` referencing the plugin
-- [ ] Existing local skills remain in place — no deletion. Belt and suspenders
-- [ ] Verify both can coexist: `/staff-review` (local) and `/flow:staff-review` (plugin) both work. Confirm no namespace collisions (plugins auto-namespace; should be clean)
-- [ ] Smoke test: trigger `/flow:staff-review` on the diff for this PR itself
+**PR 4 — md-manager: add config layer (Stage 1 of migration, non-breaking) (SHIPPED 2026-05-25, `c01ddc9`, [md-manager#23](https://github.com/by-dev-tools/md-manager/pull/23))**
+- [x] Install flow plugin: `/plugin marketplace add by-dev-tools/flow && /plugin install flow` (in this case marketplace is already known via settings.json; just enable)
+- [x] Add `md-manager/flow.config.json` declaring md-manager's specific slots (stack: web, target_branch: main, branch_prefix: claude, paths, preflight command, safety paths, modes)
+- [x] Add a note to md-manager's `CLAUDE.md` referencing the plugin
+- [x] Existing local skills remain in place — no deletion. Belt and suspenders
+- [x] Verify both can coexist: `/staff-review` (local) and `/flow:staff-review` (plugin) both work. Confirm no namespace collisions (plugins auto-namespace; should be clean)
+- [x] Smoke test: trigger `/flow:staff-review` on the diff for this PR itself
 
 **PR 5 — md-manager: end-to-end validation (small dogfood PR)**
 - [ ] Pick a small, real change (typo fix or tiny refactor) and ship it using only plugin skills (`/flow:staff-review`, `/flow:ship`) — not local duplicates

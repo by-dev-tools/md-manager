@@ -50,6 +50,23 @@ A markdown notes app with a content-forward, warm-neutral interface. Drafts live
 
 ---
 
+## Flow plugin (in-migration)
+
+md-manager is mid-migration to the [flow plugin](https://github.com/by-dev-tools/flow) (`by-dev-tools/flow@1.2.0+`) for its workflow surface. As of this commit, the plugin is **installed alongside** existing local skills — both work simultaneously:
+
+- Local `/staff-review`, `/security-review`, `/accessibility-review`, `/ship`, `/ship-spike` continue to work from `.claude/skills/`.
+- Plugin-namespaced `/flow:staff-review`, `/flow:security-review`, `/flow:accessibility-review`, `/flow:ship`, `/flow:ship-spike`, `/flow:critique-plan`, `/flow:workflow-help` are available from the installed plugin.
+
+The migration runs in 3 PRs: **PR 4 (this PR) installs the plugin alongside, non-breaking.** PR 5 dogfoods a real product change using only `/flow:*` skills to validate parity. PR 6 deletes the now-redundant local copies once parity is proven. Until PR 6 ships, prefer local skills for everything except explicit dogfood validation — both work, but the local versions are still the canonical reference during migration.
+
+**Project config:** `flow.config.json` at repo root declares md-manager's slot values (paths, default branch, typecheck command, review lenses, etc.). 13 of the schema's 14 slots are set — `rustWorkspaceDir` is deliberately omitted because md-manager is a web stack, not Tauri/Rust. The schema documents `rustWorkspaceDir` as "Tauri / Rust stacks only — omit on pure web / swift / non-Rust projects."
+
+**Authoritative loop reference during migration:** `${CLAUDE_PLUGIN_ROOT}/docs/workflow.md` (canonical loop, plugin-shipped). md-manager's `core-docs/workflow.md` remains the working reference until PR 6 thins it.
+
+**Plugin rough edges go to flow, not md-manager.** Any friction, lens failure, slot read bug, or `/flow:ship` issue surfaced while using the plugin gets captured in a follow-up PR on `by-dev-tools/flow` adding entries to `dev-docs/feedback.md` — **never** in md-manager's `core-docs/feedback.md` (plugin feedback belongs to the plugin's dev-tracking).
+
+---
+
 ## Tech stack
 
 - **Platform:** Web (modern browsers)

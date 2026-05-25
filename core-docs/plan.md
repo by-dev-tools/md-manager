@@ -41,6 +41,105 @@ The living document for what's being worked on right now, what's queued, and wha
 
 ## Active Work Items
 
+### Flow plugin extraction — PR 4: Install flow alongside local skills (Stage 1, non-breaking, current)
+
+**Mode:** feature
+**Goal:** Install the `flow` plugin (`by-dev-tools/flow@1.2.0+`) in md-manager via project-scope settings, add a `flow.config.json` at repo root declaring md-manager's 13 slot values, and add a short "Flow plugin (in-migration)" section to `CLAUDE.md`. Existing local `.claude/skills/`, `.claude/agents/`, `.claude/rules/` STAY IN PLACE — no deletion (that's PR 6, gated by PR 5 dogfood). Verify both local and plugin skills coexist cleanly via `/help`. Smoke `/flow:staff-review` on this PR's own diff to validate the lens orchestration against a real consumer. Optionally ship via `/flow:ship` itself (double-validation; fall back to local `/ship` if rough edges).
+
+**Scope (in):**
+- Project-scope plugin install: merge `"enabledPlugins": { "flow@flow": true }` into `.claude/settings.json` alongside the existing `permissions` key. Marketplace already registered at user scope (`~/.claude/settings.json` has the flow URL under key `llm-auditor`; rename to `flow` is out of scope here — the URL resolves either way for plugin install purposes; user can refresh user-scope at their convenience).
+- Create `flow.config.json` at repo root with 13 slots:
+  - `defaultBranch: "main"`
+  - `typecheckCmd: "npm run typecheck"` (verified against `package.json`)
+  - `historyPath: "core-docs/history.md"`
+  - `planPath: "core-docs/plan.md"`
+  - `roadmapPath: "core-docs/roadmap.md"`
+  - `specPath: "core-docs/spec.md"`
+  - `feedbackPath: "core-docs/feedback.md"`
+  - `designLanguagePath: "core-docs/design-language.md"`
+  - `referenceGlob: "core-docs/*.md"`
+  - `uiSurface: true`
+  - `reviewLenses: ["staff-engineer","ux-designer","design-engineer","push-further"]`
+  - `memoryHardCap: 30`
+  - `branchPrefix: "claude/"` (matches md-manager's current branch convention)
+  - (`rustWorkspaceDir` omitted — md-manager is web stack, not Tauri.)
+- Add a short "Flow plugin (in-migration)" section to `CLAUDE.md` per migration.md's template: both local and plugin skills currently work, local removal happens after PR 5 dogfood validation lands, plugin's `${CLAUDE_PLUGIN_ROOT}/docs/workflow.md` is the authoritative loop reference during migration.
+- Coexistence verification (Phase 4.2): in a fresh `claude` session, `/help` shows BOTH `/staff-review` (local) AND `/flow:staff-review` (plugin) cleanly, same for security-review / accessibility-review / ship / ship-spike. (Requires user to start a fresh session post-commit; flag this in Present.)
+- Smoke `/flow:staff-review` (and optionally `/flow:security-review` + `/flow:accessibility-review`) on PR 4's own diff. Capture any plugin rough edges in flow's `dev-docs/feedback.md` via a SEPARATE follow-up PR in flow's repo — NOT in md-manager's feedback.md.
+- Phase 4.4 (optional but preferred): ship PR 4 itself via `/flow:ship`. If the plugin's ship pipeline has rough edges, fall back to local `/ship` and document why in the PR body.
+
+**Scope (out):**
+- **No deletion** of any `.claude/skills/`, `.claude/agents/`, `.claude/rules/` files. That's PR 6, gated by PR 5 dogfood.
+- **No invocation of `/flow:*` skills for non-PR-4 product work.** PR 4 just installs + verifies coexistence + smokes the lens on its own diff. PR 5 is the real dogfood.
+- **No changes to `core-docs/workflow.md`.** Replaced or thinned in PR 6.
+- **No upstream changes to flow.** Plugin bugs found go in a separate flow PR adding entries to flow's `dev-docs/feedback.md` — never bundled into PR 4.
+- **No user-scope `~/.claude/settings.json` updates.** Project-scope install is the clean path; user-scope refresh (renaming the stale `assumption-auditor@llm-auditor` key) is out of scope and a separate user action.
+- **No bundling of any other md-manager change.** PR 4 is install + config + CLAUDE.md note; nothing else.
+
+**Spec-walk checkboxes** (mirroring the spec's per-phase success criteria from `gh api ... dev-docs/handoffs/md-manager-pr4-6-spec.md`):
+
+Phase 4.1 — Plan + sanity checks:
+- [x] flow plugin version on main is ≥ 1.2.0 (verified: `gh api ... plugins/flow/.claude-plugin/plugin.json` returns "1.2.0")
+- [x] flow PR 3 template files exist on main (verified: `template/base/flow.config.json.example` size 2535)
+- [x] md-manager's typecheck command verified: `npm run typecheck` (per `package.json`)
+- [x] This Active Work Item drafted into `core-docs/plan.md`
+- [ ] User explicitly approved
+
+Phase 4.2 — Install + config + coexistence verify:
+- [ ] `.claude/settings.json` includes `enabledPlugins: { "flow@flow": true }` (project-scope), merged with existing `permissions` key
+- [ ] `flow.config.json` exists at repo root; `jq -e .` exits clean; all 13 slots present
+- [ ] `CLAUDE.md` has a new "Flow plugin (in-migration)" section
+- [ ] User confirms (after fresh session) that `/help` shows BOTH local `/staff-review` AND plugin `/flow:staff-review` distinctly
+- [ ] No errors at fresh-session start from missing plugin files, malformed config, or rule conflicts
+
+Phase 4.3 — Smoke `/flow:staff-review` on PR 4's diff:
+- [ ] `/flow:staff-review` invocation completed (4 lens agents spawned + 4 reports collected)
+- [ ] Each lens produced output matching the documented BLOCKER/NIT/FOLLOW-UP/EXPLORATION triage shape
+- [ ] `flow.config.json` slot reads worked (verified by checking lens prompts referenced md-manager's actual `core-docs/*.md` content, not flow's default `dev-docs/*.md`)
+- [ ] Any plugin rough edges captured (file paths, line numbers, repro steps) for a SEPARATE flow PR — NOT bundled into PR 4
+
+Phase 4.4 — Ship via `/flow:ship` (or fall back to local `/ship`):
+- [ ] PR 4 OPEN against `main` (md-manager); MERGEABLE
+- [ ] PR body documents which ship pipeline was used (plugin `/flow:ship` vs local `/ship`) and why
+- [ ] If `/flow:ship` was used: any rough edges captured for a follow-up flow PR
+- [ ] Manual cold-read of full diff: no `.claude/` deletions; no out-of-scope changes
+- [ ] Preflight green: `npm run typecheck && npm run build && npm run test`
+
+**Confidence verdicts:**
+
+**Assumption:** Project-scope `enabledPlugins` merge with the existing `permissions: { allow: ["mcp__pencil"] }` block in `.claude/settings.json` works cleanly, and plugins are auto-namespaced so `/staff-review` (local) and `/flow:staff-review` (plugin) coexist without collision.
+**Confidence:** HIGH
+**Why:** Anthropic plugin docs document the namespace separation explicitly. Flow PR 1's smoke test in `/tmp/flow-smoke` confirmed `flow:*` namespace works in isolation. JSON merge semantics for sibling top-level keys are unambiguous.
+**If it flips:** Move plugin to user-scope (`~/.claude/settings.json`) — single line revert, accept temporary cross-project pollution.
+
+**Assumption:** All 13 `flow.config.json` slots map cleanly to md-manager's actual project shape, AND the plugin's skills read every slot correctly (no hardcoded `dev-docs/*` paths sneaking through after PR 2's parameterization).
+**Confidence:** MEDIUM
+**Why:** Schema was designed against md-manager as the reference consumer (the spec calls md-manager "the first real-world consumer test"). PR 2 wired slot reads explicitly. But this is the first real consumer invocation — edge cases (slot read failure, default fallback firing when it shouldn't, missing-slot warnings firing too noisily) may surface in Phase 4.3.
+**If it flips:** Missing or buggy slot reads filed to flow's `dev-docs/plan.md` via a separate flow PR. md-manager either tolerates the limitation or keeps using local skills until the slot read is fixed. Doesn't block PR 4 close-out; PR 4 just becomes "install works, smoke surfaced N issues" rather than "install works clean."
+
+**Assumption:** `/flow:ship` (the plugin's ship pipeline) works end-to-end against md-manager's `flow.config.json` slot values on first invocation OR the fallback to local `/ship` is clean.
+**Confidence:** MEDIUM
+**Why:** Plugin ship hasn't been invoked against a real consumer's `flow.config.json` before. Local `/ship` is well-trodden; fallback is safe.
+**If it flips:** Use local `/ship`. Capture every `/flow:ship` rough edge in flow's `dev-docs/feedback.md` via separate flow PR. PR 4 still ships cleanly via local `/ship`.
+
+**Risks / open questions:**
+- **Coexistence `/help` verification requires a fresh session** — the current session can't reload `enabledPlugins`. After landing the config + commits, the user must start a fresh `claude` session in md-manager (or this worktree) to validate Phase 4.2 success criteria #4. I'll flag this prominently in Present.
+- **`/flow:staff-review` on PR 4's diff may produce findings proposing changes to `.claude/settings.json` or `flow.config.json` themselves.** Apply BLOCKER + cheap NIT inline; route FOLLOW-UPs to roadmap/plan; route PLUGIN-shaped rough edges to flow's `dev-docs/feedback.md` (separate flow PR).
+- **The user-scope `~/.claude/settings.json` has stale entries** from before the llm-auditor → flow rename (`assumption-auditor@llm-auditor: true` + marketplace key `llm-auditor`). Project-scope `flow@flow: true` will activate the plugin via the marketplace URL regardless of the user-scope key staleness. Flag in Present for user cleanup at their convenience.
+- **The `branchPrefix: "claude/"` slot matches Claude-created branch convention** (5 local branches in this worktree match `claude/*`), though md-manager's recent merge convention has used unprefixed feature names (e.g. `pasted-text-import`, `consolidate-flow-extraction-planning`). The slot value is correct for *future Claude-created* branches; flow's use of the slot (validate vs. create) should be confirmed during PR 5 dogfood.
+
+**Files touched (anticipated):**
+- **New:** `flow.config.json` (repo root, ~15 lines)
+- **Modified:** `.claude/settings.json` (add sibling `enabledPlugins` key)
+- **Modified:** `CLAUDE.md` (new "Flow plugin (in-migration)" section, ~5 lines)
+- **Modified:** `core-docs/plan.md` (this Active Work Item; post-PR-4 sweep to Recently Completed at `/ship` time)
+- **Unchanged:** every `.claude/skills/*`, `.claude/agents/*`, `.claude/rules/*`, `core-docs/*` (except plan.md), `src/*`, `tools/*`, etc.
+
+**Plugin feedback handoff (out of this PR):**
+- Any `/flow:staff-review`, `/flow:security-review`, `/flow:accessibility-review`, or `/flow:ship` rough edges captured during Phases 4.3 + 4.4 → consolidated into a single follow-up PR in `by-dev-tools/flow` adding entries to `dev-docs/feedback.md`. Tracked separately; NOT a blocker for PR 4 close-out.
+
+---
+
 ### Flow plugin extraction — umbrella close-out through PR 3
 
 **Mode:** feature
